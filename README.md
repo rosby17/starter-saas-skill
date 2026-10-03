@@ -14,7 +14,7 @@ Tout ce qui se répète d'un SaaS à l'autre est déjà prêt : tu ne parles que
 6. [Après la création : 5 réglages](#6-après-la-création--5-réglages)
 7. [Mettre en ligne](#7-mettre-en-ligne)
 8. [Sécurité](#8-sécurité)
-9. [Auditer un SaaS](#9-auditer-un-saas-le-tien-ou-celui-dun-client)
+9. [Auditer un SaaS : sécurité, rentabilité, robustesse](#9-auditer-un-saas-le-tien-ou-celui-dun-client)
 10. [Faire évoluer ton SaaS](#10-faire-évoluer-ton-saas)
 11. [Problèmes fréquents](#11-problèmes-fréquents)
 
@@ -129,7 +129,10 @@ Déjà intégré :
 - Limitation du nombre de tentatives.
 - En-têtes de sécurité du navigateur.
 
-Avant chaque livraison, Claude passe un **audit obligatoire** : secrets, base de données, routes API, navigateur, dépendances (`npm audit`), protection contre les abus. Il te dit ce qu'il a vérifié.
+Avant chaque livraison, Claude passe un **audit obligatoire**. Il te dit ce qu'il a vérifié :
+- **sécurité** : secrets, base de données, routes API, navigateur, dépendances (`npm audit`), protection contre les abus ;
+- **rentabilité** : vrais prix calculés à partir de tes coûts, fonctions payantes (IA, SMS) toujours décomptées ;
+- **robustesse** : délais maximaux, erreurs lues, index, pages d'erreur, contrôle de santé.
 
 Tes règles à toi :
 - Dépôts GitHub toujours **privés**.
@@ -141,14 +144,29 @@ Tes règles à toi :
 Quelqu'un t'envoie son SaaS (dossier, lien GitHub ou ZIP) ? Dis à Claude :
 > audite ce SaaS : <chemin ou lien>
 
-Claude :
-1. récupère le code sans rien lancer de risqué ;
-2. passe le **scanner automatique** (secrets, dépendances, base de données ouverte, routes non protégées, paiements…) ;
-3. vérifie à la main ce qu'une machine ne voit pas : qui peut lire les données de qui, qui peut se donner les droits admin, qui peut payer moins ou se créditer ;
-4. écrit `AUDIT-SECURITE.md` : une note de A à E, les 3 risques principaux expliqués simplement, chaque faille avec sa preuve et sa correction ;
-5. après ton accord, **corrige** sur une branche à part (`audit/securite`), revérifie tout et te donne la note avant / après, plus ce que le propriétaire doit faire lui-même (par exemple changer une clé qui a fuité).
+Claude l'examine sous trois angles, chacun avec une note de A à E :
 
-Il ne teste jamais un site en ligne sans l'accord de son propriétaire, ne touche pas aux vraies données des clients et n'affiche jamais un secret trouvé : il dit seulement où il est.
+| Rubrique | La question | Ce qu'il regarde |
+|---|---|---|
+| **Sécurité** | Peut-on le pirater ? | clés oubliées dans le code, données d'un client lisibles par un autre, droits admin, paiements falsifiables |
+| **Rentabilité** | Gagne-t-il de l'argent ? | marge de chaque offre, coût de l'IA ou des SMS par client, fonctions payantes sans limite, point mort, ventes perdues |
+| **Robustesse** | Tient-il le coup ? | passerelle lente ou en panne, croissance du nombre de clients, mises à jour ratées, sauvegardes |
+
+Pour chaque rubrique, Claude :
+1. récupère le code sans rien lancer de risqué ;
+2. passe un **scanner automatique** (rapide, il trouve les signaux évidents) ;
+3. vérifie à la main ce qu'une machine ne voit pas : qui peut lire les données de qui, qui peut se créditer, ce que coûte vraiment un client, ce qui se passe quand un service tombe ;
+4. pour la rentabilité, te demande tes vrais coûts (serveur, IA, passerelle) et calcule la marge de chaque offre, le nombre de clients qu'il te faut pour couvrir tes frais et le prix minimum de chaque offre ;
+5. écrit un rapport (`AUDIT-SECURITE.md`, `AUDIT-RENTABILITE.md`, `AUDIT-ROBUSTESSE.md`) : la note, les 3 points principaux expliqués simplement, chaque problème avec sa preuve et sa correction ;
+6. après ton accord, **corrige** sur une branche à part, revérifie tout et te donne les notes avant / après, plus ce que tu dois faire toi-même (changer une clé qui a fuité, régler les sauvegardes, valider un nouveau prix).
+
+Tu peux aussi demander une seule rubrique : « vérifie la rentabilité de ce SaaS », « vérifie s'il est solide ».
+
+Ce qu'il ne fait jamais :
+- tester un site en ligne sans l'accord de son propriétaire ;
+- toucher aux vraies données des clients ;
+- changer un prix sans ton accord ;
+- afficher un secret trouvé : il dit seulement où il est.
 
 ## 10. Faire évoluer ton SaaS
 

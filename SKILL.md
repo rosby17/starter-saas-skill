@@ -1,6 +1,6 @@
 ---
 name: starter-saas
-description: Crée un SaaS complet et opérationnel à partir d'une description (écrite ou dictée) : landing page, authentification avec déconnexion, espace client, administration, tarifs, migrations de base de données générées automatiquement, build vérifié et déploiement. Fait aussi l'AUDIT DE SÉCURITÉ d'un SaaS existant (le sien ou celui de quelqu'un d'autre) et le corrige. Utilise-le quand l'utilisateur dit « starter saas », « crée un SaaS », « nouveau SaaS », décrit une application web à fabriquer, ou demande d'auditer, de vérifier la sécurité ou de corriger les failles d'un SaaS.
+description: Crée un SaaS complet et opérationnel à partir d'une description (écrite ou dictée) : landing page, authentification avec déconnexion, espace client, administration, tarifs, migrations de base de données générées automatiquement, build vérifié et déploiement. Fait aussi l'AUDIT d'un SaaS existant (le sien ou celui de quelqu'un d'autre) en trois rubriques, sécurité, rentabilité (marges, coûts de l'IA, prix, point mort) et robustesse (pannes, montée en charge, sauvegardes), puis le corrige. Utilise-le quand l'utilisateur dit « starter saas », « crée un SaaS », « nouveau SaaS », décrit une application web à fabriquer, ou demande d'auditer un SaaS, d'en vérifier la sécurité, la rentabilité ou la solidité, ou d'en corriger les failles.
 ---
 
 # starter-saas : de la description au SaaS qui tourne
@@ -23,7 +23,7 @@ Next.js 15 (App Router) + Supabase + Tailwind + Docker :
 
 Tout le branding est dans `src/config/site.ts` (nom, slogan, menus, fonctionnalités, FAQ) et `src/lib/pricing.ts` (prix).
 
-**Deux modes.** Créer un SaaS : étapes 1 à 8 ci-dessous. Auditer un SaaS existant (« audite ce SaaS », « vérifie la sécurité de… », un dossier, un dépôt ou un ZIP reçu) : section « Mode audit de sécurité » en bas.
+**Deux modes.** Créer un SaaS : étapes 1 à 8 ci-dessous. Auditer un SaaS existant (« audite ce SaaS », « vérifie la sécurité / la rentabilité / la solidité de… », un dossier, un dépôt ou un ZIP reçu) : section « Mode audit » en bas.
 
 ## 1. Comprendre (2 minutes)
 
@@ -84,7 +84,7 @@ Le script copie le modèle, remplace le nom, le domaine d'exemple et le nom du p
 2. Lance l'app et teste pour de vrai : inscription, connexion, création / modification / suppression d'une donnée de chaque entité, **déconnexion**, retour sur `/login`, une page privée qui redirige bien. Regarde la console du navigateur.
 3. Corrige jusqu'au vert. Si un test échoue, dis-le avec la sortie, sans l'enrober.
 
-## 7. Audit de sécurité (obligatoire avant de livrer)
+## 7. Audits de sécurité, de rentabilité et de robustesse (obligatoires avant de livrer)
 
 Lance d'abord le scanner (`python3 "<dossier du skill>/scripts/audit_securite.py" .`) : aucun CRITIQUE ni HAUTE confirmé. Puis passe chaque point ; corrige ce qui échoue, et dis ce qui a été vérifié :
 1. **Secrets** : aucun secret dans Git (`git log -p | grep` des motifs de clés, ou `gitleaks detect` s'il est installé), `.env*` ignorés sauf `.env.example`, aucune clé serveur dans un fichier `"use client"` ni dans une variable `NEXT_PUBLIC_*`. Dépôt GitHub créé en **privé** (`gh repo create --private`), jamais public sans demande explicite.
@@ -94,20 +94,33 @@ Lance d'abord le scanner (`python3 "<dossier du skill>/scripts/audit_securite.py
 5. **Dépendances** : `npm audit --omit=dev` sans vulnérabilité haute ou critique (sinon `npm audit fix` ou mise à jour ciblée).
 6. **Abus** : limitation de débit sur connexion, inscription, mot de passe oublié, checkout et formulaires publics.
 
+Puis la rentabilité et la robustesse :
+- `python3 "<dossier du skill>/scripts/audit_rentabilite.py" .` : aucun CRITIQUE ni HAUTE. Les prix d'exemple de `pricing.ts` (marqués TODO) sont remplacés par les vrais, calculés avec `scripts/calcul_rentabilite.py` à partir des coûts du produit. Toute fonction payante (IA, SMS…) débite des crédits avec `debitCredits()` AVANT l'appel et plafonne la longueur (max_tokens).
+- `python3 "<dossier du skill>/scripts/audit_robustesse.py" .` : aucun CRITIQUE, HAUTE ni MOYENNE ; chaque nouvel appel extérieur a un délai maximal, chaque écriture lit son erreur, chaque nouvelle clé étrangère a son index, chaque liste qui grandit est paginée. Restent en « À VÉRIFIER » les tests, l'intégration continue et les sauvegardes : dis à l'utilisateur de régler les sauvegardes de la base dans Coolify (Backups du service, vers un stockage S3).
+
 ## 8. Rendre compte
 
 Réponse courte : ce qui tourne (adresse), les écrans et tables générés, ce qui reste à faire par l'utilisateur (clés, DNS, texte légal), les hypothèses prises.
 
-## Mode audit de sécurité
+## Mode audit
 
-Suis `references/audit-securite.md` en entier. En bref :
-1. **Récupère le code** (dossier, `git clone` ou ZIP dans `~/Documents/dev/audits/<nom>`), branche `audit/securite`. Rien d'exécuté à l'aveugle (`--ignore-scripts`), aucune connexion à la base de production, aucun test contre un site en ligne sans l'accord de son propriétaire.
-2. **Scanner** : `python3 "<dossier du skill>/scripts/audit_securite.py" <dossier> --sortie <dossier>/SCAN-AUTOMATIQUE.md`. Chaque ligne est un signal à confirmer en lisant le code ; écarte les fausses alertes.
-3. **Revue manuelle** des 23 questions de la référence (identité, propriétaire de chaque ressource, rôle admin, RLS, colonnes sensibles, prix, webhooks, crédits atomiques, fichiers, SSRF, redirections, comptes, erreurs, crons, sauvegardes). Les failles graves sont là.
-4. **Rapport** `AUDIT-SECURITE.md` : note A à E, 3 risques principaux en langage simple, puis chaque faille avec niveau, fichier:ligne, scénario d'attaque, correction ; et la liste de ce qui a été vérifié sans problème. Secrets : dire où, jamais les afficher ni ouvrir un coffre d'identifiants.
-5. Montre le résumé et demande UN accord, puis **corrige** dans l'ordre CRITIQUE → HAUTE → MOYENNE, un commit par correction, migrations neuves pour la base. Revérifie (`tsc`, lint, build, scanner relancé) et mets le rapport à jour : note avant / après, ce que le propriétaire doit faire lui-même (révoquer une clé, nettoyer l'historique Git…).
+Trois rubriques, chacune avec sa méthode complète (à suivre en entier), son scanner et son rapport. « Audite ce SaaS » = les trois, dans cet ordre. « Vérifie la sécurité / la rentabilité / la solidité » = la rubrique demandée.
 
-Le même audit s'applique aux SaaS créés avec ce skill (étape 7).
+| Rubrique | Méthode | Scanner | Rapport |
+|---|---|---|---|
+| Sécurité | `references/audit-securite.md` | `scripts/audit_securite.py` | `AUDIT-SECURITE.md` |
+| Rentabilité | `references/audit-rentabilite.md` | `scripts/audit_rentabilite.py` + `scripts/calcul_rentabilite.py` | `AUDIT-RENTABILITE.md` |
+| Robustesse | `references/audit-robustesse.md` | `scripts/audit_robustesse.py` | `AUDIT-ROBUSTESSE.md` |
+
+En bref :
+1. **Récupère le code** (dossier, `git clone` ou ZIP dans `~/Documents/dev/audits/<nom>`). Rien d'exécuté à l'aveugle (`--ignore-scripts`), aucune connexion à la base de production sans accord (et alors en lecture seule), aucun test contre un site en ligne sans l'accord de son propriétaire.
+2. **Scanners** : `python3 "<dossier du skill>/scripts/<scanner>" <dossier> --sortie <dossier>/SCAN-<RUBRIQUE>.md`. Chaque ligne est un signal à confirmer en lisant le code ; écarte les fausses alertes et dis pourquoi.
+3. **Rentabilité : les chiffres** : demande au propriétaire ses coûts (serveur, IA, SMS, passerelle) et ses volumes, remplis `chiffres.json` (`calcul_rentabilite.py --modele`), puis calcule marges, point mort et prix minimum. Prix des fournisseurs lus sur leur page le jour même, jamais de mémoire.
+4. **Revue manuelle** des questions de chaque méthode (23 sécurité, 18 rentabilité, 22 robustesse). Les failles graves, les pertes d'argent et les pannes sont là.
+5. **Rapports** : chacun commence par une note A à E et les 3 points principaux en langage simple, puis chaque point avec niveau, fichier:ligne, preuve (scénario d'attaque, coût en argent, scénario de panne) et correction ; et ce qui a été vérifié sans problème. Secrets : dire où, jamais les afficher.
+6. Montre un résumé (les trois notes, les 3 urgences toutes rubriques confondues) et demande UN accord, puis **corrige** sur `audit/<rubrique>`, CRITIQUE → HAUTE → MOYENNE, un commit par correction, migrations neuves. Les prix et les offres ne changent qu'avec l'accord explicite du propriétaire. Revérifie (`tsc`, lint, build, scanners relancés, calcul refait) et donne les notes avant / après, plus ce que le propriétaire doit faire lui-même (révoquer une clé, régler les sauvegardes, changer un prix).
+
+Les scanners se testent : `python3 tests/test_audit.py` et `python3 tests/test_rentabilite_robustesse.py` (faux SaaS pleins de défauts connus : tout doit être trouvé, et rien sur leur version corrigée). Les mêmes audits s'appliquent aux SaaS créés avec ce skill (étape 7).
 
 ## Règles
 

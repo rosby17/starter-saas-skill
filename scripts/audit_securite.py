@@ -364,13 +364,14 @@ def check_code(root):
 # ---------------------------------------------------------------------------
 # Rapport
 # ---------------------------------------------------------------------------
-def report(root):
-    counts = {lvl: sum(1 for f in findings if f['niveau'] == lvl) for lvl in ORDER}
-    out = [f'# Scan de sécurité automatique : {root.name}', '',
-           'Première passe automatique. Chaque point est un SIGNAL à confirmer en lisant le code ; la revue manuelle trouve ce qu’un scanner ne voit pas (logique métier, droits entre clients, paiements).', '',
+def report(root, liste=None, titre='Scan de sécurité automatique',
+           intro='Première passe automatique. Chaque point est un SIGNAL à confirmer en lisant le code ; la revue manuelle trouve ce qu’un scanner ne voit pas (logique métier, droits entre clients, paiements).'):
+    liste = findings if liste is None else liste
+    counts = {lvl: sum(1 for f in liste if f['niveau'] == lvl) for lvl in ORDER}
+    out = [f'# {titre} : {root.name}', '', intro, '',
            '| Niveau | Nombre |', '|---|---|'] + [f'| {lvl} | {counts[lvl]} |' for lvl in ORDER] + ['']
     for lvl in ORDER:
-        group = [f for f in findings if f['niveau'] == lvl]
+        group = [f for f in liste if f['niveau'] == lvl]
         if not group:
             continue
         out.append(f'## {lvl}')
@@ -390,7 +391,10 @@ def main():
     check_dependencies(root)
     check_database(root)
     check_code(root)
-    text, counts = report(root)
+    write_report(*report(root))
+
+
+def write_report(text, counts):
     if '--sortie' in sys.argv:
         dest = Path(sys.argv[sys.argv.index('--sortie') + 1])
         dest.write_text(text, encoding='utf-8')

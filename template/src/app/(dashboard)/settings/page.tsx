@@ -10,7 +10,8 @@ async function saveProfile(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
   const first_name = String(formData.get('first_name') || '').trim().slice(0, 80)
-  await supabase.from('profiles').update({ first_name }).eq('id', user.id)
+  const { error } = await supabase.from('profiles').update({ first_name }).eq('id', user.id)
+  if (error) throw new Error('Le prénom n’a pas été enregistré. Réessaie dans un instant.')
   revalidatePath('/settings')
 }
 

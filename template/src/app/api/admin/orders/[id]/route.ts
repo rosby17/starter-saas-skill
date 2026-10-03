@@ -41,7 +41,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (action === 'verify') {
     const gateway = gatewayForPaymentMethod(order.payment_method)
     if (!gateway?.checkStatus) return NextResponse.json({ success: false, message: "Cette passerelle ne permet pas de vérifier : attends son webhook, ou utilise « Marquer payée » après contrôle." }, { status: 400 })
-    const state = await gateway.checkStatus({ id: order.id, payment_ref: order.payment_ref })
+    // Passerelle muette ou trop lente : « inconnu », sans rien créditer.
+    const state = await gateway.checkStatus({ id: order.id, payment_ref: order.payment_ref }).catch(() => 'unknown' as const)
     const credited = state === 'paid' ? await creditPaidOrder(db, order) : false
     await logAdminAction(db, auth.userId, 'order.verify', { type: 'order', id }, { state, credited })
     return NextResponse.json({ success: true, state, credited })

@@ -23,6 +23,7 @@ export const warappay: PaymentGateway = {
     if (customer.phone) payload.customer_phone = customer.phone
 
     const response = await fetch('https://api.warappay.com/api/v1/checkout', {
+      signal: AbortSignal.timeout(15_000),
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.WARAPPAY_API_KEY}` },
       body: JSON.stringify(payload),

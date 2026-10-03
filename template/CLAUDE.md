@@ -9,5 +9,7 @@
 - **Administration** : `/admin`, réservé à `profiles.is_admin = true` (premier compte créé par l'assistant `/setup`).
 - **Base de données** : Supabase OPEN SOURCE hébergé par le créateur (Docker en local, service Coolify `api.<domaine>` en ligne). JAMAIS de compte supabase.com. Installation : `/setup` (local) et `/admin/deploy` (en ligne), via `src/lib/deploy/`.
 - **Base de données** : uniquement par migrations dans `supabase/migrations/` : un fichier NEUF par changement (`AAAAMMJJHHMMSS_nom.sql`), jamais de modification d'une migration déjà appliquée. Toujours rejouables (`if not exists`, `drop policy if exists`), RLS activée sur chaque table, index sur chaque clé étrangère. Pour savoir quoi changer, lire l'état réel de la base (`supabase db diff`), pas sa mémoire.
+- **Fonctions payantes** (IA, SMS, WhatsApp…) : compte obligatoire, `debitCredits()` (`src/lib/credits/balance.ts`, atomique) AVANT l'appel, longueur plafonnée (max_tokens). Jamais de débit « lire le solde puis écrire ».
+- **Robustesse** : chaque appel extérieur a un délai maximal (`signal: AbortSignal.timeout(15_000)`), chaque écriture en base lit son `{ error }`, chaque liste qui grandit est paginée.
 - **Secrets** : jamais dans Git ni dans le chat. `.env.local` en local, variables d'environnement de l'hébergeur en production.
 - **Vérifier avant de livrer** : `npx tsc --noEmit`, `npm run lint`, `npm run build`, puis essai réel dans le navigateur (inscription → connexion → action → déconnexion).

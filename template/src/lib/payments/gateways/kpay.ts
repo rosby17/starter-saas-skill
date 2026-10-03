@@ -10,6 +10,7 @@ export const kpay: PaymentGateway = {
     if (!(plan.amountUsd > 0)) throw new GatewayError('Ce forfait ne peut pas être payé par carte.', 400)
     const returnUrl = `${origin}/billing/success?cartId=${orderId}&provider=kpay`
     const response = await fetch('https://admin.kpay.site/api/v1/payments/init', {
+      signal: AbortSignal.timeout(15_000),
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-API-Key': process.env.KPAY_API_KEY!, 'X-Secret-Key': process.env.KPAY_SECRET_KEY! },
       body: JSON.stringify({

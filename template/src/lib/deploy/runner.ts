@@ -91,7 +91,8 @@ export async function getDeployState(): Promise<DeployState | null> {
 }
 
 async function saveState(state: DeployState) {
-  await serviceClient().from('system_settings').upsert({ key: STATE_KEY, value: state, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+  const { error } = await serviceClient().from('system_settings').upsert({ key: STATE_KEY, value: state, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+  if (error) console.error('État de la mise en ligne non enregistré :', error.message)
 }
 
 const env = (name: string) => (isPlaceholder(process.env[name]) ? '' : process.env[name]!)

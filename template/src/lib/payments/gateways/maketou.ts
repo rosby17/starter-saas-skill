@@ -21,6 +21,7 @@ export const maketou: PaymentGateway = {
     if (customer.phone) payload.phone = customer.phone
 
     const response = await fetch('https://api.maketou.net/api/v1/stores/cart/checkout', {
+      signal: AbortSignal.timeout(15_000),
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.MAKETOU_API_KEY}` },
       body: JSON.stringify(payload),
@@ -39,6 +40,7 @@ export const maketou: PaymentGateway = {
     const apiKey = process.env.MAKETOU_API_KEY
     if (!apiKey) return 'unknown'
     const response = await fetch(`https://api.maketou.net/api/v1/stores/cart/${encodeURIComponent(order.payment_ref || order.id)}`, {
+      signal: AbortSignal.timeout(15_000),
       headers: { Authorization: `Bearer ${apiKey}` },
     })
     if (!response.ok) return 'unknown'

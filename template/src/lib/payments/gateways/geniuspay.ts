@@ -29,7 +29,7 @@ export const geniuspay: PaymentGateway = {
       metadata: { order_id: orderId, planId: plan.id },
     }
     if (paymentType === 'card') body.payment_method = 'card'
-    const response = await fetch(`${GENIUSPAY_API}/payments`, { method: 'POST', headers: geniusPayHeaders(), body: JSON.stringify(body) })
+    const response = await fetch(`${GENIUSPAY_API}/payments`, { method: 'POST', headers: geniusPayHeaders(), body: JSON.stringify(body), signal: AbortSignal.timeout(15_000) })
     const data = await response.json().catch(() => null)
     const tx = data?.data
     const redirectUrl = tx?.checkout_url || tx?.payment_url

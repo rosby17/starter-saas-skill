@@ -7,7 +7,7 @@ export type GeniusPayPayment = { reference: string; amount: number; status: stri
 
 /** État du paiement tel que GeniusPay le connaît (source de vérité). */
 export async function fetchGeniusPayPayment(reference: string): Promise<GeniusPayPayment | null> {
-  const response = await fetch(`${GENIUSPAY_API}/payments/${encodeURIComponent(reference)}`, { headers: geniusPayHeaders() })
+  const response = await fetch(`${GENIUSPAY_API}/payments/${encodeURIComponent(reference)}`, { headers: geniusPayHeaders(), signal: AbortSignal.timeout(15_000) })
   if (!response.ok) return null
   const body = await response.json().catch(() => null)
   return body?.success && body.data ? (body.data as GeniusPayPayment) : null

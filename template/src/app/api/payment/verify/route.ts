@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     if (orderData.status !== "success" && orderData.status !== "completed") {
       const gateway = gatewayForPaymentMethod(orderData.payment_method);
       if (gateway?.checkStatus) {
-        const state = await gateway.checkStatus({ id: orderData.id, payment_ref: orderData.payment_ref });
+        const state = await gateway.checkStatus({ id: orderData.id, payment_ref: orderData.payment_ref }).catch(() => 'unknown' as const);
         if (state === "paid") {
           await creditPaidOrder(supabase, orderData);
           orderData.status = "success"; // crédité par cet appel ou déjà crédité par un autre : dans les deux cas c'est payé
@@ -64,6 +64,7 @@ export async function GET(request: Request) {
     // Warappay : le webhook fait foi, mais on relit aussi le paiement au retour du client (webhook en retard ou perdu).
     if (orderData.payment_method === "Warappay" && orderData.status !== "success" && orderData.status !== "completed" && process.env.WARAPPAY_API_KEY) {
       const response = await fetch(`https://api.warappay.com/api/v1/checkout/${orderData.payment_ref || cartId}`, {
+        signal: AbortSignal.timeout(15_000),
         headers: { Authorization: `Bearer ${process.env.WARAPPAY_API_KEY}` },
       });
       if (response.ok) {

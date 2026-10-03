@@ -15,6 +15,7 @@ export const taramoney: PaymentGateway = {
     const price = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(plan.amountLocal)
 
     const response = await fetch('https://www.dklo.co/api/tara/paymentlinks', {
+      signal: AbortSignal.timeout(15_000),
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

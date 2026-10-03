@@ -38,6 +38,10 @@ export async function middleware(request: NextRequest) {
     return new NextResponse('Configuration incomplète : NEXT_PUBLIC_SUPABASE_URL manquant sur le serveur.', { status: 503 })
   }
 
+  // Contrôle de santé (Docker, Coolify) : jamais bloqué par la maintenance ni par la session, sinon le conteneur
+  // serait jugé malade pendant une maintenance et redémarré.
+  if (pathname === '/api/health') return NextResponse.next()
+
   let supabaseResponse = NextResponse.next({
     request: { headers: request.headers },
   })

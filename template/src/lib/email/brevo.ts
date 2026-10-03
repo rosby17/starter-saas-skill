@@ -24,6 +24,7 @@ export async function sendEmail({ to, subject, html, replyTo, priority = "normal
   }
   try {
     const res = await fetch(BREVO_API_URL, {
+      signal: AbortSignal.timeout(15_000),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
