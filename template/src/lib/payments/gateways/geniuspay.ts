@@ -16,8 +16,8 @@ export const geniuspay: PaymentGateway = {
   paymentMethod: 'GeniusPay',
   isConfigured: () => !!process.env.GENIUSPAY_API_KEY && !!process.env.GENIUSPAY_API_SECRET && !!process.env.GENIUSPAY_WEBHOOK_SECRET,
 
-  async createCheckout({ orderId, plan, customer, origin, paymentType }) {
-    const amount = Math.round(plan.amountLocal)
+  async createCheckout({ orderId, plan, customer, origin, paymentType, amountFcfa }) {
+    const amount = amountFcfa
     if (!(amount >= GENIUSPAY_MIN_XOF)) throw new GatewayError('Montant trop faible pour ce moyen de paiement.', 400)
     const body: Record<string, unknown> = {
       amount,

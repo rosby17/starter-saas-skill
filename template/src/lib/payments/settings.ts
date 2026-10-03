@@ -10,6 +10,7 @@ function defaults(): PaymentProviderSettings {
     mobile_money: { active: DEFAULT_ACTIVE_PROVIDER.mobile_money },
     card: { active: DEFAULT_ACTIVE_PROVIDER.card },
     paypal: { active: DEFAULT_ACTIVE_PROVIDER.paypal },
+    crypto: { active: DEFAULT_ACTIVE_PROVIDER.crypto },
   }
 }
 

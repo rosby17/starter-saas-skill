@@ -7,6 +7,7 @@ import { getActivePaymentProvider } from '@/lib/payments/settings'
 import { GatewayError } from '@/lib/payments/types'
 import type { PaymentCategoryId } from '@/lib/payments/providers'
 import { publicOrigin } from '@/lib/site-url'
+import { toFcfa } from '@/lib/currency'
 import { checkRateLimit } from '@/lib/rate-limit'
 
 /**
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
 
     const body = await request.json()
     const { firstName, lastName, phone, planId, currency } = body
-    const paymentType: PaymentCategoryId = body.paymentType === 'card' ? 'card' : body.paymentType === 'paypal' ? 'paypal' : 'mobile_money'
+    const paymentType: PaymentCategoryId = ['card', 'paypal', 'crypto'].includes(body.paymentType) ? body.paymentType : 'mobile_money'
 
     if (!firstName || !planId) {
       return NextResponse.json({ success: false, message: 'Le prénom et le forfait sont obligatoires.' }, { status: 400 })
@@ -56,14 +57,19 @@ export async function POST(request: Request) {
     const origin = publicOrigin()
     const paymentCurrency = String(currency || plan.currency || 'XOF').toUpperCase()
 
+    const amountFcfa = await toFcfa(plan.amountLocal, paymentCurrency)
+    const generatedId = crypto.randomUUID()
     const created = await gateway.createCheckout({
-      orderId: crypto.randomUUID(),
+      orderId: generatedId,
       plan,
       currency: paymentCurrency,
       customer: { email: user.email, firstName: String(firstName), lastName: String(lastName || ''), phone: phone ? String(phone).trim() : undefined },
       origin,
+      amountFcfa,
+      paymentType,
     })
-    const orderId = created.orderId || created.providerRef
+    // Jamais providerRef : certaines passerelles renvoient une référence qui n'est pas un UUID (GeniusPay, Binance).
+    const orderId = created.orderId || generatedId
 
     const { error } = await db.from('orders').insert({
       id: orderId,
@@ -71,14 +77,22 @@ export async function POST(request: Request) {
       plan_name: plan.name,
       credits: plan.credits,
       amount_local: plan.amountLocal,
+      amount_fcfa: amountFcfa,
+      amount_usd: plan.amountUsd,
+      validity_days: plan.validityDays ?? null,
       currency: paymentCurrency,
       payment_method: gateway.paymentMethod,
       payment_ref: created.providerRef,
       status: 'pending',
     })
-    if (error) console.error('Commande « pending » non enregistrée :', error)
+    if (error) {
+      // Sans commande en base, un paiement ne pourrait jamais être crédité : on n'envoie pas le client payer.
+      console.error('Commande « pending » non enregistrée :', error)
+      return NextResponse.json({ success: false, message: 'Le service est momentanément indisponible. Réessaie dans un instant.' }, { status: 500 })
+    }
 
-    return NextResponse.json({ success: true, cartId: orderId, redirectUrl: created.redirectUrl })
+    // redirectUrl absent = paiement manuel (Binance) : le client reçoit des instructions et la référence à indiquer.
+    return NextResponse.json({ success: true, cartId: orderId, redirectUrl: created.redirectUrl ?? null, manual: created.manual ?? null })
   } catch (error) {
     if (error instanceof GatewayError) return NextResponse.json({ success: false, message: error.message }, { status: error.status })
     console.error('Erreur checkout :', error)

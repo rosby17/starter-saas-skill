@@ -54,14 +54,14 @@ export async function POST(request: Request) {
 
     const { data: order } = await supabase
       .from("orders")
-      .select("id, user_id, plan_name, credits, amount_local, currency, status")
+      .select("id, user_id, plan_name, credits, amount_local, amount_fcfa, currency, status")
       .eq("id", productId)
       .maybeSingle();
     if (!order) return NextResponse.json({ success: true, message: "Order not found." });
 
     // Le montant encaissé doit couvrir le montant dû AVANT de créditer (bug de conversion, panier trafiqué…).
-    if (!paidAmountCoversOrder(amount, order.amount_local)) {
-      console.error(`[ACTION REQUIRED] TaraMoney confirme « SUCCESS » pour ${productId} mais le montant reçu (${amount}) est inférieur au dû (${order.amount_local}). Crédits NON accordés.`);
+    if (!paidAmountCoversOrder(amount, order.amount_fcfa ?? order.amount_local)) {
+      console.error(`[ACTION REQUIRED] TaraMoney confirme « SUCCESS » pour ${productId} mais le montant reçu (${amount}) est inférieur au dû (${order.amount_fcfa ?? order.amount_local}). Crédits NON accordés.`);
       await supabase.from("orders").update({ status: "flagged_underpaid" }).eq("id", productId).eq("status", "pending");
       return NextResponse.json({ success: true, message: "Amount mismatch, flagged for manual review." });
     }

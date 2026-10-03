@@ -16,6 +16,8 @@ export type BillingPlan = {
   currency: 'XOF' | 'USD' | 'EUR';
   /** Whatever unit your product meters usage in (credits, seats, etc). */
   credits: number;
+  /** Durée de validité des crédits achetés, en jours. Absent = ils n'expirent jamais. */
+  validityDays?: number;
   features: string[];
 };
 

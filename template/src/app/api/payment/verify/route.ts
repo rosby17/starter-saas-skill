@@ -68,7 +68,7 @@ export async function GET(request: Request) {
       });
       if (response.ok) {
         const data = await response.json();
-        if (data.status === "completed") orderData.status = await settlePaid(supabase, orderData, Number(data.amount), "local", "Warappay");
+        if (data.status === "completed") orderData.status = await settlePaid(supabase, orderData, Number(data.amount), "fcfa", "Warappay");
         else if (data.status === "failed") { await markFailed(supabase, cartId); orderData.status = "failed"; }
       }
     }

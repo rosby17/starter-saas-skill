@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     const { data: order } = await supabase.from('orders').select('*').eq('id', orderId).maybeSingle()
     if (!order) return NextResponse.json({ success: true, message: 'Order not found.' })
-    await settlePaid(supabase, order, Number(payload.data.amount), 'local', 'Warappay')
+    await settlePaid(supabase, order, Number(payload.data.amount), 'fcfa', 'Warappay')
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Warappay webhook error:', error)

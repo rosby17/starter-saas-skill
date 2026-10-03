@@ -2,14 +2,12 @@
 // silently running with `undefined` values (cryptic runtime errors, or
 // falling back to insecure defaults).
 
+// Seul le socle est obligatoire : les clés de chaque passerelle de paiement et de Brevo sont vérifiées
+// au moment de leur usage (PaymentGateway.isConfigured), pour qu'un SaaS sans Tara ou sans Brevo démarre.
 const REQUIRED_SERVER_ENV = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
-  'TARA_API_KEY',
-  'TARA_BUSINESS_ID',
-  'TARA_WEBHOOK_SECRET',
-  'BREVO_API_KEY',
 ] as const;
 
 export function assertServerEnv(): void {

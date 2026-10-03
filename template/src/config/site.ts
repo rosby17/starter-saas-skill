@@ -7,6 +7,10 @@ export const site = {
   url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
   supportEmail: 'support@yoursaas.app',
   locale: 'fr_FR',
+  // Vendeur affiché sur les factures : à remplir avant de facturer (raison sociale, adresse, numéro fiscal).
+  company: { legalName: '{{APP_NAME}}', address: 'Adresse de l\'entreprise', taxId: '' },
+  // Devises proposées aux clients (le cron update-rates tient leurs taux à jour).
+  currencies: ['XOF', 'EUR', 'USD'],
   // Barre du haut des pages publiques
   nav: [
     { href: '/#fonctionnalites', label: 'Fonctionnalités' },
@@ -17,6 +21,7 @@ export const site = {
   dashboardNav: [
     { href: '/dashboard', label: 'Tableau de bord', icon: 'home' },
     { href: '/billing', label: 'Abonnement', icon: 'card' },
+    { href: '/billing-history', label: 'Mes paiements', icon: 'list' },
     { href: '/support', label: 'Aide', icon: 'help' },
     { href: '/settings', label: 'Mon compte', icon: 'user' },
   ] as { href: string; label: string; icon: 'home' | 'card' | 'help' | 'user' | 'list' }[],

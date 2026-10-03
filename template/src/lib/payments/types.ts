@@ -1,18 +1,24 @@
 import type { BillingPlan } from '@/lib/pricing'
+import type { PaymentCategoryId } from './providers'
 
 export type CheckoutInput = {
   orderId: string
   plan: BillingPlan
   currency: string
   customer: { email: string; firstName: string; lastName: string; phone?: string }
+  /** Montant en FCFA, déjà converti (les passerelles africaines facturent en FCFA). */
+  amountFcfa: number
   /** Adresse publique du site, sans « / » final. */
   origin: string
   /** Type de paiement choisi par le client (certaines passerelles adaptent leur page : carte directe, etc.). */
-  paymentType?: 'mobile_money' | 'card' | 'paypal'
+  paymentType: PaymentCategoryId
 }
 
 export type CheckoutResult = {
-  redirectUrl: string
+  /** Absent pour un paiement manuel (ex. Binance) : le client reçoit des instructions au lieu d'être redirigé. */
+  redirectUrl?: string
+  /** Instructions de paiement manuel affichées au client. */
+  manual?: { title: string; lines: string[] }
   /** Référence chez la passerelle ; sert à retrouver la commande. */
   providerRef: string
   /** Certaines passerelles imposent leur propre identifiant de commande (ex. Maketou) : il remplace orderId. */

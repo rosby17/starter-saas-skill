@@ -6,10 +6,11 @@ import { PLANS } from "@/lib/pricing";
 import { Button } from "@/components/ui/button";
 
 export default function BillingPage() {
-  const [paymentType, setPaymentType] = useState<"mobile_money" | "card" | "paypal">("mobile_money");
+  const [paymentType, setPaymentType] = useState<"mobile_money" | "card" | "paypal" | "crypto">("mobile_money");
   const [email, setEmail] = useState<string | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [manual, setManual] = useState<{ title: string; lines: string[] } | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export default function BillingPage() {
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
       if (data.redirectUrl) window.location.href = data.redirectUrl;
+      else if (data.manual) setManual(data.manual); // paiement manuel (Binance) : instructions à afficher
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
     } finally {
@@ -47,12 +49,18 @@ export default function BillingPage() {
       <h1 className="text-2xl font-bold mb-2">Abonnement</h1>
       <p className="text-gray-600 mb-6">Choisis un forfait puis ton moyen de paiement. Les prix viennent de src/lib/pricing.ts.</p>
       <div className="mb-8 inline-flex rounded-lg border border-gray-200 p-1 text-sm">
-        {([["mobile_money", "Mobile Money"], ["card", "Carte bancaire"], ["paypal", "PayPal"]] as const).map(([id, label]) => (
+        {([["mobile_money", "Mobile Money"], ["card", "Carte bancaire"], ["paypal", "PayPal"], ["crypto", "Binance Pay"]] as const).map(([id, label]) => (
           <button key={id} type="button" onClick={() => setPaymentType(id)}
             className={`rounded-md px-4 py-2 ${paymentType === id ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"}`}>{label}</button>
         ))}
       </div>
 
+      {manual && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="mb-2 font-semibold">{manual.title}</p>
+          <ul className="space-y-1">{manual.lines.map((line) => <li key={line}>{line}</li>)}</ul>
+        </div>
+      )}
       {error && <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-sm text-red-700">{error}</div>}
 
       <div className="grid sm:grid-cols-3 gap-4">

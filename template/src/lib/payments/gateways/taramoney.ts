@@ -7,7 +7,7 @@ export const taramoney: PaymentGateway = {
   paymentMethod: 'TaraMoney',
   isConfigured: () => !!process.env.TARA_API_KEY && !!process.env.TARA_BUSINESS_ID && !!process.env.TARA_WEBHOOK_SECRET,
 
-  async createCheckout({ orderId, plan, currency, origin }) {
+  async createCheckout({ orderId, plan, currency, origin, amountFcfa }) {
     const secret = process.env.TARA_WEBHOOK_SECRET!
     const toHttps = (url: string) => url.replace(/^http:\/\//, 'https://')
     const returnUrl = toHttps(`${origin}/billing/success?cartId=${orderId}`)
@@ -22,8 +22,8 @@ export const taramoney: PaymentGateway = {
         businessId: process.env.TARA_BUSINESS_ID,
         productId: orderId,
         productName: `${plan.name} — ${price} ${currency}`,
-        // TaraMoney règle en FCFA : convertis ici si tu affiches d'autres devises.
-        productPrice: Math.round(plan.amountLocal),
+        // TaraMoney règle en FCFA : le montant est converti d'après les taux (lib/currency.ts).
+        productPrice: amountFcfa,
         productDescription: `Total : ${price} ${currency}. Aucun montant supérieur ne sera débité.`,
         returnUrl,
         webHookUrl,

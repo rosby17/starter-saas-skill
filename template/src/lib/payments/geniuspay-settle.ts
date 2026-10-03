@@ -20,7 +20,7 @@ export async function settleGeniusPayOrder(
   payment: GeniusPayPayment
 ): Promise<string> {
   const status = String(payment.status || '').toLowerCase()
-  if (status === 'completed') return settlePaid(supabase, order, Number(payment.amount), 'local', 'GeniusPay')
+  if (status === 'completed') return settlePaid(supabase, order, Number(payment.amount), 'fcfa', 'GeniusPay')
   if (['failed', 'cancelled', 'expired'].includes(status)) {
     await markFailed(supabase, order.id)
     return order.status === 'pending' ? 'failed' : order.status

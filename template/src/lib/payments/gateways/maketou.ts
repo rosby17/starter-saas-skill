@@ -7,15 +7,15 @@ export const maketou: PaymentGateway = {
   paymentMethod: 'Maketou Checkout',
   isConfigured: () => !!process.env.MAKETOU_API_KEY && !!process.env.MAKETOU_PRODUCT_ID,
 
-  async createCheckout({ plan, currency, customer, origin }) {
+  async createCheckout({ plan, currency, customer, origin, amountFcfa }) {
     const payload: Record<string, unknown> = {
       productDocumentId: process.env.MAKETOU_PRODUCT_ID,
       email: customer.email,
       firstName: customer.firstName,
       lastName: customer.lastName,
       redirectURL: `${origin}/billing/success`,
-      // Maketou facture toujours en FCFA : convertis ici si tu affiches d'autres devises.
-      customerPrice: Math.round(plan.amountLocal),
+      // Maketou facture toujours en FCFA : le montant est converti d'après les taux (lib/currency.ts).
+      customerPrice: amountFcfa,
       meta: { planId: plan.id, currency },
     }
     if (customer.phone) payload.phone = customer.phone
