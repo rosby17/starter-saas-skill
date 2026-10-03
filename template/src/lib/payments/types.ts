@@ -25,6 +25,8 @@ export interface PaymentGateway {
   /** false si les clés d'environnement manquent : le checkout répond alors proprement. */
   isConfigured(): boolean
   createCheckout(input: CheckoutInput): Promise<CheckoutResult>
+  /** Facultatif : interroge la passerelle (celles qui n'ont pas de webhook). 'unknown' = pas de réponse exploitable. */
+  checkStatus?(order: { id: string; payment_ref: string | null }): Promise<'paid' | 'pending' | 'unknown'>
 }
 
 export class GatewayError extends Error {

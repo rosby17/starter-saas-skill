@@ -1,4 +1,5 @@
 import { acquireCronLock, releaseCronLock } from "@/lib/cron-lock";
+import { isAuthorizedCron } from "@/lib/cron-auth";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { creditPaidOrder } from "@/lib/orders/credit-order";
@@ -38,11 +39,6 @@ const TIME_BUDGET_MS = 7000;
 async function run(request: Request) {
   const startedAt = Date.now();
   try {
-    const authHeader = request.headers.get("authorization");
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return new Response("Unauthorized", { status: 401 });
-    }
-
     const hoursParam = Number(new URL(request.url).searchParams.get("hours"));
     const lookbackHours = Number.isFinite(hoursParam) && hoursParam > 0
       ? Math.min(Math.max(hoursParam, MIN_LOOKBACK_HOURS), MAX_LOOKBACK_HOURS)
@@ -93,7 +89,7 @@ async function run(request: Request) {
         if (cart?.status === "completed" || cart?.status === "success") {
           // creditPaidOrder atomically claims the order: safe even if several
           // checks run concurrently (this cron, a live verify call, etc).
-          const wasCredited = await creditPaidOrder(supabase, order, "via Maketou (cron reconciliation)");
+          const wasCredited = await creditPaidOrder(supabase, order);
           if (wasCredited) {
             credited.push(order.id);
             console.log(`[reverify-maketou] Credited order ${order.id} (${order.credits} credits, user ${order.user_id})`);
@@ -139,7 +135,7 @@ const LOCK_NAME = "reverify-maketou-orders";
 
 // Verrou : si le passage précédent tourne encore, celui-ci s'efface au lieu de se chevaucher.
 export async function GET(request: Request) {
-  if (process.env.CRON_SECRET && request.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isAuthorizedCron(request)) {
     return new Response("Unauthorized", { status: 401 });
   }
   if (!(await acquireCronLock(LOCK_NAME))) {

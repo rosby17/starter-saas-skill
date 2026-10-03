@@ -4,6 +4,10 @@
  * instead of inline HTML if you prefer managing copy in the Brevo UI.
  */
 
+// Tout texte inséré dans un e-mail HTML passe par esc() : un nom ou un forfait ne doit jamais injecter de HTML.
+const esc = (value: unknown) =>
+  String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "{{APP_NAME}}";
 
 function wrapper(bodyHtml: string): string {
@@ -19,7 +23,7 @@ function wrapper(bodyHtml: string): string {
 
 export function welcomeTemplate({ firstName }: { firstName?: string }): string {
   return wrapper(`
-    <p>Hi ${firstName || "there"},</p>
+    <p>Bonjour ${esc(firstName || "")},</p>
     <p>Welcome to ${APP_NAME}! Your account is ready to go.</p>
   `);
 }
@@ -35,7 +39,7 @@ export function rechargeConfirmationTemplate({
 }): string {
   return wrapper(`
     <p>Your purchase is confirmed.</p>
-    <p><strong>${planName}</strong> — ${amount}</p>
+    <p><strong>${esc(planName)}</strong> — ${esc(amount)}</p>
     <p>${credits.toLocaleString()} credits have been added to your account.</p>
   `);
 }
@@ -48,7 +52,7 @@ export function genericNotificationTemplate({
   message: string;
 }): string {
   return wrapper(`
-    <h3 style="margin: 0 0 8px;">${title}</h3>
-    <p>${message}</p>
+    <h3 style="margin: 0 0 8px;">${esc(title)}</h3>
+    <p>${esc(message)}</p>
   `);
 }

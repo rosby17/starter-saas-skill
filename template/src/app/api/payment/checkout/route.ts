@@ -6,6 +6,8 @@ import { getGateway } from '@/lib/payments/gateways'
 import { getActivePaymentProvider } from '@/lib/payments/settings'
 import { GatewayError } from '@/lib/payments/types'
 import type { PaymentCategoryId } from '@/lib/payments/providers'
+import { publicOrigin } from '@/lib/site-url'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 /**
  * Crée un lien de paiement et enregistre la commande « pending ».
@@ -22,6 +24,10 @@ export async function POST(request: Request) {
     const { data: { user } } = await authClient.auth.getUser()
     if (!user || !user.email) {
       return NextResponse.json({ success: false, message: 'Connecte-toi pour payer.' }, { status: 401 })
+    }
+
+    if (!checkRateLimit(`checkout:${user.id}`, 10, 60_000).success) {
+      return NextResponse.json({ success: false, message: 'Trop de tentatives. Réessaie dans une minute.' }, { status: 429 })
     }
 
     const body = await request.json()
@@ -46,8 +52,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'Ce moyen de paiement est momentanément indisponible. Choisis-en un autre ou réessaie plus tard.' }, { status: 503 })
     }
 
-    let origin = (request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://127.0.0.1:3000').replace(/\/$/, '')
-    if (origin.includes('localhost')) origin = origin.replace('localhost', '127.0.0.1')
+    // Adresse du site fixée côté serveur : jamais l'en-tête Origin de la requête (voir site-url.ts).
+    const origin = publicOrigin()
     const paymentCurrency = String(currency || plan.currency || 'XOF').toUpperCase()
 
     const created = await gateway.createCheckout({

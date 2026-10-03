@@ -2,40 +2,24 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { creditPaidOrder } from "@/lib/orders/credit-order";
+import { gatewayForPaymentMethod } from "@/lib/payments/gateways";
 
 export const dynamic = "force-dynamic";
 
 const LOOKBACK_DAYS = 7;
 
 /**
- * Reconciliation safety net for providers without reliable webhooks (or as a
- * belt-and-suspenders check even with webhooks). Call this when the user
- * returns to the app — which they will, since they're here to spend their
- * credits — to re-check their recent unpaid orders and credit any that were
- * actually paid.
- *
- * Safe by construction: creditPaidOrder atomically claims the order, so no
- * double-crediting even under concurrent calls.
- *
- * NOTE: this template implementation doesn't call out to TaraMoney's API
- * (the reference implementation this was adapted from queried a *different* provider,
- * which had no webhook at all). If TaraMoney's dashboard/API exposes an
- * order-status lookup, wire it in below; otherwise this route is safe to
- * leave as a no-op and rely on the webhook + expire-stale-orders cron.
+ * Filet de sécurité appelé au retour de l'utilisateur dans l'application : revérifie ses commandes récentes non payées
+ * auprès de la passerelle (si elle sait répondre, voir PaymentGateway.checkStatus) et crédite celles qui l'ont été.
+ * Sûr par construction : le crédit est atomique (fonction SQL credit_paid_order), jamais de double crédit.
  */
 export async function POST() {
   try {
     const authClient = await createClient();
     const { data: { user } } = await authClient.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ success: false, message: "Not authenticated." }, { status: 401 });
-    }
+    if (!user) return NextResponse.json({ success: false, message: "Non connecté." }, { status: 401 });
 
-    const supabase = createServiceClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
+    const supabase = createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
     const since = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
     const { data: orders, error } = await supabase
@@ -46,17 +30,20 @@ export async function POST() {
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(10);
-
     if (error) throw error;
 
-    // TODO: replace with a real provider status lookup + creditPaidOrder call
-    // per order, mirroring the pattern in creditPaidOrder's callers.
-    void creditPaidOrder;
-
-    return NextResponse.json({ success: true, creditedCount: 0, checked: orders?.length || 0 });
+    let creditedCount = 0;
+    for (const order of orders || []) {
+      const gateway = gatewayForPaymentMethod(order.payment_method);
+      if (!gateway?.checkStatus) continue;
+      if ((await gateway.checkStatus({ id: order.id, payment_ref: order.payment_ref })) === "paid" && (await creditPaidOrder(supabase, order))) {
+        creditedCount += 1;
+      }
+    }
+    return NextResponse.json({ success: true, creditedCount, checked: orders?.length || 0 });
   } catch (error) {
     console.error("reconcile-pending error:", error);
-    // Never break app load over a failed reconciliation attempt.
+    // Une réconciliation ratée ne doit jamais empêcher l'application de s'ouvrir.
     return NextResponse.json({ success: false, creditedCount: 0 }, { status: 200 });
   }
 }

@@ -34,4 +34,15 @@ export const maketou: PaymentGateway = {
     }
     return { redirectUrl: data.redirectUrl, providerRef: data.cart.id, orderId: data.cart.id }
   },
+
+  async checkStatus(order) {
+    const apiKey = process.env.MAKETOU_API_KEY
+    if (!apiKey) return 'unknown'
+    const response = await fetch(`https://api.maketou.net/api/v1/stores/cart/${encodeURIComponent(order.payment_ref || order.id)}`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
+    if (!response.ok) return 'unknown'
+    const data = await response.json()
+    return data.cart?.status === 'completed' ? 'paid' : 'pending'
+  },
 }

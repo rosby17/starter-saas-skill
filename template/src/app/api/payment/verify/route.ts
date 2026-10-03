@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { expirePendingOrders } from "@/lib/orders/expire-pending";
 import { creditPaidOrder } from "@/lib/orders/credit-order";
+import { gatewayForPaymentMethod } from "@/lib/payments/gateways";
 
 /**
  * Polled by the client-side billing success page while it waits for payment
@@ -45,38 +46,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, message: "Order not found." }, { status: 404 });
     }
 
-    // Maketou has no webhook: poll for any order not yet credited (pending OR
-    // failed) — a payment can complete on Maketou's side after the order was
-    // already expired locally.
-    if (orderData.payment_method === "Maketou Checkout" && orderData.status !== "success" && orderData.status !== "completed") {
-      const apiKey = process.env.MAKETOU_API_KEY;
-      if (apiKey) {
-        const response = await fetch(`https://api.maketou.net/api/v1/stores/cart/${cartId}`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${apiKey}` },
-        });
-
-        if (!response.ok) {
-          if (response.status === 429) {
-            const retryAfter = response.headers.get("retry-after") || "10";
-            return NextResponse.json(
-              { success: false, message: "The Maketou payment service is temporarily overloaded. Please try again shortly.", retryAfter },
-              { status: 429, headers: { "Retry-After": retryAfter } }
-            );
-          }
-          let errMsg = "Unable to verify the payment with Maketou.";
-          try {
-            const errData = await response.json();
-            if (errData?.message) errMsg = errData.message;
-          } catch {}
-          return NextResponse.json({ success: false, message: errMsg }, { status: response.status });
-        }
-
-        const data = await response.json();
-        if (data.cart?.status === "completed") {
-          const wasCredited = await creditPaidOrder(supabase, orderData, "via Maketou");
-          if (wasCredited) orderData.status = "success";
-          else orderData.status = "success"; // already claimed elsewhere (webhook-less race), report as success
+    // Passerelle sans webhook (ex. Maketou) : on l'interroge pour toute commande pas encore créditée (pending OU failed :
+    // un paiement peut aboutir chez elle après l'expiration locale). Le crédit reste atomique.
+    if (orderData.status !== "success" && orderData.status !== "completed") {
+      const gateway = gatewayForPaymentMethod(orderData.payment_method);
+      if (gateway?.checkStatus) {
+        const state = await gateway.checkStatus({ id: orderData.id, payment_ref: orderData.payment_ref });
+        if (state === "paid") {
+          await creditPaidOrder(supabase, orderData);
+          orderData.status = "success"; // crédité par cet appel ou déjà crédité par un autre : dans les deux cas c'est payé
         }
       }
     }
