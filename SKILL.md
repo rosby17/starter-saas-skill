@@ -1,6 +1,6 @@
 ---
 name: starter-saas
-description: Crée un SaaS complet et opérationnel à partir d'une description (écrite ou dictée) : landing page, authentification avec déconnexion, espace client, administration, tarifs, migrations de base de données générées automatiquement, build vérifié et déploiement Docker. Utilise-le quand l'utilisateur dit « starter saas », « crée un SaaS », « nouveau SaaS » ou décrit une application web à fabriquer.
+description: Crée un SaaS complet et opérationnel à partir d'une description (écrite ou dictée) : landing page, authentification avec déconnexion, espace client, administration, tarifs, migrations de base de données générées automatiquement, build vérifié et déploiement. Fait aussi l'AUDIT DE SÉCURITÉ d'un SaaS existant (le sien ou celui de quelqu'un d'autre) et le corrige. Utilise-le quand l'utilisateur dit « starter saas », « crée un SaaS », « nouveau SaaS », décrit une application web à fabriquer, ou demande d'auditer, de vérifier la sécurité ou de corriger les failles d'un SaaS.
 ---
 
 # starter-saas : de la description au SaaS qui tourne
@@ -22,6 +22,8 @@ Next.js 15 (App Router) + Supabase + Tailwind + Docker :
 - **Déploiement** : `Dockerfile` (build « standalone »), route `/api/health`.
 
 Tout le branding est dans `src/config/site.ts` (nom, slogan, menus, fonctionnalités, FAQ) et `src/lib/pricing.ts` (prix).
+
+**Deux modes.** Créer un SaaS : étapes 1 à 8 ci-dessous. Auditer un SaaS existant (« audite ce SaaS », « vérifie la sécurité de… », un dossier, un dépôt ou un ZIP reçu) : section « Mode audit de sécurité » en bas.
 
 ## 1. Comprendre (2 minutes)
 
@@ -84,7 +86,7 @@ Le script copie le modèle, remplace le nom, le domaine d'exemple et le nom du p
 
 ## 7. Audit de sécurité (obligatoire avant de livrer)
 
-Passe chaque point ; corrige ce qui échoue, puis dis ce qui a été vérifié :
+Lance d'abord le scanner (`python3 "<dossier du skill>/scripts/audit_securite.py" .`) : aucun CRITIQUE ni HAUTE confirmé. Puis passe chaque point ; corrige ce qui échoue, et dis ce qui a été vérifié :
 1. **Secrets** : aucun secret dans Git (`git log -p | grep` des motifs de clés, ou `gitleaks detect` s'il est installé), `.env*` ignorés sauf `.env.example`, aucune clé serveur dans un fichier `"use client"` ni dans une variable `NEXT_PUBLIC_*`. Dépôt GitHub créé en **privé** (`gh repo create --private`), jamais public sans demande explicite.
 2. **Base** : RLS activée sur CHAQUE table (`select relname from pg_class where relrowsecurity = false` sur le schéma public → vide), politiques propriétaire/admin, aucune politique `using (true)` en écriture ; colonnes sensibles (`is_admin`, crédits, statut de commande) non modifiables par l'utilisateur.
 3. **API** : chaque route vérifie la session (`getUser()`) et le propriétaire de la ressource (pas d'identifiant pris du corps de requête pour l'identité : IDOR), entrées validées par `zod`, routes admin derrière `requireAdmin()`, crons derrière `isAuthorizedCron`, webhooks à signature vérifiée en temps constant, prix toujours lus côté serveur.
@@ -95,6 +97,17 @@ Passe chaque point ; corrige ce qui échoue, puis dis ce qui a été vérifié :
 ## 8. Rendre compte
 
 Réponse courte : ce qui tourne (adresse), les écrans et tables générés, ce qui reste à faire par l'utilisateur (clés, DNS, texte légal), les hypothèses prises.
+
+## Mode audit de sécurité
+
+Suis `references/audit-securite.md` en entier. En bref :
+1. **Récupère le code** (dossier, `git clone` ou ZIP dans `~/Documents/dev/audits/<nom>`), branche `audit/securite`. Rien d'exécuté à l'aveugle (`--ignore-scripts`), aucune connexion à la base de production, aucun test contre un site en ligne sans l'accord de son propriétaire.
+2. **Scanner** : `python3 "<dossier du skill>/scripts/audit_securite.py" <dossier> --sortie <dossier>/SCAN-AUTOMATIQUE.md`. Chaque ligne est un signal à confirmer en lisant le code ; écarte les fausses alertes.
+3. **Revue manuelle** des 23 questions de la référence (identité, propriétaire de chaque ressource, rôle admin, RLS, colonnes sensibles, prix, webhooks, crédits atomiques, fichiers, SSRF, redirections, comptes, erreurs, crons, sauvegardes). Les failles graves sont là.
+4. **Rapport** `AUDIT-SECURITE.md` : note A à E, 3 risques principaux en langage simple, puis chaque faille avec niveau, fichier:ligne, scénario d'attaque, correction ; et la liste de ce qui a été vérifié sans problème. Secrets : dire où, jamais les afficher ni ouvrir un coffre d'identifiants.
+5. Montre le résumé et demande UN accord, puis **corrige** dans l'ordre CRITIQUE → HAUTE → MOYENNE, un commit par correction, migrations neuves pour la base. Revérifie (`tsc`, lint, build, scanner relancé) et mets le rapport à jour : note avant / après, ce que le propriétaire doit faire lui-même (révoquer une clé, nettoyer l'historique Git…).
+
+Le même audit s'applique aux SaaS créés avec ce skill (étape 7).
 
 ## Règles
 

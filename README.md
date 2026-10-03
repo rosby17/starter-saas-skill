@@ -14,8 +14,9 @@ Tout ce qui se répète d'un SaaS à l'autre est déjà prêt : tu ne parles que
 6. [Après la création : 5 réglages](#6-après-la-création--5-réglages)
 7. [Mettre en ligne](#7-mettre-en-ligne)
 8. [Sécurité](#8-sécurité)
-9. [Faire évoluer ton SaaS](#9-faire-évoluer-ton-saas)
-10. [Problèmes fréquents](#10-problèmes-fréquents)
+9. [Auditer un SaaS](#9-auditer-un-saas-le-tien-ou-celui-dun-client)
+10. [Faire évoluer ton SaaS](#10-faire-évoluer-ton-saas)
+11. [Problèmes fréquents](#11-problèmes-fréquents)
 
 ---
 
@@ -135,7 +136,21 @@ Tes règles à toi :
 - Ne colle jamais une clé dans le chat ni dans le code : utilise **Clés et intégrations**.
 - Ne partage jamais `SUPABASE_SERVICE_ROLE_KEY`.
 
-## 9. Faire évoluer ton SaaS
+## 9. Auditer un SaaS (le tien ou celui d'un client)
+
+Quelqu'un t'envoie son SaaS (dossier, lien GitHub ou ZIP) ? Dis à Claude :
+> audite ce SaaS : <chemin ou lien>
+
+Claude :
+1. récupère le code sans rien lancer de risqué ;
+2. passe le **scanner automatique** (secrets, dépendances, base de données ouverte, routes non protégées, paiements…) ;
+3. vérifie à la main ce qu'une machine ne voit pas : qui peut lire les données de qui, qui peut se donner les droits admin, qui peut payer moins ou se créditer ;
+4. écrit `AUDIT-SECURITE.md` : une note de A à E, les 3 risques principaux expliqués simplement, chaque faille avec sa preuve et sa correction ;
+5. après ton accord, **corrige** sur une branche à part (`audit/securite`), revérifie tout et te donne la note avant / après, plus ce que le propriétaire doit faire lui-même (par exemple changer une clé qui a fuité).
+
+Il ne teste jamais un site en ligne sans l'accord de son propriétaire, ne touche pas aux vraies données des clients et n'affiche jamais un secret trouvé : il dit seulement où il est.
+
+## 10. Faire évoluer ton SaaS
 
 Ouvre Claude Code dans le dossier du projet et demande simplement : « ajoute un export Excel des rendez-vous », « ajoute une offre annuelle à 50 000 FCFA ». Claude crée une migration neuve pour la base (il ne casse jamais l'existante), teste, puis repasse l'audit.
 
@@ -145,7 +160,7 @@ Pour mettre à jour le skill (nouvelles passerelles, corrections) :
 cd ~/.claude/skills/starter-saas && git pull
 ```
 
-## 10. Problèmes fréquents
+## 11. Problèmes fréquents
 
 | Ce que tu vois | Que faire |
 |---|---|
