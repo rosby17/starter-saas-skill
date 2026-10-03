@@ -61,6 +61,8 @@ Chaque ligne est un SIGNAL : la confirmer en lisant le code. Une petite table de
 14. Les erreurs serveur sont remontées quelque part que quelqu'un regarde (onRequestError, GlitchTip ou Sentry) ?
 15. Une route de santé, un HEALTHCHECK dans le Dockerfile, et une surveillance extérieure qui prévient si le site ne répond plus (Uptime Kuma) ?
 16. Les variables d'environnement indispensables sont vérifiées au démarrage ?
+23. La gravité des erreurs sépare-t-elle « notre bug » (rouge) des pannes de fournisseur et des erreurs côté client (rien à corriger) ? Le journal se limite-t-il à 24 h par défaut, se résout et se purge-t-il tout seul ? Voir `references/supervision-exploitation.md`.
+24. L'image de production est-elle construite hors du serveur qui sert le site (sinon : swap, `nice`, un seul build à la fois) ? Un nettoyage planifié existe-t-il (`template/ops/nettoyage-serveur.sh`) ?
 
 **Mises à jour et données**
 17. Le build vérifie les types et le lint, et une mise à jour qui plante au démarrage ne remplace pas la version qui marche (HEALTHCHECK) ?

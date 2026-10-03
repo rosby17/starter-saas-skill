@@ -20,6 +20,7 @@ Next.js 15 (App Router) + Supabase + Tailwind + Docker :
 - **Paiement orchestré** (même flux pour tous tes SaaS) : le client choisit un TYPE de paiement (mobile money, carte, PayPal), l'administrateur choisit la passerelle active pour chaque type (`/admin/payment-providers`), les passerelles sont des adaptateurs interchangeables (`src/lib/payments/gateways/`, Maketou, Tara Money, Warappay (mobile money, carte, PayPal), GeniusPay, K-Pay (carte) et Binance Pay manuel fournis ; montants convertis en FCFA d'après les taux ; webhooks signés dans `src/app/api/payment/webhook/<passerelle>/` ; les clés sont des variables d'environnement, voir `.env.example`), l'identité vient de la session et le prix du catalogue serveur, le crédit est atomique (jamais deux fois), avec webhook, vérification au retour, cron de rattrapage et verrous. **Facturation et administration** : historique des paiements et factures imprimables côté client (`/billing-history`), commandes côté admin (`/admin/orders` : vérifier, marquer payée, abandonner), ajustement manuel de crédits, journal d'audit, crons `update-rates` (taux de change) et `expire-credits` (crédits à durée de validité, `validityDays` dans `pricing.ts`). Vendeur des factures : `site.company`. Retire ce bloc si le produit est gratuit.
 - **Facultatif** : e-mails (Brevo).
 - **Déploiement** : `Dockerfile` (build « standalone »), route `/api/health`.
+- **Exploitation** : `ops/nettoyage-serveur.sh` + `.cron` (nettoyage hebdomadaire du serveur, sans toucher aux volumes). Journal d'erreurs, bannière de panne fournisseur, nouveaux essais prudents et erreurs déjà commises en production : `references/supervision-exploitation.md` (à appliquer à chaque SaaS qui a un fournisseur externe).
 
 Tout le branding est dans `src/config/site.ts` (nom, slogan, menus, fonctionnalités, FAQ) et `src/lib/pricing.ts` (prix).
 
@@ -122,6 +123,7 @@ Méthodes détaillées par rubrique :
 | Sécurité | `references/audit-securite.md` | `scripts/audit_securite.py` | `AUDIT-SECURITE.md` |
 | Rentabilité | `references/audit-rentabilite.md` | `scripts/audit_rentabilite.py` + `scripts/calcul_rentabilite.py` | `AUDIT-RENTABILITE.md` |
 | Robustesse | `references/audit-robustesse.md` | `scripts/audit_robustesse.py` | `AUDIT-ROBUSTESSE.md` |
+| Supervision et exploitation | `references/supervision-exploitation.md` | (revue manuelle, section 7) | dans `AUDIT-ROBUSTESSE.md` |
 
 En bref :
 1. **Récupère le code** (dossier, `git clone` ou ZIP dans `~/Documents/dev/audits/<nom>`). Rien d'exécuté à l'aveugle (`--ignore-scripts`), aucune connexion à la base de production sans accord (et alors en lecture seule), aucun test contre un site en ligne sans l'accord de son propriétaire.
@@ -136,5 +138,6 @@ Les scanners se testent : `python3 tests/test_audit.py`, `python3 tests/test_ren
 ## Règles
 
 - Jamais de suppression de données ni de ressource payante sans accord. Jamais de secret dans Git ni dans une réponse. Dépôts toujours créés en privé.
+- Toute leçon d'exploitation tirée d'un incident (panne, alerte inutile, charge serveur) s'ajoute à `references/supervision-exploitation.md`, et son script réutilisable à `template/ops/`.
 - Une amélioration générale (pas propre à un produit) se reporte aussi dans `template/` de ce skill pour tous les prochains SaaS.
 - Autre pile que Next.js + Supabase demandée : dis-le en une phrase, adapte, et note le choix dans la SPEC.

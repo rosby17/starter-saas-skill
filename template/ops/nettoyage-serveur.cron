@@ -1,0 +1,5 @@
+# Nettoyage hebdomadaire (dimanche 04h30, heure creuse), à priorité minimale.
+# Installation sur le serveur :
+#   sudo install -m 755 ops/nettoyage-serveur.sh /usr/local/sbin/nettoyage-serveur
+#   sudo install -m 644 ops/nettoyage-serveur.cron /etc/cron.d/nettoyage-serveur
+30 4 * * 0 root nice -n 19 ionice -c3 /usr/local/sbin/nettoyage-serveur --execute >> /var/log/nettoyage-serveur.log 2>&1
