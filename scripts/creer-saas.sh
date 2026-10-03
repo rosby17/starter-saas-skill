@@ -36,6 +36,12 @@ import json, sys
 p, slug = sys.argv[1], sys.argv[2]
 d = json.load(open(p)); d['name'] = slug
 json.dump(d, open(p, 'w'), indent=2, ensure_ascii=False); open(p, 'a').write('\n')
+import os
+lock = os.path.join(os.path.dirname(p), 'package-lock.json')
+if os.path.exists(lock):
+    l = json.load(open(lock)); l['name'] = slug
+    if '' in l.get('packages', {}): l['packages']['']['name'] = slug
+    json.dump(l, open(lock, 'w'), indent=2, ensure_ascii=False); open(lock, 'a').write('\n')
 PY
 
 [ -f "$DEST/.env.example" ] && cp "$DEST/.env.example" "$DEST/.env.local"

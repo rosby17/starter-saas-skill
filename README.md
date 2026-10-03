@@ -14,7 +14,7 @@ Tout ce qui se répète d'un SaaS à l'autre est déjà prêt : tu ne parles que
 6. [Après la création : 5 réglages](#6-après-la-création--5-réglages)
 7. [Mettre en ligne](#7-mettre-en-ligne)
 8. [Sécurité](#8-sécurité)
-9. [Auditer un SaaS : sécurité, rentabilité, robustesse](#9-auditer-un-saas-le-tien-ou-celui-dun-client)
+9. [Auditer un SaaS : les 11 domaines](#9-auditer-un-saas-le-tien-ou-celui-dun-client)
 10. [Faire évoluer ton SaaS](#10-faire-évoluer-ton-saas)
 11. [Problèmes fréquents](#11-problèmes-fréquents)
 
@@ -129,10 +129,7 @@ Déjà intégré :
 - Limitation du nombre de tentatives.
 - En-têtes de sécurité du navigateur.
 
-Avant chaque livraison, Claude passe un **audit obligatoire**. Il te dit ce qu'il a vérifié :
-- **sécurité** : secrets, base de données, routes API, navigateur, dépendances (`npm audit`), protection contre les abus ;
-- **rentabilité** : vrais prix calculés à partir de tes coûts, fonctions payantes (IA, SMS) toujours décomptées ;
-- **robustesse** : délais maximaux, erreurs lues, index, pages d'erreur, contrôle de santé.
+Avant chaque livraison, Claude passe l'**audit complet en 11 domaines** (voir la section 9) et te montre le tableau : chaque domaine doit être ✓ ou ⚠, jamais ✗.
 
 Tes règles à toi :
 - Dépôts GitHub toujours **privés**.
@@ -144,20 +141,30 @@ Tes règles à toi :
 Quelqu'un t'envoie son SaaS (dossier, lien GitHub ou ZIP) ? Dis à Claude :
 > audite ce SaaS : <chemin ou lien>
 
-Claude l'examine sous trois angles, chacun avec une note de A à E :
+Claude le passe sur la grille des **11 domaines d'un bon SaaS** (détail case par case : [references/checklist-saas.md](references/checklist-saas.md)) :
 
-| Rubrique | La question | Ce qu'il regarde |
+| # | Domaine | La question |
 |---|---|---|
-| **Sécurité** | Peut-on le pirater ? | clés oubliées dans le code, données d'un client lisibles par un autre, droits admin, paiements falsifiables |
-| **Rentabilité** | Gagne-t-il de l'argent ? | marge de chaque offre, coût de l'IA ou des SMS par client, fonctions payantes sans limite, point mort, ventes perdues |
-| **Robustesse** | Tient-il le coup ? | passerelle lente ou en panne, croissance du nombre de clients, mises à jour ratées, sauvegardes |
+| 1 | **Authentification et comptes** | Inscription, connexion, déconnexion, mot de passe oublié : solides et impossibles à forcer ? |
+| 2 | **Droits d'accès** | Un client peut-il voir ou modifier les données d'un autre ? Un client peut-il se faire admin ? |
+| 3 | **Paiements et facturation** | Peut-on payer moins, être crédité deux fois, falsifier un paiement ? Factures et historique ? |
+| 4 | **API** | Chaque route vérifie-t-elle qui appelle et ce qu'on lui envoie ? |
+| 5 | **Sécurité technique** | Clés oubliées, failles dans les dépendances, injections, en-têtes, serveur |
+| 6 | **Robustesse** | Pannes, lenteurs, sauvegardes, surveillance, tâches automatiques |
+| 7 | **Rentabilité** | Marge de chaque offre, coût de l'IA ou des SMS, point mort, ventes perdues |
+| 8 | **Données personnelles et légal** | Confidentialité, CGU, suppression et export des données, consentement |
+| 9 | **Design et accessibilité** | Charte partout, aucun élément natif du navigateur, mobile, lisibilité |
+| 10 | **Performance et référencement** | Vitesse, Google, aperçus sur les réseaux sociaux |
+| 11 | **Qualité du code** | Tests, vérifications automatiques, migrations, documentation, capacité à évoluer |
 
-Pour chaque rubrique, Claude :
+**Ce que tu reçois dans le chat** : le tableau des 11 domaines (✓ conforme, ⚠ à améliorer, ✗ à corriger, ? à vérifier) avec une note sur 100, les urgences expliquées simplement, puis les failles domaine par domaine (authentification, paiement, API…), chacune avec l'endroit et la correction. Le détail complet est dans `AUDIT-COMPLET.md`.
+
+Concrètement, Claude :
 1. récupère le code sans rien lancer de risqué ;
-2. passe un **scanner automatique** (rapide, il trouve les signaux évidents) ;
+2. passe **4 scanners automatiques** (sécurité, rentabilité, robustesse, produit) qui rangent leurs signaux dans les 11 domaines ;
 3. vérifie à la main ce qu'une machine ne voit pas : qui peut lire les données de qui, qui peut se créditer, ce que coûte vraiment un client, ce qui se passe quand un service tombe ;
 4. pour la rentabilité, te demande tes vrais coûts (serveur, IA, passerelle) et calcule la marge de chaque offre, le nombre de clients qu'il te faut pour couvrir tes frais et le prix minimum de chaque offre ;
-5. écrit un rapport (`AUDIT-SECURITE.md`, `AUDIT-RENTABILITE.md`, `AUDIT-ROBUSTESSE.md`) : la note, les 3 points principaux expliqués simplement, chaque problème avec sa preuve et sa correction ;
+5. te donne le rapport dans le chat et écrit `AUDIT-COMPLET.md` (plus les rapports détaillés `AUDIT-SECURITE.md`, `AUDIT-RENTABILITE.md`, `AUDIT-ROBUSTESSE.md`) : chaque problème avec sa preuve et sa correction ;
 6. après ton accord, **corrige** sur une branche à part, revérifie tout et te donne les notes avant / après, plus ce que tu dois faire toi-même (changer une clé qui a fuité, régler les sauvegardes, valider un nouveau prix).
 
 Tu peux aussi demander une seule rubrique : « vérifie la rentabilité de ce SaaS », « vérifie s'il est solide ».

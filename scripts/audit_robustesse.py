@@ -229,6 +229,13 @@ def main():
     root = Path(sys.argv[1]).resolve()
     if not root.is_dir():
         sys.exit(f'Dossier introuvable : {root}')
+    scan(root)
+    base.write_report(*base.report(root, findings, 'Scan de robustesse automatique',
+                                   'Première passe automatique : ce qui fait tomber ou ralentir le SaaS quand il grandit ou qu’un service extérieur flanche. Chaque point est un SIGNAL à confirmer en lisant le code.'))
+
+
+def scan(root):
+    """Lance toutes les vérifications et renvoie la liste des signaux (utilisé aussi par audit_complet.py)."""
     code = {p: base.read(p) for p in base.files(root, base.CODE_EXT)}
     paths = [base.rel(root, p) for p in base.files(root)]
     check_external_calls(root, code)
@@ -239,8 +246,7 @@ def main():
     check_build(root)
     check_jobs(root, code)
     check_backups(root, code)
-    base.write_report(*base.report(root, findings, 'Scan de robustesse automatique',
-                                   'Première passe automatique : ce qui fait tomber ou ralentir le SaaS quand il grandit ou qu’un service extérieur flanche. Chaque point est un SIGNAL à confirmer en lisant le code.'))
+    return findings
 
 
 if __name__ == '__main__':

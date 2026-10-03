@@ -1,0 +1,30 @@
+# Vérifications automatiques à chaque envoi de code : rien ne part en ligne s'il y a une erreur.
+name: Vérifications
+on:
+  push:
+  pull_request:
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    env:
+      # Valeurs factices : le build n'appelle pas la base.
+      NEXT_PUBLIC_SUPABASE_URL: https://exemple.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: cle-factice
+      NEXT_PUBLIC_SITE_URL: https://exemple.com
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Types
+        run: npx tsc --noEmit
+      - name: Règles du code (dont l'interdiction des éléments natifs du navigateur)
+        run: npm run lint
+      - name: Build
+        run: npm run build
+      - name: Failles connues des dépendances (hautes et critiques)
+        run: npm audit --omit=dev --audit-level=high

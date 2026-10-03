@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { AccountDataActions } from '@/components/AccountDataActions'
 
 async function saveProfile(formData: FormData) {
   'use server'
@@ -45,6 +46,11 @@ export default async function SettingsPage() {
           <Input name="password" type="password" minLength={8} placeholder="Nouveau mot de passe (8 caractères minimum)" required />
           <Button type="submit" variant="secondary">Changer le mot de passe</Button>
         </form>
+      </Card>
+      <Card>
+        <h2 className="mb-1 font-semibold">Mes données</h2>
+        <p className="mb-4 text-sm text-gray-500">Récupère tout ce que nous gardons sur toi, ou supprime ton compte.</p>
+        <AccountDataActions />
       </Card>
     </main>
   )

@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth/admin'
 import { serviceClient } from '@/lib/auth/service-client'
@@ -15,12 +16,16 @@ export const dynamic = 'force-dynamic'
  * Un « flagged_* » (remboursement, montant insuffisant) ne peut pas être crédité d'ici : il se règle en base, à la main.
  * Chaque action est écrite dans admin_audit_log.
  */
+const OrderAction = z.object({ id: z.string().uuid(), action: z.enum(['verify', 'mark_paid', 'mark_failed']) })
+
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin()
   if (!auth.authorized) return auth.error
 
   const { id } = await params
-  const { action } = await request.json().catch(() => ({}))
+  const parsed = OrderAction.safeParse({ id, ...(await request.json().catch(() => ({}))) })
+  if (!parsed.success) return NextResponse.json({ success: false, message: 'Demande invalide.' }, { status: 400 })
+  const { action } = parsed.data
   const db = serviceClient()
 
   const { data: order } = await db.from('orders').select('*').eq('id', id).maybeSingle()

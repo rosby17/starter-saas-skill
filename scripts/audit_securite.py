@@ -387,11 +387,17 @@ def main():
     root = Path(sys.argv[1]).resolve()
     if not root.is_dir():
         sys.exit(f'Dossier introuvable : {root}')
+    scan(root)
+    write_report(*report(root))
+
+
+def scan(root):
+    """Lance toutes les vérifications et renvoie la liste des signaux (utilisé aussi par audit_complet.py)."""
     check_secrets(root)
     check_dependencies(root)
     check_database(root)
     check_code(root)
-    write_report(*report(root))
+    return findings
 
 
 def write_report(text, counts):

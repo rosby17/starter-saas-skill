@@ -277,11 +277,7 @@ def main():
     root = Path(sys.argv[1]).resolve()
     if not root.is_dir():
         sys.exit(f'Dossier introuvable : {root}')
-    check_paid_features(root)
-    check_credits(root)
-    plans_found = check_pricing(root)
-    has_free_credits = any(x['prix'] == 0 and x['credits'] for _, plans in plans_found for x in plans)
-    check_revenue_leaks(root, has_free_credits)
+    plans_found = scan(root)
     text, counts = base.report(root, findings, 'Scan de rentabilité automatique',
                                'Première passe automatique : ce que le CODE révèle des pertes d’argent. Les marges et le point mort se calculent ensuite avec les vrais coûts du propriétaire (calcul_rentabilite.py).')
     if plans_found:
@@ -292,6 +288,16 @@ def main():
                 unit = f'{x["prix"] / x["credits"]:.4g}' if x['credits'] else '—'
                 text += f'| {x["nom"]} | {x["prix"]:g} | {x["credits"] if x["credits"] is not None else "—"} | {unit} |\n'
     base.write_report(text, counts)
+
+
+def scan(root):
+    """Lance toutes les vérifications ; les signaux vont dans `findings`, renvoie les offres trouvées (utilisé aussi par audit_complet.py)."""
+    check_paid_features(root)
+    check_credits(root)
+    plans_found = check_pricing(root)
+    has_free_credits = any(x['prix'] == 0 and x['credits'] for _, plans in plans_found for x in plans)
+    check_revenue_leaks(root, has_free_credits)
+    return plans_found
 
 
 if __name__ == '__main__':

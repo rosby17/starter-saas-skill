@@ -8,6 +8,7 @@ import { GatewayError } from '@/lib/payments/types'
 import type { PaymentCategoryId } from '@/lib/payments/providers'
 import { publicOrigin } from '@/lib/site-url'
 import { toFcfa } from '@/lib/currency'
+import { z } from 'zod'
 import { checkRateLimit } from '@/lib/rate-limit'
 
 /**
@@ -19,6 +20,16 @@ import { checkRateLimit } from '@/lib/rate-limit'
  *  3. le client choisit un TYPE de paiement (paymentType) ; la passerelle est celle que
  *     l'administrateur a activée pour ce type (/admin/payment-providers).
  */
+// Tout ce qui vient du navigateur est borné : longueurs, formats, valeurs permises. Le prix, lui, vient du catalogue serveur.
+const CheckoutBody = z.object({
+  firstName: z.string().trim().min(1).max(60),
+  lastName: z.string().trim().max(60).optional().default(''),
+  phone: z.string().trim().regex(/^\+?[0-9 ]{6,20}$/).optional().or(z.literal('')),
+  planId: z.string().min(1).max(60),
+  currency: z.string().regex(/^[A-Za-z]{3}$/).optional(),
+  paymentType: z.enum(['mobile_money', 'card', 'paypal', 'crypto']).catch('mobile_money'),
+})
+
 export async function POST(request: Request) {
   try {
     const authClient = await createClient()
@@ -31,13 +42,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'Trop de tentatives. Réessaie dans une minute.' }, { status: 429 })
     }
 
-    const body = await request.json()
-    const { firstName, lastName, phone, planId, currency } = body
-    const paymentType: PaymentCategoryId = ['card', 'paypal', 'crypto'].includes(body.paymentType) ? body.paymentType : 'mobile_money'
-
-    if (!firstName || !planId) {
-      return NextResponse.json({ success: false, message: 'Le prénom et le forfait sont obligatoires.' }, { status: 400 })
+    const parsed = CheckoutBody.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, message: 'Le prénom et le forfait sont obligatoires (téléphone : chiffres uniquement).' }, { status: 400 })
     }
+    const { firstName, lastName, phone, planId, currency } = parsed.data
+    const paymentType: PaymentCategoryId = parsed.data.paymentType
     const plan = getPlanById(planId)
     if (!plan || plan.amountLocal <= 0) {
       return NextResponse.json({ success: false, message: 'Forfait invalide ou gratuit : aucun paiement à faire.' }, { status: 400 })

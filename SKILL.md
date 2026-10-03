@@ -1,6 +1,6 @@
 ---
 name: starter-saas
-description: Crée un SaaS complet et opérationnel à partir d'une description (écrite ou dictée) : landing page, authentification avec déconnexion, espace client, administration, tarifs, migrations de base de données générées automatiquement, build vérifié et déploiement. Fait aussi l'AUDIT d'un SaaS existant (le sien ou celui de quelqu'un d'autre) en trois rubriques, sécurité, rentabilité (marges, coûts de l'IA, prix, point mort) et robustesse (pannes, montée en charge, sauvegardes), puis le corrige. Utilise-le quand l'utilisateur dit « starter saas », « crée un SaaS », « nouveau SaaS », décrit une application web à fabriquer, ou demande d'auditer un SaaS, d'en vérifier la sécurité, la rentabilité ou la solidité, ou d'en corriger les failles.
+description: Crée un SaaS complet et opérationnel à partir d'une description (écrite ou dictée) : landing page, authentification avec déconnexion, espace client, administration, tarifs, migrations de base de données générées automatiquement, build vérifié et déploiement. Fait aussi l'AUDIT complet d'un SaaS existant (le sien ou celui de quelqu'un d'autre) sur 11 domaines : authentification, droits d'accès, paiements, API, sécurité, robustesse (pannes, sauvegardes), rentabilité (marges, coûts de l'IA, prix, point mort), légal et données personnelles, design et accessibilité, performance et référencement, qualité du code ; rapport par domaine dans le chat, puis corrections. Utilise-le quand l'utilisateur dit « starter saas », « crée un SaaS », « nouveau SaaS », décrit une application web à fabriquer, ou demande d'auditer un SaaS, d'en vérifier la sécurité, la rentabilité ou la solidité, ou d'en corriger les failles.
 ---
 
 # starter-saas : de la description au SaaS qui tourne
@@ -84,9 +84,9 @@ Le script copie le modèle, remplace le nom, le domaine d'exemple et le nom du p
 2. Lance l'app et teste pour de vrai : inscription, connexion, création / modification / suppression d'une donnée de chaque entité, **déconnexion**, retour sur `/login`, une page privée qui redirige bien. Regarde la console du navigateur.
 3. Corrige jusqu'au vert. Si un test échoue, dis-le avec la sortie, sans l'enrober.
 
-## 7. Audits de sécurité, de rentabilité et de robustesse (obligatoires avant de livrer)
+## 7. Audit complet en 11 domaines (obligatoire avant de livrer)
 
-Lance d'abord le scanner (`python3 "<dossier du skill>/scripts/audit_securite.py" .`) : aucun CRITIQUE ni HAUTE confirmé. Puis passe chaque point ; corrige ce qui échoue, et dis ce qui a été vérifié :
+Lance `python3 "<dossier du skill>/scripts/audit_complet.py" . --sortie AUDIT-COMPLET.md` : il passe les 4 scanners et range tout en 11 domaines (authentification, accès, paiements, API, sécurité technique, robustesse, rentabilité, légal, design et accessibilité, performance et référencement, qualité du code). Aucun CRITIQUE ni HAUTE confirmé ; seuls les prix d'exemple restent tant que l'utilisateur ne les a pas donnés. Passe aussi les cases manuelles de `references/checklist-saas.md`, en particulier le test à deux comptes clients. Les points détaillés ci-dessous restent la référence :
 1. **Secrets** : aucun secret dans Git (`git log -p | grep` des motifs de clés, ou `gitleaks detect` s'il est installé), `.env*` ignorés sauf `.env.example`, aucune clé serveur dans un fichier `"use client"` ni dans une variable `NEXT_PUBLIC_*`. Dépôt GitHub créé en **privé** (`gh repo create --private`), jamais public sans demande explicite.
 2. **Base** : RLS activée sur CHAQUE table (`select relname from pg_class where relrowsecurity = false` sur le schéma public → vide), politiques propriétaire/admin, aucune politique `using (true)` en écriture ; colonnes sensibles (`is_admin`, crédits, statut de commande) non modifiables par l'utilisateur.
 3. **API** : chaque route vérifie la session (`getUser()`) et le propriétaire de la ressource (pas d'identifiant pris du corps de requête pour l'identité : IDOR), entrées validées par `zod`, routes admin derrière `requireAdmin()`, crons derrière `isAuthorizedCron`, webhooks à signature vérifiée en temps constant, prix toujours lus côté serveur.
@@ -104,7 +104,18 @@ Réponse courte : ce qui tourne (adresse), les écrans et tables générés, ce 
 
 ## Mode audit
 
-Trois rubriques, chacune avec sa méthode complète (à suivre en entier), son scanner et son rapport. « Audite ce SaaS » = les trois, dans cet ordre. « Vérifie la sécurité / la rentabilité / la solidité » = la rubrique demandée.
+Le SaaS à auditer (le sien, ou celui qu'on lui envoie) est jugé sur la grille UNIQUE des **11 domaines d'un bon SaaS** (`references/checklist-saas.md`) : 1 authentification et comptes, 2 droits d'accès et données des clients, 3 paiements et facturation, 4 API et intégrations, 5 sécurité technique, 6 robustesse et exploitation, 7 rentabilité, 8 données personnelles et légal, 9 expérience, design et accessibilité, 10 performance et référencement, 11 qualité du code et évolutivité. « Audite ce SaaS » = les 11 domaines. « Vérifie la sécurité / la rentabilité / la solidité » = la rubrique demandée, avec sa méthode détaillée ci-dessous.
+
+**Première passe** : `python3 "<dossier du skill>/scripts/audit_complet.py" <dossier> --sortie <dossier>/AUDIT-COMPLET.md` (4 scanners : sécurité, rentabilité, robustesse, produit). Puis la revue manuelle de chaque domaine (checklist + questions des méthodes détaillées).
+
+**Rapport dans le chat (OBLIGATOIRE, toujours dans cet ordre)** :
+1. Le tableau des 11 domaines (état ✓ / ⚠ / ✗ / ?, nombre de failles par niveau) et la note sur 100.
+2. Les urgences (CRITIQUE puis HAUTE) : pour chacune, le risque concret en une phrase (« n'importe qui peut lire les factures des autres clients ») et la correction.
+3. Domaine par domaine (Authentification, Accès, Paiement, API, …) : chaque faille CONFIRMÉE avec niveau, `fichier:ligne` et correction ; les fausses alertes écartées en une ligne.
+4. Ce qui n'a pas pu être vérifié (et pourquoi), ce que le propriétaire doit faire lui-même, puis UNE question : « je corrige ? ».
+Le détail (preuves, scénarios, toutes les cases manuelles) va dans `AUDIT-COMPLET.md`.
+
+Méthodes détaillées par rubrique :
 
 | Rubrique | Méthode | Scanner | Rapport |
 |---|---|---|---|
@@ -120,7 +131,7 @@ En bref :
 5. **Rapports** : chacun commence par une note A à E et les 3 points principaux en langage simple, puis chaque point avec niveau, fichier:ligne, preuve (scénario d'attaque, coût en argent, scénario de panne) et correction ; et ce qui a été vérifié sans problème. Secrets : dire où, jamais les afficher.
 6. Montre un résumé (les trois notes, les 3 urgences toutes rubriques confondues) et demande UN accord, puis **corrige** sur `audit/<rubrique>`, CRITIQUE → HAUTE → MOYENNE, un commit par correction, migrations neuves. Les prix et les offres ne changent qu'avec l'accord explicite du propriétaire. Revérifie (`tsc`, lint, build, scanners relancés, calcul refait) et donne les notes avant / après, plus ce que le propriétaire doit faire lui-même (révoquer une clé, régler les sauvegardes, changer un prix).
 
-Les scanners se testent : `python3 tests/test_audit.py` et `python3 tests/test_rentabilite_robustesse.py` (faux SaaS pleins de défauts connus : tout doit être trouvé, et rien sur leur version corrigée). Les mêmes audits s'appliquent aux SaaS créés avec ce skill (étape 7).
+Les scanners se testent : `python3 tests/test_audit.py`, `python3 tests/test_rentabilite_robustesse.py` et `python3 tests/test_produit.py` (faux SaaS pleins de défauts connus : tout doit être trouvé, et rien sur leur version corrigée). Les mêmes audits s'appliquent aux SaaS créés avec ce skill (étape 7).
 
 ## Règles
 
