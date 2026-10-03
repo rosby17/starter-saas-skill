@@ -7,7 +7,7 @@ Décris ton produit, Claude fabrique le SaaS : landing page, connexion et décon
 Il faut [Claude Code](https://claude.com/claude-code), Node.js 20+, Git, et un compte Supabase (gratuit) ; le CLI Supabase et Docker aident pour tester les migrations.
 
 ```bash
-git clone <ADRESSE-DU-DEPOT> ~/.claude/skills/starter-saas
+git clone https://github.com/rosby17/starter-saas-skill.git ~/.claude/skills/starter-saas
 ```
 
 Ou, sans Git : télécharge le zip, décompresse-le pour obtenir un dossier `starter-saas` dans `~/.claude/skills/`. Ce skill est alors disponible dans toutes tes sessions.
