@@ -18,7 +18,8 @@ async function createTicket(formData: FormData) {
 
 export default async function SupportPage() {
   const supabase = await createClient()
-  const { data: tickets } = await supabase.from('support_tickets').select('id, subject, status, created_at').order('created_at', { ascending: false }).limit(20)
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: tickets } = await supabase.from('support_tickets').select('id, subject, status, created_at').eq('user_id', user!.id).order('created_at', { ascending: false }).limit(20)
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-6">

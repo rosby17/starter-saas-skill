@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
-const nextConfig: NextConfig = {
+const baseConfig: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
@@ -21,4 +22,8 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Le serveur de développement (npm run dev) écrit dans .next-dev, le build (npm run build) dans .next :
+// lancer un build pendant que le site tourne en local ne peut plus casser ses fichiers (CSS et JS en 404, page sans style).
+export default function nextConfig(phase: string): NextConfig {
+  return { ...baseConfig, distDir: phase === PHASE_DEVELOPMENT_SERVER ? '.next-dev' : '.next' };
+}

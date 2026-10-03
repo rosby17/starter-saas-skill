@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+/* =============================================================================
+   CHARTE GRAPHIQUE : le seul endroit où changer couleurs et police.
+   Les classes Tailwind en découlent : bg-brand, text-brand, border-brand,
+   hover:bg-brand-hover, bg-accent, text-accent, font-sans.
+   Règle : le texte des boutons est blanc, donc --color-brand doit rester assez
+   foncé (contraste ≥ 4,5:1 avec le blanc, à vérifier sur webaim.org/resources/contrastchecker).
+   ============================================================================= */
+@theme {
+  --color-brand: #111827;        /* couleur principale : boutons, liens forts */
+  --color-brand-hover: #1f2937;  /* la même, un peu plus claire ou plus foncée, au survol */
+  --color-accent: #2563eb;       /* couleur secondaire : badges, mises en avant, liens */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; /* police (voir layout.tsx pour une police Google) */
+}
+
 :root {
   --background: #ffffff;
   --foreground: #111827;
@@ -8,5 +22,5 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
 }

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/card'
+import { useConfirm } from '@/components/ui/dialog'
+import { Select } from '@/components/ui/select'
 
 type Order = {
   id: string; email: string | null; plan_name: string | null; credits: number; amount_local: number; currency: string
@@ -20,6 +22,7 @@ export default function AdminOrdersPage() {
   const [status, setStatus] = useState('')
   const [q, setQ] = useState('')
   const [message, setMessage] = useState<string | null>(null)
+  const confirm = useConfirm()
 
   const load = useCallback(async () => {
     const params = new URLSearchParams({ page: String(page) })
@@ -32,7 +35,7 @@ export default function AdminOrdersPage() {
   useEffect(() => { load() }, [load])
 
   const act = async (id: string, action: 'verify' | 'mark_paid' | 'mark_failed') => {
-    if (action === 'mark_paid' && !confirm('Confirmer que le paiement a bien été reçu ? Les crédits seront accordés.')) return
+    if (action === 'mark_paid' && !(await confirm({ title: 'Paiement bien reçu ?', message: 'Les crédits seront accordés au client.', confirmLabel: 'Marquer payée' }))) return
     const res = await fetch(`/api/admin/orders/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) })
     const data = await res.json()
     setMessage(data.message || (data.credited ? 'Commande créditée.' : data.state ? `Passerelle : ${data.state}` : data.success ? 'Fait.' : 'Échec.'))
@@ -43,10 +46,12 @@ export default function AdminOrdersPage() {
     <main className="p-8">
       <h1 className="mb-6 text-2xl font-bold">Commandes</h1>
       <div className="mb-4 flex flex-wrap gap-3">
-        <select value={status} onChange={(e) => { setPage(1); setStatus(e.target.value) }} className="rounded-lg border border-gray-300 px-3 py-2 text-sm">
-          <option value="">Tous les statuts</option>
-          {Object.entries(STATUS_LABELS).map(([value, { label }]) => <option key={value} value={value}>{label}</option>)}
-        </select>
+        <Select
+          className="w-56"
+          value={status}
+          onChange={(v) => { setPage(1); setStatus(v) }}
+          options={[{ value: '', label: 'Tous les statuts' }, ...Object.entries(STATUS_LABELS).map(([value, { label }]) => ({ value, label }))]}
+        />
         <input value={q} onChange={(e) => { setPage(1); setQ(e.target.value) }} placeholder="Numéro de commande ou référence" className="w-72 rounded-lg border border-gray-300 px-3 py-2 text-sm" />
         <span className="self-center text-sm text-gray-500">{total} commande(s)</span>
       </div>

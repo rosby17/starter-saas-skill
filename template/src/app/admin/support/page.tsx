@@ -10,12 +10,12 @@ export default async function AdminSupportPage() {
 
   return (
     <main className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Support tickets</h1>
+      <h1 className="text-2xl font-bold mb-6">Demandes d'aide</h1>
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-gray-500 border-b border-gray-200">
-            <th className="py-2">Subject</th>
-            <th>Status</th>
+            <th className="py-2">Sujet</th>
+            <th>Statut</th>
             <th>Date</th>
           </tr>
         </thead>
@@ -29,7 +29,7 @@ export default async function AdminSupportPage() {
           ))}
         </tbody>
       </table>
-      {(!tickets || tickets.length === 0) && <p className="text-gray-500 text-sm mt-4">No tickets yet. Table `support_tickets` is not created by this starter's migration — add it if you need this page.</p>}
+      {(!tickets || tickets.length === 0) && <p className="text-gray-500 text-sm mt-4">Aucune demande pour l'instant.</p>}
     </main>
   );
 }

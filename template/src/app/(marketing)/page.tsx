@@ -10,7 +10,7 @@ export default function LandingPage() {
         <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">{site.tagline}</h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600">{site.description}</p>
         <div className="mt-10 flex justify-center gap-3">
-          <Link href="/signup" className="rounded-lg bg-gray-900 px-6 py-3 font-medium text-white hover:bg-gray-800">Essayer gratuitement</Link>
+          <Link href="/signup" className="rounded-lg bg-brand px-6 py-3 font-medium text-white hover:bg-brand-hover">Essayer gratuitement</Link>
           <Link href="/pricing" className="rounded-lg bg-gray-100 px-6 py-3 font-medium text-gray-900 hover:bg-gray-200">Voir les tarifs</Link>
         </div>
       </section>
@@ -44,7 +44,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-gray-900 py-20 text-center text-white">
+      <section className="bg-brand py-20 text-center text-white">
         <h2 className="text-3xl font-bold">Prêt à commencer ?</h2>
         <Link href="/signup" className="mt-8 inline-block rounded-lg bg-white px-6 py-3 font-medium text-gray-900">Créer mon compte</Link>
       </section>

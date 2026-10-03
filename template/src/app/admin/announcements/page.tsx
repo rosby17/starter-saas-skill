@@ -10,7 +10,7 @@ export default async function AdminAnnouncementsPage() {
 
   return (
     <main className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Announcements</h1>
+      <h1 className="text-2xl font-bold mb-6">Annonces</h1>
       <div className="space-y-2">
         {(announcements || []).map((a) => (
           <Link

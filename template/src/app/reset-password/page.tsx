@@ -33,7 +33,7 @@ function ResetPasswordForm() {
       if (!tokenHash) {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-          setError("No valid reset token was found. Please use the exact link from your email.");
+          setError("Lien de réinitialisation invalide. Utilise le lien exact reçu par e-mail.");
         }
       }
     };
@@ -44,11 +44,11 @@ function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError("Les deux mots de passe ne correspondent pas.");
       return;
     }
     if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError("Le mot de passe doit faire au moins 8 caractères.");
       return;
     }
 
@@ -71,7 +71,7 @@ function ResetPasswordForm() {
       setSuccess(true);
       setTimeout(() => router.push("/dashboard"), 3000);
     } catch (err: any) {
-      setError(err.message || "An error occurred while resetting your password.");
+      setError(err.message || "Impossible de changer le mot de passe.");
     } finally {
       setIsLoading(false);
     }
@@ -80,9 +80,9 @@ function ResetPasswordForm() {
   if (success) {
     return (
       <div className="w-full max-w-md mx-auto p-8 bg-white border border-gray-200 rounded-2xl shadow-sm text-center space-y-4">
-        <h2 className="text-2xl font-bold text-gray-900">Password updated!</h2>
-        <p className="text-gray-600">Your password has been changed successfully.</p>
-        <p className="text-sm text-gray-500">Redirecting to your dashboard…</p>
+        <h2 className="text-2xl font-bold text-gray-900">Mot de passe changé !</h2>
+        <p className="text-gray-600">Ton mot de passe a bien été modifié.</p>
+        <p className="text-sm text-gray-500">Redirection vers ton espace…</p>
       </div>
     );
   }
@@ -90,8 +90,8 @@ function ResetPasswordForm() {
   return (
     <div className="w-full max-w-md mx-auto p-8 bg-white border border-gray-200 rounded-2xl shadow-sm">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">New password</h1>
-        <p className="text-gray-600 mt-2">Enter your new password below.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Nouveau mot de passe</h1>
+        <p className="text-gray-600 mt-2">Choisis ton nouveau mot de passe.</p>
       </div>
 
       {error && (
@@ -102,15 +102,15 @@ function ResetPasswordForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">New password</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Nouveau mot de passe</label>
           <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} disabled={isLoading} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm password</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirme le mot de passe</label>
           <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required disabled={isLoading} />
         </div>
         <Button type="submit" disabled={isLoading || !!error} className="w-full">
-          {isLoading ? "Saving…" : "Save password"}
+          {isLoading ? "Enregistrement…" : "Enregistrer le mot de passe"}
         </Button>
       </form>
     </div>
@@ -120,7 +120,7 @@ function ResetPasswordForm() {
 export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Suspense fallback={<div className="w-8 h-8 border-4 border-gray-900 border-t-transparent rounded-full animate-spin" />}>
+      <Suspense fallback={<div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />}>
         <ResetPasswordForm />
       </Suspense>
     </div>

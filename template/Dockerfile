@@ -12,8 +12,15 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
-# Note: your host (Coolify, etc.) should inject production env vars at build
-# time too, if any of them are read at build time (NEXT_PUBLIC_* vars).
+# Les NEXT_PUBLIC_* sont figées dans le code au build : Coolify les passe en arguments de build.
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_APP_NAME
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY \
+    NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
+    NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME
 RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build
 
 # Runtime

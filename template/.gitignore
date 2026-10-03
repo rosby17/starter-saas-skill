@@ -1,5 +1,6 @@
 node_modules
 .next
+/.next-dev
 .env
 .env.local
 .env.*.local
@@ -7,3 +8,7 @@ npm-debug.log*
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts
+
+# Supabase local (CLI)
+supabase/.temp
+supabase/.branches

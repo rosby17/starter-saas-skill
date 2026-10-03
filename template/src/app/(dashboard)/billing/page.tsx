@@ -51,7 +51,7 @@ export default function BillingPage() {
       <div className="mb-8 inline-flex rounded-lg border border-gray-200 p-1 text-sm">
         {([["mobile_money", "Mobile Money"], ["card", "Carte bancaire"], ["paypal", "PayPal"], ["crypto", "Binance Pay"]] as const).map(([id, label]) => (
           <button key={id} type="button" onClick={() => setPaymentType(id)}
-            className={`rounded-md px-4 py-2 ${paymentType === id ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"}`}>{label}</button>
+            className={`rounded-md px-4 py-2 ${paymentType === id ? "bg-brand text-white" : "text-gray-700 hover:bg-gray-100"}`}>{label}</button>
         ))}
       </div>
 

@@ -32,17 +32,17 @@ export default function AdminMaintenancePage() {
 
   return (
     <main className="p-8 max-w-lg">
-      <h1 className="text-2xl font-bold mb-6">Maintenance mode</h1>
+      <h1 className="text-2xl font-bold mb-6">Mode maintenance</h1>
       {loading ? (
         <p className="text-gray-500">Loading…</p>
       ) : (
         <div className="border border-gray-200 rounded-2xl p-6 flex items-center justify-between">
           <div>
             <p className="font-medium">Maintenance mode is {enabled ? "ON" : "OFF"}</p>
-            <p className="text-sm text-gray-500">When on, all non-admin traffic is redirected to /maintenance.</p>
+            <p className="text-sm text-gray-500">Activé : tous les visiteurs (sauf les administrateurs) voient la page de maintenance.</p>
           </div>
           <Button variant={enabled ? "danger" : "primary"} onClick={toggle} disabled={saving}>
-            {enabled ? "Turn off" : "Turn on"}
+            {enabled ? "Désactiver" : "Activer"}
           </Button>
         </div>
       )}

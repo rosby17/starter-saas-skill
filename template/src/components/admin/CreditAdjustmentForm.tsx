@@ -23,7 +23,7 @@ export function CreditAdjustmentForm({ userId }: { userId: string }) {
     <form onSubmit={submit} className="flex items-center gap-2">
       <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="+500 / -200" className="w-24 rounded border border-gray-300 px-2 py-1 text-xs" required />
       <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Raison" className="w-40 rounded border border-gray-300 px-2 py-1 text-xs" required />
-      <button className="rounded bg-gray-900 px-2 py-1 text-xs text-white">Appliquer</button>
+      <button className="rounded bg-brand px-2 py-1 text-xs text-white">Appliquer</button>
       {message && <span className="text-xs text-gray-500">{message}</span>}
     </form>
   )

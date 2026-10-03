@@ -11,25 +11,25 @@ export default async function AdminOverviewPage() {
 
   return (
     <main className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Overview</h1>
+      <h1 className="text-2xl font-bold mb-6">Vue d'ensemble</h1>
       <div className="grid grid-cols-2 gap-4 mb-8">
         <div className="border border-gray-200 rounded-2xl p-6">
-          <p className="text-sm text-gray-500">Users</p>
+          <p className="text-sm text-gray-500">Utilisateurs</p>
           <p className="text-3xl font-bold mt-1">{userCount ?? "—"}</p>
         </div>
         <div className="border border-gray-200 rounded-2xl p-6">
-          <p className="text-sm text-gray-500">Paid orders</p>
+          <p className="text-sm text-gray-500">Commandes payées</p>
           <p className="text-3xl font-bold mt-1">{orderCount ?? "—"}</p>
         </div>
       </div>
 
-      <h2 className="font-semibold mb-3">Recent orders</h2>
+      <h2 className="font-semibold mb-3">Dernières commandes</h2>
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-gray-500 border-b border-gray-200">
-            <th className="py-2">Plan</th>
-            <th>Amount</th>
-            <th>Status</th>
+            <th className="py-2">Forfait</th>
+            <th>Montant</th>
+            <th>Statut</th>
             <th>Date</th>
           </tr>
         </thead>

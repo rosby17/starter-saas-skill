@@ -10,7 +10,7 @@ export default async function AdminFeedbacksPage() {
 
   return (
     <main className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Feedback</h1>
+      <h1 className="text-2xl font-bold mb-6">Avis</h1>
       <div className="space-y-2">
         {(feedbacks || []).map((f) => (
           <div key={f.id} className="border border-gray-200 rounded-xl p-4">
@@ -19,7 +19,7 @@ export default async function AdminFeedbacksPage() {
           </div>
         ))}
         {(!feedbacks || feedbacks.length === 0) && (
-          <p className="text-gray-500 text-sm">No feedback yet. Table `feedbacks` is not created by this starter's migration — add it if you need this page.</p>
+          <p className="text-gray-500 text-sm">Aucun avis pour l'instant.</p>
         )}
       </div>
     </main>

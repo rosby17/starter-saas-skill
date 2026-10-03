@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { RadioCard } from '@/components/ui/choice'
 
 type Provider = { id: string; label: string; active: boolean; configured: boolean }
 type Category = { id: string; label: string; description: string; providers: Provider[] }
@@ -40,13 +41,12 @@ export default function PaymentProvidersPage() {
           <section key={category.id} className="rounded-2xl border border-gray-200 p-5">
             <h2 className="font-semibold">{category.label}</h2>
             <p className="mb-3 text-sm text-gray-500">{category.description}</p>
-            <div className="space-y-2">
+            <div role="radiogroup" aria-label={category.label} className="space-y-2">
               {category.providers.map((provider) => (
-                <label key={provider.id} className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 text-sm">
-                  <input type="radio" name={category.id} checked={provider.active} onChange={() => choose(category.id, provider.id)} />
-                  <span className="font-medium">{provider.label}</span>
-                  {!provider.configured && <span className="ml-auto text-xs text-amber-700">clés manquantes dans l'environnement</span>}
-                </label>
+                <div key={provider.id} className="flex items-center gap-3">
+                  <RadioCard checked={provider.active} onSelect={() => choose(category.id, provider.id)} label={provider.label} />
+                  {!provider.configured && <a href="/admin/keys" className="shrink-0 text-xs text-amber-700 underline">clés manquantes : renseigner</a>}
+                </div>
               ))}
             </div>
           </section>

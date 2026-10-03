@@ -1,9 +1,13 @@
 # Règles de ce projet (générées par le skill starter-saas)
 
 - **Branding et contenu de la landing** : `src/config/site.ts` (nom, slogan, menus, fonctionnalités, FAQ). Prix : `src/lib/pricing.ts`. Ne pas disperser ces textes ailleurs.
+- **Charte graphique** : couleurs et police UNIQUEMENT dans le bloc `@theme` de `src/app/globals.css` (classes `bg-brand`, `text-brand`, `hover:bg-brand-hover`, `bg-accent`) ; logo = `site.logo` (fichier dans `public/`) ; icône = `src/app/icon.png`. Jamais de couleur en dur dans un composant.
+- **Interface 100 % aux couleurs du site (OBLIGATOIRE)** : AUCUN élément natif du navigateur. Interdits : `<select>`, `<input type="date|time|radio|checkbox|color|range">`, `confirm()`, `alert()`, `prompt()`, `window.open`, `<dialog>` brut, infobulles `title`. Utiliser `src/components/ui` : `Select`, `DatePicker`, `RadioCard`, `Checkbox`, `Switch`, `useConfirm` ; messages d'erreur et de succès DANS la page. Un composant manquant (heure, menu, couleur…) se crée dans `components/ui` avec la charte. `npm run lint` bloque ces éléments.
+- **Clés de services** (paiement, Brevo, CRON_SECRET) : collées par le propriétaire dans `/admin/keys` ; toute nouvelle clé se déclare dans `src/lib/secrets/catalog.ts`.
 - **Menu de l'espace client** : `site.dashboardNav` dans `src/config/site.ts` ; chaque nouvelle page connectée y ajoute sa ligne.
 - **Authentification** : Supabase. Déconnexion = `POST /auth/signout` (`LogoutButton`). Les pages privées sont protégées par `src/middleware.ts` ET revérifiées côté serveur avec `getUser()`.
-- **Administration** : `/admin`, réservé à `profiles.is_admin = true` (à activer à la main sur son propre compte, dans Supabase).
+- **Administration** : `/admin`, réservé à `profiles.is_admin = true` (premier compte créé par l'assistant `/setup`).
+- **Base de données** : Supabase OPEN SOURCE hébergé par le créateur (Docker en local, service Coolify `api.<domaine>` en ligne). JAMAIS de compte supabase.com. Installation : `/setup` (local) et `/admin/deploy` (en ligne), via `src/lib/deploy/`.
 - **Base de données** : uniquement par migrations dans `supabase/migrations/` : un fichier NEUF par changement (`AAAAMMJJHHMMSS_nom.sql`), jamais de modification d'une migration déjà appliquée. Toujours rejouables (`if not exists`, `drop policy if exists`), RLS activée sur chaque table, index sur chaque clé étrangère. Pour savoir quoi changer, lire l'état réel de la base (`supabase db diff`), pas sa mémoire.
 - **Secrets** : jamais dans Git ni dans le chat. `.env.local` en local, variables d'environnement de l'hébergeur en production.
 - **Vérifier avant de livrer** : `npx tsc --noEmit`, `npm run lint`, `npm run build`, puis essai réel dans le navigateur (inscription → connexion → action → déconnexion).

@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 // Paths that never require an authenticated session. Add any marketing,
 // legal, or public API prefixes your app needs here.
-const publicPrefixes = ['/login', '/signup', '/reset-password', '/', '/api']
+const publicPrefixes = ['/login', '/signup', '/reset-password', '/setup', '/', '/api']
 
 function isPublicPath(pathname: string) {
   return publicPrefixes.some(
@@ -19,8 +19,24 @@ function redirectWithCookies(url: URL, supabaseResponse: NextResponse, status = 
   return redirectRes
 }
 
+// Supabase pas encore branché (valeurs d'exemple de .env.example) : en local, tout mène à l'assistant /setup.
+const supabaseConfigured = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  return !!url && /^https?:\/\//.test(url) && !url.includes('your-project')
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
+
+  if (!supabaseConfigured()) {
+    if (pathname === '/setup' || pathname.startsWith('/api/setup')) return NextResponse.next()
+    if (process.env.NODE_ENV !== 'production') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/setup'
+      return NextResponse.redirect(url)
+    }
+    return new NextResponse('Configuration incomplète : NEXT_PUBLIC_SUPABASE_URL manquant sur le serveur.', { status: 503 })
+  }
 
   let supabaseResponse = NextResponse.next({
     request: { headers: request.headers },

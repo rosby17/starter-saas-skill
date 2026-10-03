@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Logo } from "@/components/Logo";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
       router.push(next);
       router.refresh();
     } catch (err: any) {
-      setError(err.message || "Something went wrong.");
+      setError(err.message || "Une erreur est survenue.");
     } finally {
       setIsLoading(false);
     }
@@ -49,9 +50,9 @@ function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
   return (
     <div className="w-full max-w-md mx-auto p-8 bg-white border border-gray-200 rounded-2xl shadow-sm">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{APP_NAME}</h1>
+        <h1 className="text-2xl"><Logo /><span className="sr-only">{APP_NAME}</span></h1>
         <p className="text-gray-600 mt-2">
-          {mode === "login" ? "Sign in to your account" : "Create your account"}
+          {mode === "login" ? "Connecte-toi à ton compte" : "Crée ton compte"}
         </p>
       </div>
 
@@ -64,21 +65,21 @@ function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
       <form onSubmit={handleSubmit} className="space-y-4">
         {mode === "signup" && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">First name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Prénom</label>
             <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
           </div>
         )}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">E-mail</label>
           <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Mot de passe</label>
           <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
         </div>
 
         <Button type="submit" disabled={isLoading} className="w-full">
-          {isLoading ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+          {isLoading ? "Un instant…" : mode === "login" ? "Se connecter" : "Créer mon compte"}
         </Button>
       </form>
 
@@ -86,22 +87,22 @@ function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
         {mode === "login" ? (
           <>
             <p>
-              No account?{" "}
-              <button className="font-semibold text-gray-900 hover:underline" onClick={() => setMode("signup")}>
-                Sign up
+              Pas encore de compte ?{" "}
+              <button className="font-semibold text-brand hover:underline" onClick={() => setMode("signup")}>
+                Créer un compte
               </button>
             </p>
             <p>
               <Link href="/reset-password" className="hover:underline">
-                Forgot your password?
+                Mot de passe oublié ?
               </Link>
             </p>
           </>
         ) : (
           <p>
-            Already have an account?{" "}
-            <button className="font-semibold text-gray-900 hover:underline" onClick={() => setMode("login")}>
-              Sign in
+            Déjà un compte ?{" "}
+            <button className="font-semibold text-brand hover:underline" onClick={() => setMode("login")}>
+              Se connecter
             </button>
           </p>
         )}
@@ -113,7 +114,7 @@ function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
 export default function AuthUI({ initialMode }: { initialMode: "login" | "signup" }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Suspense fallback={<div className="w-8 h-8 border-4 border-gray-900 border-t-transparent rounded-full animate-spin" />}>
+      <Suspense fallback={<div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />}>
         <AuthForm initialMode={initialMode} />
       </Suspense>
     </div>

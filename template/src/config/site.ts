@@ -2,6 +2,9 @@
 // l'agent /starter-saas modifie ce fichier (et pricing.ts), rien d'autre pour le branding.
 export const site = {
   name: '{{APP_NAME}}',
+  // Logo : fichier dans public/ (ex. '/logo.svg', fond transparent, ~ 160×40). Vide = carré aux couleurs de la marque + nom (components/Logo.tsx).
+  // Icône d'onglet : déposer src/app/icon.png (512×512). Couleurs et police : src/app/globals.css (bloc CHARTE GRAPHIQUE).
+  logo: '',
   tagline: 'La promesse en une phrase.',
   description: 'Description courte pour Google et les réseaux sociaux.',
   url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',

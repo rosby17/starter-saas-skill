@@ -7,12 +7,15 @@ const STATUS: Record<string, { label: string; tone: 'gray' | 'green' | 'red' | '
   expired: { label: 'Expirée', tone: 'gray' }, flagged_underpaid: { label: 'En vérification', tone: 'amber' }, flagged_reversal: { label: 'Remboursée', tone: 'gray' },
 }
 
-// Historique des paiements de l'utilisateur (la RLS ne laisse voir que SES commandes) + facture des commandes payées.
+// Historique des paiements de l'utilisateur + facture des commandes payées. Filtre explicite par user_id :
+// un administrateur peut lire (RLS) les commandes de tout le monde.
 export default async function BillingHistoryPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   const { data: orders } = await supabase
     .from('orders')
     .select('id, plan_name, credits, amount_local, currency, payment_method, status, created_at')
+    .eq('user_id', user!.id)
     .order('created_at', { ascending: false })
     .limit(100)
 

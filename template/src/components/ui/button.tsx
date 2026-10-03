@@ -6,7 +6,7 @@ type Variant = "primary" | "secondary" | "ghost" | "danger";
 export const Button = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }>(
   ({ className, variant = "primary", ...props }, ref) => {
     const variants: Record<Variant, string> = {
-      primary: "bg-gray-900 text-white hover:bg-gray-800",
+      primary: "bg-brand text-white hover:bg-brand-hover",
       secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200",
       ghost: "bg-transparent text-gray-700 hover:bg-gray-100",
       danger: "bg-red-600 text-white hover:bg-red-700",
