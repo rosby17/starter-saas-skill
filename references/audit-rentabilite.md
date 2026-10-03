@@ -61,7 +61,8 @@ Il suit les appels de fonction en fonction, mais un contrôle caché ailleurs (m
 2. Les grandes offres sont moins chères à l'unité que les petites (sinon personne ne les prend) ?
 3. Les prix suivent le pouvoir d'achat du public visé (FCFA, mobile money) et les prix des concurrents ?
 4. Une offre annuelle (2 mois offerts) ou un pack existe pour encaisser plus tôt et garder les clients plus longtemps ?
-5. Le gratuit fait essayer sans suffire (souvent 5 à 15 % de la première offre), et il est limité dans le temps ou en volume ?
+5. Le gratuit fait essayer sans suffire (souvent 5 à 15 % de la première offre), et il est limité dans le temps ou en volume ? Un essai « une fois par compte » se renouvelle sans fin avec de nouvelles adresses : le limiter aussi par appareil (ou par moyen de paiement).
+5 bis. Les prix suivent le pouvoir d'achat de chaque région (ex. Afrique en FCFA, Europe en euros, Amérique du Nord plus cher, reste du monde au niveau Afrique), lus côté serveur d'après le pays (en-tête de Cloudflare), et le montant encaissé est celui affiché ?
 
 **Coûts qui dérapent**
 6. Toute fonction payante exige un compte, débite des crédits ou un quota AVANT l'appel, de façon atomique, et rend le crédit si l'appel échoue ?
@@ -73,7 +74,7 @@ Il suit les appels de fonction en fonction, mais un contrôle caché ailleurs (m
 **Argent perdu en route**
 11. Un paiement réussi dont le webhook s'est perdu est rattrapé (vérification au retour, cron de rattrapage) ?
 12. Les clients qui commencent un paiement sans le finir sont relancés (e-mail ou WhatsApp après 1 h puis 24 h) ?
-13. Les abonnements arrivés à échéance sont relancés avant de couper, et l'accès est bien coupé après (pas de service gratuit oublié) ?
+13. Les abonnements arrivés à échéance sont relancés avant de couper (indispensable quand le renouvellement n'est pas automatique : e-mail quelques jours avant, une seule fois), et l'accès est bien coupé après (pas de service gratuit oublié) ?
 14. Les remboursements et litiges sont suivis (pas de crédits gardés après un remboursement) ?
 
 **Croissance**

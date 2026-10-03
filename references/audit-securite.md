@@ -39,7 +39,7 @@ Pour CHAQUE route API, action serveur et page privée, réponds à ces questions
 1. Qui peut appeler ça sans être connecté ? (le middleware ne suffit pas : la page ou la route doit revérifier)
 2. L'identité vient-elle de la session (bien) ou d'un champ envoyé par le navigateur (faille IDOR) ?
 3. Quand on lit, modifie ou supprime une ressource par son identifiant, vérifie-t-on qu'elle appartient à l'utilisateur ? Essaie mentalement avec l'identifiant d'un autre client.
-4. Les routes admin vérifient-elles le rôle côté serveur, dans une donnée que l'utilisateur ne peut pas modifier ?
+4. Les routes admin vérifient-elles le rôle côté serveur, dans une donnée que l'utilisateur ne peut pas modifier ? Si le rôle vient d'une liste d'adresses e-mail (`ADMIN_EMAILS`), l'adresse doit être CONFIRMÉE : sinon, créer un compte avec une adresse d'administrateur encore libre donne l'administration.
 5. Le client « service » (qui ignore la RLS) n'est-il utilisé qu'après ces contrôles ?
 
 **Base de données** (Supabase)
@@ -62,7 +62,7 @@ Pour CHAQUE route API, action serveur et page privée, réponds à ces questions
 18. Redirections et liens d'e-mail : adresse du site fixée côté serveur, chemin interne seulement.
 
 **Comptes**
-19. Mot de passe oublié, confirmation d'e-mail, changement d'adresse : pas de prise de contrôle possible ; limitation de débit.
+19. Mot de passe oublié, confirmation d'e-mail, changement d'adresse : pas de prise de contrôle possible ; limitation de débit par adresse IP ET par compte (essais répartis sur de nombreuses IP). Derrière un proxy, l'IP est la DERNIÈRE valeur de `X-Forwarded-For` (ou l'en-tête de Cloudflare), jamais la première, que le client écrit lui-même.
 20. Suppression de compte et export de données (RGPD) si clients européens.
 
 **Exploitation**

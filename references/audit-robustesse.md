@@ -65,7 +65,7 @@ Chaque ligne est un SIGNAL : la confirmer en lisant le code. Une petite table de
 **Mises à jour et données**
 17. Le build vérifie les types et le lint, et une mise à jour qui plante au démarrage ne remplace pas la version qui marche (HEALTHCHECK) ?
 18. Un retour à la version précédente est possible en une action (image précédente dans Coolify) ?
-19. Sauvegarde automatique quotidienne de la base, HORS du serveur (Coolify, Backups du service de base vers un stockage S3) ?
+19. Sauvegarde automatique quotidienne de la base, HORS du serveur (Coolify, Backups du service de base vers un stockage S3) ? Pour une base fichier (SQLite), une copie cohérente quotidienne par l'application (API de sauvegarde, pas une simple copie de fichier) en plus.
 20. Une restauration a déjà été essayée sur une copie, et on sait combien de temps elle prend ?
 21. Les tâches planifiées prennent un verrou, et une exécution ratée est rattrapée à la suivante ?
 22. Au moins un test automatique du parcours qui rapporte (inscription → paiement → crédit → usage), lancé à chaque envoi de code ?
