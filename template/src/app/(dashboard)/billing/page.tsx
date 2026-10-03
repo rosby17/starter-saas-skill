@@ -6,7 +6,7 @@ import { PLANS } from "@/lib/pricing";
 import { Button } from "@/components/ui/button";
 
 export default function BillingPage() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const [paymentType, setPaymentType] = useState<"mobile_money" | "card" | "paypal">("mobile_money");
   const [email, setEmail] = useState<string | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +14,6 @@ export default function BillingPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id || null);
       setEmail(data.user?.email || null);
     });
   }, [supabase]);
@@ -28,9 +27,8 @@ export default function BillingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planId,
-          userId,
-          email,
-          firstName: email?.split("@")[0] || "Customer",
+          paymentType, // 'mobile_money' | 'card' | 'paypal' : la passerelle est choisie par l'admin
+          firstName: email?.split("@")[0] || "Client",
           lastName: "",
         }),
       });
@@ -46,8 +44,14 @@ export default function BillingPage() {
 
   return (
     <main className="max-w-4xl mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-2">Billing</h1>
-      <p className="text-gray-600 mb-8">Choose a plan. Prices below are placeholders — edit src/lib/pricing.ts.</p>
+      <h1 className="text-2xl font-bold mb-2">Abonnement</h1>
+      <p className="text-gray-600 mb-6">Choisis un forfait puis ton moyen de paiement. Les prix viennent de src/lib/pricing.ts.</p>
+      <div className="mb-8 inline-flex rounded-lg border border-gray-200 p-1 text-sm">
+        {([["mobile_money", "Mobile Money"], ["card", "Carte bancaire"], ["paypal", "PayPal"]] as const).map(([id, label]) => (
+          <button key={id} type="button" onClick={() => setPaymentType(id)}
+            className={`rounded-md px-4 py-2 ${paymentType === id ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"}`}>{label}</button>
+        ))}
+      </div>
 
       {error && <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-sm text-red-700">{error}</div>}
 

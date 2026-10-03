@@ -1,3 +1,4 @@
+import { acquireCronLock, releaseCronLock } from "@/lib/cron-lock";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { creditPaidOrder } from "@/lib/orders/credit-order";
@@ -34,7 +35,7 @@ const TIME_BUDGET_MS = 7000;
  * Protect this route behind CRON_SECRET (see .env.example) — call it with
  * `Authorization: Bearer $CRON_SECRET` from your scheduler.
  */
-export async function GET(request: Request) {
+async function run(request: Request) {
   const startedAt = Date.now();
   try {
     const authHeader = request.headers.get("authorization");
@@ -131,5 +132,22 @@ export async function GET(request: Request) {
       { success: false, error: "Failed to reverify Maketou orders." },
       { status: 500 }
     );
+  }
+}
+
+const LOCK_NAME = "reverify-maketou-orders";
+
+// Verrou : si le passage précédent tourne encore, celui-ci s'efface au lieu de se chevaucher.
+export async function GET(request: Request) {
+  if (process.env.CRON_SECRET && request.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  if (!(await acquireCronLock(LOCK_NAME))) {
+    return NextResponse.json({ success: true, skipped: "already running" });
+  }
+  try {
+    return await run(request);
+  } finally {
+    await releaseCronLock(LOCK_NAME);
   }
 }

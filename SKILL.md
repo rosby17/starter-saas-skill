@@ -17,7 +17,8 @@ Next.js 15 (App Router) + Supabase + Tailwind + Docker :
 - **Espace client** : menu latéral (tiroir sur téléphone), tableau de bord, mon compte (profil, mot de passe), aide (tickets), abonnement.
 - **Administration** (`/admin`) : vue d'ensemble, utilisateurs, support, avis, annonces, mode maintenance.
 - **Base de données** : migrations Supabase rejouables (profils, crédits, commandes, annonces, support, avis), sécurité par ligne (RLS) partout.
-- **Facultatif** : paiement (TaraMoney, Maketou), e-mails (Brevo). On les garde ou on les retire selon le besoin.
+- **Paiement orchestré** (même flux pour tous tes SaaS) : le client choisit un TYPE de paiement (mobile money, carte, PayPal), l'administrateur choisit la passerelle active pour chaque type (`/admin/payment-providers`), les passerelles sont des adaptateurs interchangeables (`src/lib/payments/gateways/`, TaraMoney et Maketou fournis), l'identité vient de la session et le prix du catalogue serveur, le crédit est atomique (jamais deux fois), avec webhook, vérification au retour, cron de rattrapage et verrous. Retire ce bloc si le produit est gratuit.
+- **Facultatif** : e-mails (Brevo).
 - **Déploiement** : `Dockerfile` (build « standalone »), route `/api/health`.
 
 Tout le branding est dans `src/config/site.ts` (nom, slogan, menus, fonctionnalités, FAQ) et `src/lib/pricing.ts` (prix).
@@ -29,7 +30,7 @@ Tout le branding est dans `src/config/site.ts` (nom, slogan, menus, fonctionnali
 - **Qui l'utilise** : rôles (utilisateur, admin, autre).
 - **Données propres au produit** : pour chaque entité, ses champs, ses relations et QUI peut la voir ou la modifier.
 - **Écrans et actions** de chaque rôle.
-- **Argent** : gratuit, abonnement ou crédits ? Quel fournisseur de paiement (aucun, TaraMoney, Maketou, autre) ?
+- **Argent** : gratuit, abonnement ou crédits ? Quelles passerelles (aucune, TaraMoney, Maketou, autre : une autre passerelle se branche en ajoutant un adaptateur, voir le README du modèle) ?
 - **E-mails**, **langue** de l'interface, **nom de domaine**, **hébergeur** (Docker : Coolify, Fly.io, Railway, un serveur…).
 
 Ce qui manque : prends une valeur par défaut raisonnable et note-la sous « Hypothèses ». Pose au plus 3 questions, seulement si la réponse change vraiment le résultat. Montre un résumé court du `SPEC.md` et demande UN « on y va ? ». Ensuite ne redemande plus rien, sauf avant une action payante ou publique.

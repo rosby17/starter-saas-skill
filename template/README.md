@@ -31,14 +31,19 @@ A copy-pasteable Next.js (App Router) starter extracted from a production app, w
 
 4. **Deploy**: build with the included `Dockerfile` (`next build` in standalone mode) on any Docker host (Coolify, Fly.io, etc.).
 
-## Payment providers
+## Paiements : un flux unique, orchestré par l'administrateur
 
-The checkout route (`src/app/api/payment/checkout/route.ts`) supports two providers, selected by passing `provider: 'taramoney' | 'maketou'` from the client (TaraMoney is the default when `provider` is omitted). Both write to the same `orders` table and credit through the same `credits` ledger — the difference is how each provider tells you a payment succeeded:
+Même schéma pour tous les SaaS (celui d'iziVoice) :
 
-- **TaraMoney** — has a webhook. `src/app/api/payment/webhook/taramoney/route.ts` receives the callback, authenticates it via a shared secret embedded in the callback URL (`TARA_WEBHOOK_SECRET` — TaraMoney doesn't support HMAC signing), verifies the paid amount against what was due, and credits the order. The `/billing/success` page polls `src/app/api/payment/verify/route.ts` just to report status while it waits for the webhook.
-- **Maketou** — has **no webhook**. Crediting instead happens two ways: (1) when the customer's browser returns to `/billing/success`, `verify/route.ts` actively polls Maketou's cart-status API and credits the order itself; (2) as a safety net for customers who close the tab before returning (e.g. they paid from a separate mobile money app), `src/app/api/cron/reverify-maketou-orders/route.ts` re-checks recent pending/failed Maketou orders on a schedule. Wire this route to your scheduler (cron, Coolify scheduled task, etc.) protected by `CRON_SECRET`, e.g. hitting it every minute with `?hours=2` for a shallow pass and once a day with no params for a 7-day deep sweep.
+1. Le client choisit un **type** de paiement (Mobile Money, carte, PayPal) sur `/billing`. Il ne choisit jamais une passerelle.
+2. `POST /api/payment/checkout` : l'identité vient de la **session**, le prix du **catalogue serveur** (`src/lib/pricing.ts`), la passerelle du **réglage admin** (`/admin/payment-providers`, un seul moyen actif par type, stocké dans `system_settings`). La commande est enregistrée « pending ».
+3. La passerelle est un **adaptateur** (`src/lib/payments/gateways/<id>.ts`) qui implémente `PaymentGateway` : `isConfigured()` et `createCheckout()`.
+4. Le crédit se fait toujours par `creditPaidOrder` (atomique, jamais deux fois), déclenché par :
+   - **TaraMoney** : le webhook `api/payment/webhook/taramoney` (secret partagé dans l'URL de rappel, `TARA_WEBHOOK_SECRET`) ;
+   - **Maketou** (pas de webhook) : le retour sur `/billing/success` (`api/payment/verify`), puis le cron `api/cron/reverify-maketou-orders` pour les clients qui ferment l'onglet (protégé par `CRON_SECRET`, protégé aussi contre le chevauchement par `cron_locks`).
+5. Filets de sécurité : `api/payment/reconcile-pending` (au retour de l'utilisateur) et `api/payment/expire-stale-orders` (expire les commandes jamais payées).
 
-Add another provider by adding a third branch in `checkout/route.ts` following the same pattern, plus a webhook or polling/reconciliation route depending on what the provider supports.
+**Ajouter une passerelle** : un fichier dans `gateways/`, l'enregistrer dans `gateways/index.ts`, la lister dans `providers.ts` pour les types où elle marche, puis une route webhook ou une vérification selon qu'elle prévient ou non le site.
 
 ## Must-replace before shipping
 
