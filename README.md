@@ -26,7 +26,7 @@ Dans Claude Code, écris par exemple :
 - Connexion, inscription, mot de passe oublié, déconnexion.
 - Espace client (tableau de bord, mon compte, aide, abonnement) et administration.
 - Migrations Supabase rejouables, sécurité par ligne partout.
-- Paiement (TaraMoney, Maketou) et e-mails (Brevo), facultatifs.
+- Passerelles de paiement (Maketou, Tara Money, Warappay, GeniusPay, K-Pay) et e-mails (Brevo), facultatifs.
 - Dockerfile et route `/api/health` pour l'hébergement.
 
 Le branding est dans `template/src/config/site.ts` et `template/src/lib/pricing.ts`.

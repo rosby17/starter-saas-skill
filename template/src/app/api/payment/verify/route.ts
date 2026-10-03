@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { expirePendingOrders } from "@/lib/orders/expire-pending";
 import { creditPaidOrder } from "@/lib/orders/credit-order";
+import { fetchGeniusPayPayment, settleGeniusPayOrder } from "@/lib/payments/geniuspay-settle";
+import { markFailed, settlePaid } from "@/lib/payments/settle";
 import { gatewayForPaymentMethod } from "@/lib/payments/gateways";
 
 /**
@@ -57,6 +59,24 @@ export async function GET(request: Request) {
           orderData.status = "success"; // crédité par cet appel ou déjà crédité par un autre : dans les deux cas c'est payé
         }
       }
+    }
+
+    // Warappay : le webhook fait foi, mais on relit aussi le paiement au retour du client (webhook en retard ou perdu).
+    if (orderData.payment_method === "Warappay" && orderData.status !== "success" && orderData.status !== "completed" && process.env.WARAPPAY_API_KEY) {
+      const response = await fetch(`https://api.warappay.com/api/v1/checkout/${orderData.payment_ref || cartId}`, {
+        headers: { Authorization: `Bearer ${process.env.WARAPPAY_API_KEY}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === "completed") orderData.status = await settlePaid(supabase, orderData, Number(data.amount), "local", "Warappay");
+        else if (data.status === "failed") { await markFailed(supabase, cartId); orderData.status = "failed"; }
+      }
+    }
+
+    // GeniusPay : relecture du paiement par l'API (source de vérité).
+    if (orderData.payment_method === "GeniusPay" && orderData.payment_ref && orderData.status !== "success" && orderData.status !== "completed") {
+      const payment = await fetchGeniusPayPayment(orderData.payment_ref);
+      if (payment) orderData.status = await settleGeniusPayOrder(supabase, orderData, payment);
     }
 
     if (orderData.status === "pending") {

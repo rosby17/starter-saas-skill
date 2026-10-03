@@ -7,6 +7,8 @@ export type CheckoutInput = {
   customer: { email: string; firstName: string; lastName: string; phone?: string }
   /** Adresse publique du site, sans « / » final. */
   origin: string
+  /** Type de paiement choisi par le client (certaines passerelles adaptent leur page : carte directe, etc.). */
+  paymentType?: 'mobile_money' | 'card' | 'paypal'
 }
 
 export type CheckoutResult = {
