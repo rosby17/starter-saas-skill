@@ -68,6 +68,7 @@ Le script copie le modèle, remplace le nom, le domaine d'exemple et le nom du p
 - Chaque table : `id uuid default gen_random_uuid()`, `created_at`, `updated_at` (+ trigger), **RLS activée**, politiques tirées de la SPEC (propriétaire, admin), index sur chaque clé étrangère.
 - Pour savoir quoi changer, lis l'ÉTAT RÉEL de la base (`supabase db diff` ou `information_schema`), pas ta mémoire ni le dernier fichier : le delta se calcule entre la SPEC et la base.
 - Vérifie avant de livrer : `supabase db reset` sur la base locale (Docker) puis une requête de contrôle. En ligne, les nouvelles migrations sont appliquées par la prochaine mise en ligne complète.
+- **Teste-les pour de vrai** : `bash "<dossier du skill>/scripts/tester-migrations.sh" <projet>` lance une base Supabase jetable (Docker), joue chaque migration DEUX fois (rejouable), puis les tests `supabase/tests/*.sql`, et efface la base. Pour chaque règle sensible de ton produit (droits, crédit, quota), ajoute un test dans `supabase/tests/` avec des `assert` : le modèle en fournit un pour la facturation (`billing.test.sql`).
 
 ## 5. Connexions
 
