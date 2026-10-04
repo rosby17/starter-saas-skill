@@ -88,6 +88,33 @@ export function coolify(baseUrl: string, token: string) {
         body: { data: Object.entries(envs).map(([key, value]) => ({ key, value, is_preview: false, is_literal: true })) },
       }),
 
+    // Le modèle Supabase de Coolify tire « minio/mc », image retirée des registres publics (« pull access denied » ou 401) :
+    // tout le démarrage échoue. L'image minio du même service contient déjà `mc` : on s'en sert pour la tâche « créer le bucket ».
+    fixSupabaseImages: async (uuid: string) => {
+      const svc = await call<{ docker_compose_raw?: string }>(`/services/${uuid}`)
+      const raw = svc.docker_compose_raw || ''
+      const minio = raw.match(/supabase-minio:\s*\n\s*image:\s*['"]?([^\s'"]+)/)?.[1]
+      if (!minio) return
+      const fixed = raw.replace(/(minio-createbucket:\s*\n\s*image:\s*)\S+/, `$1${minio}`)
+      if (fixed === raw) return
+      await call(`/services/${uuid}`, { method: 'PATCH', body: { docker_compose_raw: Buffer.from(fixed).toString('base64') } })
+    },
+
+    // Connexion Google : le modèle Supabase de Coolify ne transmet pas les réglages Google au service de connexion
+    // (GoTrue). On ajoute ces lignes une fois, à côté de GOTRUE_EXTERNAL_EMAIL_ENABLED ; les valeurs viennent des variables du service.
+    enableGoogleAuth: async (uuid: string) => {
+      const svc = await call<{ docker_compose_raw?: string }>(`/services/${uuid}`)
+      const raw = svc.docker_compose_raw || ''
+      if (raw.includes('GOTRUE_EXTERNAL_GOOGLE_ENABLED')) return false
+      const m = raw.match(/^(\s*)- ['"]?GOTRUE_EXTERNAL_EMAIL_ENABLED=.*$/m)
+      if (!m) throw new DeployError('Service de connexion introuvable dans la base Coolify : connexion Google non activée.')
+      const lines = ['GOTRUE_EXTERNAL_GOOGLE_ENABLED=${GOTRUE_EXTERNAL_GOOGLE_ENABLED:-false}', 'GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID=${GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID:-}',
+        'GOTRUE_EXTERNAL_GOOGLE_SECRET=${GOTRUE_EXTERNAL_GOOGLE_SECRET:-}', 'GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI=${GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI:-}']
+      const fixed = raw.replace(m[0], [m[0], ...lines.map((l) => `${m[1]}- ${l}`)].join('\n'))
+      await call(`/services/${uuid}`, { method: 'PATCH', body: { docker_compose_raw: Buffer.from(fixed).toString('base64') } })
+      return true
+    },
+
     startService: (uuid: string) => call(`/services/${uuid}/start`, { method: 'POST' }),
     restartService: (uuid: string) => call(`/services/${uuid}/restart`, { method: 'POST' }),
 

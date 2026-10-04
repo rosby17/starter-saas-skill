@@ -19,6 +19,7 @@ const eslintConfig = [
         { selector: "JSXOpeningElement[name.name='dialog']", message: 'Fenêtre native interdite : utilise useConfirm (components/ui/dialog).' },
         { selector: "JSXAttribute[name.name='type'][value.value=/^(date|time|datetime-local|month|week)$/]", message: 'Calendrier natif interdit : utilise <DatePicker>.' },
         { selector: "JSXAttribute[name.name='type'][value.value=/^(radio|checkbox|color|range)$/]", message: 'Contrôle natif interdit : utilise RadioCard, Checkbox ou Switch (components/ui/choice).' },
+        { selector: "JSXAttribute[name.name='type'][value.value='password']", message: 'Mot de passe sans œil : utilise <PasswordInput> (components/ui/password-input).' },
         { selector: "CallExpression[callee.object.name='window'][callee.property.name=/^(alert|confirm|prompt|open)$/]", message: 'Fenêtre ou onglet du navigateur interdit : reste dans le design du site.' },
       ],
       'no-restricted-globals': ['error',

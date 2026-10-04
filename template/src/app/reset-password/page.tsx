@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { PasswordInput } from '@/components/ui/password-input'
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { Button } from "@/components/ui/button";
@@ -103,11 +104,11 @@ function ResetPasswordForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Nouveau mot de passe</label>
-          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} disabled={isLoading} />
+          <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} disabled={isLoading} />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirme le mot de passe</label>
-          <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required disabled={isLoading} />
+          <PasswordInput value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required disabled={isLoading} />
         </div>
         <Button type="submit" disabled={isLoading || !!error} className="w-full">
           {isLoading ? "Enregistrement…" : "Enregistrer le mot de passe"}

@@ -7,10 +7,13 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import { GoogleButton } from "@/components/GoogleButton";
+import { safeNext } from "@/lib/safe-next";
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "{{APP_NAME}}";
 
-function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
+function AuthForm({ initialMode, google }: { initialMode: "login" | "signup"; google: boolean }) {
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,8 +40,7 @@ function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-      const next = searchParams.get("next") || "/dashboard";
-      router.push(next);
+      router.push(safeNext(searchParams.get("next")));
       router.refresh();
     } catch (err: any) {
       setError(err.message || "Une erreur est survenue.");
@@ -62,6 +64,16 @@ function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
         </div>
       )}
 
+      {google && (
+        <div className="mb-6 space-y-6">
+          <GoogleButton next={safeNext(searchParams.get("next"))} label={mode === "login" ? "Se connecter avec Google" : "S'inscrire avec Google"} />
+          <div className="flex items-center gap-3 text-xs text-gray-400"><span className="h-px flex-1 bg-gray-200" />ou avec ton e-mail<span className="h-px flex-1 bg-gray-200" /></div>
+        </div>
+      )}
+      {searchParams.get("erreur") === "connexion" && !error && (
+        <div className="mb-6 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">La connexion n’a pas abouti. Réessaie.</div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         {mode === "signup" && (
           <div>
@@ -75,7 +87,7 @@ function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Mot de passe</label>
-          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+          <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete={mode === "login" ? "current-password" : "new-password"} />
         </div>
 
         <Button type="submit" disabled={isLoading} className="w-full">
@@ -111,11 +123,11 @@ function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
   );
 }
 
-export default function AuthUI({ initialMode }: { initialMode: "login" | "signup" }) {
+export default function AuthUI({ initialMode, google = false }: { initialMode: "login" | "signup"; google?: boolean }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Suspense fallback={<div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />}>
-        <AuthForm initialMode={initialMode} />
+        <AuthForm initialMode={initialMode} google={google} />
       </Suspense>
     </div>
   );

@@ -25,6 +25,8 @@ export type SecretDefinition = {
   requirement: SecretRequirement
   /** true : l'admin peut générer une valeur aléatoire (secret que l'on choisit soi-même). */
   generate?: boolean
+  /** Affiche l'adresse de retour à déclarer chez Google (adresse de la base + /auth/v1/callback). */
+  oauthCallback?: boolean
   /** Chemin du webhook à coller chez la passerelle (affiché avec l'adresse du site). */
   webhookPath?: string
 }
@@ -47,6 +49,12 @@ export const SECRET_CATALOG: SecretDefinition[] = [
     help: 'Brevo → SMTP & API → onglet SMTP : « Identifiant ». Sert aux e-mails de connexion du site en ligne (confirmation, mot de passe oublié).' },
   { name: 'BREVO_SMTP_KEY', label: 'Clé SMTP', group: 'E-mails (Brevo)', secret: true, requirement: { kind: 'optional' },
     help: 'Brevo → SMTP & API → onglet SMTP → Générer une clé SMTP. Sans elle, les comptes en ligne sont confirmés sans e-mail.' },
+
+  // --- Connexion Google (facultative) : appliquée à la base à la prochaine mise en ligne ou « Redéployer »
+  { name: 'GOOGLE_CLIENT_ID', label: 'ID client Google', group: 'Connexion avec Google', secret: false, requirement: { kind: 'optional' }, oauthCallback: true,
+    help: 'console.cloud.google.com → API et services → Identifiants → Créer → ID client OAuth → Application Web. Colle l’adresse de redirection ci-dessous dans « URI de redirection autorisés ».' },
+  { name: 'GOOGLE_CLIENT_SECRET', label: 'Code secret du client Google', group: 'Connexion avec Google', secret: true, requirement: { kind: 'optional' },
+    help: 'Affiché par Google avec l’ID client. Ensuite : Mise en ligne → Redéployer, et le bouton « Continuer avec Google » apparaît sur la connexion et l’inscription.' },
 
   // --- Mise en ligne (utilisées par /admin/deploy ; facultatives tant qu'on ne déploie pas)
   { name: 'GITHUB_TOKEN', label: 'Jeton GitHub', group: 'Mise en ligne', secret: true, requirement: { kind: 'optional' },

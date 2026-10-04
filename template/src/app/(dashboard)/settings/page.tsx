@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { PasswordInput } from '@/components/ui/password-input'
 import { revalidatePath } from 'next/cache'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -43,7 +44,7 @@ export default async function SettingsPage() {
       <Card>
         <h2 className="mb-4 font-semibold">Mot de passe</h2>
         <form action={changePassword} className="space-y-3">
-          <Input name="password" type="password" minLength={8} placeholder="Nouveau mot de passe (8 caractères minimum)" required />
+          <PasswordInput name="password" minLength={8} placeholder="Nouveau mot de passe (8 caractères minimum)" required />
           <Button type="submit" variant="secondary">Changer le mot de passe</Button>
         </form>
       </Card>

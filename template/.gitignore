@@ -12,3 +12,6 @@ next-env.d.ts
 # Supabase local (CLI)
 supabase/.temp
 supabase/.branches
+
+# Mise en ligne directe (scripts/deployer.ts) : jetons et état, jamais dans Git
+.deploy.json

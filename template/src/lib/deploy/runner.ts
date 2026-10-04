@@ -4,6 +4,7 @@ import { isPlaceholder } from '@/lib/secrets/catalog'
 import { exportSecretsFor, saveSecret } from '@/lib/secrets/store'
 import { site } from '@/config/site'
 import { coolify } from './coolify'
+import { CRON_TASKS } from './cron-tasks'
 import { applyMigrations, copyAdmins, copyRows, waitForDatabase, type Db } from './database'
 import { cloudflare, hostinger, type DnsProvider } from './dns'
 import { createDeployKey, ensurePrivateRepo, githubLogin, pushProject } from './github'
@@ -52,6 +53,33 @@ export async function saveDeploySettings(patch: DeploySettings): Promise<DeployS
 }
 
 // Vrai pendant qu'une mise en ligne tourne dans CE processus.
+// Réglages de connexion de la base en ligne (GoTrue) : adresses, e-mails (SMTP Brevo), connexion Google.
+// Renvoie true si quelque chose a changé (il faut alors redémarrer le service).
+async function applyAuthConfig(cf: ReturnType<typeof coolify>, uuid: string, apiUrl: string, siteUrl: string, domain: string): Promise<boolean> {
+  const smtpLogin = env('BREVO_SMTP_LOGIN'), smtpKey = env('BREVO_SMTP_KEY')
+  const smtp = !!(smtpLogin && smtpKey && env('BREVO_SENDER_EMAIL'))
+  const googleId = env('GOOGLE_CLIENT_ID'), googleSecret = env('GOOGLE_CLIENT_SECRET')
+  const google = !!(googleId && googleSecret)
+  const patched = google ? await cf.enableGoogleAuth(uuid) : false
+  const wanted: Record<string, string> = {
+    API_EXTERNAL_URL: apiUrl,
+    GOTRUE_SITE_URL: siteUrl,
+    ADDITIONAL_REDIRECT_URLS: `${siteUrl}/**,https://www.${domain}/**`,
+    // Sans SMTP, la base ne peut envoyer aucun e-mail : les comptes sont confirmés d'office.
+    ENABLE_EMAIL_AUTOCONFIRM: smtp ? 'false' : 'true',
+    ...(smtp ? {
+      SMTP_HOST: 'smtp-relay.brevo.com', SMTP_PORT: '587', SMTP_USER: smtpLogin, SMTP_PASS: smtpKey,
+      SMTP_ADMIN_EMAIL: env('BREVO_SENDER_EMAIL'), SMTP_SENDER_NAME: env('BREVO_SENDER_NAME') || site.name,
+    } : {}),
+    GOTRUE_EXTERNAL_GOOGLE_ENABLED: google ? 'true' : 'false',
+    ...(google ? { GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: googleId, GOTRUE_EXTERNAL_GOOGLE_SECRET: googleSecret, GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: `${apiUrl}/auth/v1/callback` } : {}),
+  }
+  const current = await cf.serviceEnvs(uuid)
+  const changed = Object.entries(wanted).some(([k, v]) => (current[k] ?? '') !== v)
+  if (changed) await cf.setServiceEnvs(uuid, wanted)
+  return changed || patched
+}
+
 let running = false
 
 /** Adresse et clés de la base installée sur le serveur (variables générées par Coolify). */
@@ -132,6 +160,7 @@ export async function startDeploy(mode: 'full' | 'redeploy'): Promise<void> {
       ]
     : [
         { id: 'check', label: 'Vérification des clés', status: 'pending' },
+        { id: 'auth', label: 'Connexion (Google, e-mails) mise à jour', status: 'pending' },
         { id: 'env', label: 'Variables du serveur mises à jour', status: 'pending' },
         { id: 'deploy', label: 'Reconstruction et redémarrage', status: 'pending' },
         { id: 'https', label: 'Site joignable en HTTPS', status: 'pending' },
@@ -195,19 +224,8 @@ async function execute(state: DeployState, initial: DeploySettings) {
         settings = await saveDeploySettings({ supabaseUuid })
       }
       const uuid = settings.supabaseUuid!
-      const smtpLogin = env('BREVO_SMTP_LOGIN'), smtpKey = env('BREVO_SMTP_KEY')
-      const smtp = !!(smtpLogin && smtpKey && env('BREVO_SENDER_EMAIL'))
-      await cf.setServiceEnvs(uuid, {
-        API_EXTERNAL_URL: apiUrl,
-        GOTRUE_SITE_URL: siteUrl,
-        ADDITIONAL_REDIRECT_URLS: `${siteUrl}/**,https://www.${domain}/**`,
-        // Sans SMTP, la base ne peut envoyer aucun e-mail : les comptes sont confirmés d'office.
-        ENABLE_EMAIL_AUTOCONFIRM: smtp ? 'false' : 'true',
-        ...(smtp ? {
-          SMTP_HOST: 'smtp-relay.brevo.com', SMTP_PORT: '587', SMTP_USER: smtpLogin, SMTP_PASS: smtpKey,
-          SMTP_ADMIN_EMAIL: env('BREVO_SENDER_EMAIL'), SMTP_SENDER_NAME: env('BREVO_SENDER_NAME') || site.name,
-        } : {}),
-      })
+      await applyAuthConfig(cf, uuid, apiUrl, siteUrl, domain)
+      await cf.fixSupabaseImages(uuid)
       if (fresh) await cf.startService(uuid)
       else await cf.restartService(uuid)
 
@@ -240,6 +258,16 @@ async function execute(state: DeployState, initial: DeploySettings) {
       settings = await saveDeploySettings({ projectUuid, privateKeyUuid, appUuid })
     })
 
+    await step('auth', async () => {
+      // Clés Google ou SMTP ajoutées dans /admin/keys après la première mise en ligne : appliquées à la base.
+      if (!settings.supabaseUuid) return 'skipped'
+      const changed = await applyAuthConfig(cf, settings.supabaseUuid, apiUrl, siteUrl, domain)
+      if (!changed) return 'déjà à jour'
+      await cf.restartService(settings.supabaseUuid)
+      await waitForDatabase(await prodDatabase(cf, settings.supabaseUuid), 10 * 60_000)
+      return env('GOOGLE_CLIENT_ID') && env('GOOGLE_CLIENT_SECRET') ? 'connexion Google active' : 'réglages appliqués'
+    })
+
     await step('env', async () => {
       if (!settings.appUuid) throw new DeployError('Application Coolify absente : lance d’abord une mise en ligne complète.')
       let cronSecret = env('CRON_SECRET')
@@ -269,12 +297,7 @@ async function execute(state: DeployState, initial: DeploySettings) {
     })
 
     await step('cron', async () => {
-      const call = (path: string) => `wget -q -O /dev/null --header="Authorization: Bearer $CRON_SECRET" http://127.0.0.1:3000${path}`
-      await cf.ensureScheduledTasks(settings.appUuid!, [
-        { name: 'Taux de change', command: call('/api/cron/update-rates'), frequency: '0 3 * * *' },
-        { name: 'Expiration des crédits', command: call('/api/cron/expire-credits'), frequency: '30 3 * * *' },
-        { name: 'Rattrapage Maketou', command: call('/api/cron/reverify-maketou-orders'), frequency: '*/15 * * * *' },
-      ])
+      await cf.ensureScheduledTasks(settings.appUuid!, CRON_TASKS)
     })
 
     await step('deploy', async () => {

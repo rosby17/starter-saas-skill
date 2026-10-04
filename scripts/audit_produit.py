@@ -175,6 +175,12 @@ def check_ux(root, code, paths):
         add('MOYENNE', 'Design', f'Élément natif du navigateur : {label} ({len(where)})', ', '.join(where[:5]) + (' …' if len(where) > 5 else ''),
             'Il affiche le style du système (gris, macOS ou Windows), pas celui du SaaS : l’interface paraît bricolée.',
             f'Remplacer par un composant aux couleurs du site ({repl}).')
+    bare_pw = [f'{base.rel(root, p)}:{base.line_of(t, m.start())}' for p, t in ui.items() if not re.search(r'(^|/)components/ui/', base.rel(root, p))
+               for m in re.finditer(r'type=["\']password["\']', t)]
+    if bare_pw:
+        add('MOYENNE', 'Expérience', f'Mot de passe sans bouton pour l’afficher ({len(bare_pw)})', ', '.join(bare_pw[:5]),
+            'Le client ne voit pas ce qu’il tape : fautes de frappe, comptes bloqués, abandons à l’inscription.',
+            'Un champ mot de passe avec un œil pour afficher / masquer (composant PasswordInput).')
     no_alt = []
     for p, text in ui.items():
         for m in re.finditer(r'<img\b(?![^>]*\balt=)[^>]*>', text):

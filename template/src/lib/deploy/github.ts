@@ -46,14 +46,25 @@ export async function pushProject(token: string, fullName: string): Promise<void
   }
   await git(['commit', '-q', '-m', 'Mise en ligne']).catch(() => undefined) // rien à enregistrer : on continue
   const basic = Buffer.from(`x-access-token:${token}`).toString('base64')
-  await git(['push', '-q', `https://github.com/${fullName}.git`, 'HEAD:refs/heads/main'], {
-    GIT_TERMINAL_PROMPT: '0',
-    GIT_CONFIG_COUNT: '1',
-    GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader',
-    GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${basic}`,
-  }).catch((error: Error & { stderr?: string }) => {
-    throw new DeployError(`Envoi sur GitHub impossible : ${(error.stderr || error.message).replace(basic, '***').slice(0, 300)}`)
-  })
+  // Gros dépôt ou connexion lente : GitHub coupe parfois en HTTP 408. On compacte d'abord, puis on réessaie (3 fois).
+  await git(['gc', '-q']).catch(() => undefined)
+  let last = ''
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await git(['-c', 'http.postBuffer=1073741824', '-c', 'http.version=HTTP/1.1', 'push', '-q', `https://github.com/${fullName}.git`, 'HEAD:refs/heads/main'], {
+        GIT_TERMINAL_PROMPT: '0',
+        GIT_CONFIG_COUNT: '1',
+        GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader',
+        GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${basic}`,
+      })
+      return
+    } catch (error) {
+      const e = error as Error & { stderr?: string }
+      last = (e.stderr || e.message).replace(basic, '***').slice(0, 300)
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 3000 * attempt))
+    }
+  }
+  throw new DeployError(`Envoi sur GitHub impossible après 3 essais : ${last}`)
 }
 
 /** Paire de clés SSH dédiée : la publique devient une clé de déploiement EN LECTURE SEULE du dépôt,

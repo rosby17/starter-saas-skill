@@ -73,6 +73,7 @@ EXPECTED = [
     'calendrier du navigateur',
     'fenêtre du navigateur',
     'Images sans texte alternatif',
+    'Mot de passe sans bouton pour l’afficher',
     'Langue de la page non indiquée',
     'Zones cliquables qui ne sont pas des boutons',
     'Pas de page « introuvable » personnalisée',
@@ -103,7 +104,7 @@ export default function L({ children }) { return <html lang="fr"><body>{children
     'src/app/cgu/page.tsx': 'export default function P() { return <p>CGU</p> }\n',
     'src/app/login/page.tsx': """export default function Login() {
   async function go(f) { await supabase.auth.signInWithPassword({ email: f.email, password: f.password }) }
-  return <form><input name="email" /><input name="password" type="password" minLength={10} /><a href="/reset-password">Mot de passe oublié</a></form>
+  return <form><input name="email" /><PasswordInput name="password" minLength={10} /><a href="/reset-password">Mot de passe oublié</a></form>
 }
 """,
     'src/app/signup/page.tsx': FLAWED['src/app/signup/page.tsx'],

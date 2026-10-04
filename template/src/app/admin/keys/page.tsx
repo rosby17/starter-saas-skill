@@ -11,6 +11,7 @@ type Secret = {
   secret: boolean
   generate?: boolean
   webhookPath?: string
+  oauthCallback?: boolean
   source: 'admin' | 'server' | 'missing'
   required: boolean
   unreadable: boolean
@@ -121,6 +122,9 @@ export default function KeysPage() {
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-gray-500">{s.help}</p>
+                  {s.oauthCallback && (
+                    <p className="mt-1 text-xs text-gray-500">Adresse de redirection à déclarer chez Google : <code className="select-all">{(process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '')}/auth/v1/callback</code></p>
+                  )}
                   {s.webhookPath && origin && (
                     <p className="mt-1 text-xs text-gray-500">Adresse du webhook à déclarer : <code className="select-all">{origin}{s.webhookPath}</code></p>
                   )}

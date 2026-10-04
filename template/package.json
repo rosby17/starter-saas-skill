@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H localhost",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deployer": "npx -y tsx scripts/deployer.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
