@@ -43,7 +43,9 @@ USER nextjs
 
 EXPOSE 3000
 ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+# « :: » écoute en IPv6 ET en IPv4 : le test de santé de Coolify appelle http://localhost:3000/api/health,
+# qui désigne ::1 dans le conteneur ; avec 0.0.0.0 (IPv4 seul) il est refusé et Coolify annule le déploiement.
+ENV HOSTNAME="::"
 
 # Coolify / Docker : l'application n'est déclarée prête que si elle répond. Une mise à jour qui plante au démarrage
 # ne remplace pas la version qui marche.
