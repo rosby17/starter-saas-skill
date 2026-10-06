@@ -106,6 +106,8 @@ export async function deleteSecret(name: string): Promise<void> {
 export type SecretStatus = Omit<SecretDefinition, 'requirement'> & {
   source: 'admin' | 'server' | 'missing'
   required: boolean
+  /** true : clé facultative quel que soit le réglage (n'empêche jamais un service d'être « Configuré »). */
+  optional: boolean
   unreadable: boolean
   /** Fin de la valeur pour la reconnaître, jamais la valeur entière d'un secret. */
   preview: string | null
@@ -127,7 +129,7 @@ export async function getSecretsStatus(): Promise<SecretStatus[]> {
     const value = process.env[def.name]
     const source = isPlaceholder(value) ? 'missing' : adminProvided.has(def.name) ? 'admin' : 'server'
     const required = requirement.kind === 'always' || (requirement.kind === 'gateway' && activeGateways.has(requirement.id))
-    return { ...def, source, required, unreadable: unreadable.has(def.name), preview: source === 'missing' ? null : preview({ ...def, requirement }, value!) }
+    return { ...def, source, required, optional: requirement.kind === 'optional', unreadable: unreadable.has(def.name), preview: source === 'missing' ? null : preview({ ...def, requirement }, value!) }
   })
 }
 

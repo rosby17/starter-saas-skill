@@ -1,30 +1,42 @@
 'use client'
 
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 // Ajoute (+) ou retire (−) des crédits à un utilisateur ; la raison est obligatoire et journalisée.
-export function CreditAdjustmentForm({ userId }: { userId: string }) {
+// Le compte se choisit avec <UserSearch> (components/admin/UserTools.tsx).
+export function CreditAdjustmentForm({ userId, onDone }: { userId: string; onDone?: () => void }) {
   const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
-  const [message, setMessage] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
-    const res = await fetch(`/api/admin/users/${userId}/credits`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: Number(amount), reason }),
-    })
-    const data = await res.json()
-    setMessage(data.success ? 'Ajusté.' : data.message)
-    if (data.success) { setAmount(''); setReason('') }
+    setBusy(true)
+    setMessage(null)
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/credits`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: Number(amount.replace(/[\s−]/g, (c) => (c === '−' ? '-' : ''))), reason }),
+      })
+      const data = await res.json()
+      setMessage({ ok: data.success, text: data.success ? 'Crédits ajustés.' : data.message })
+      if (data.success) { setAmount(''); setReason(''); onDone?.() }
+    } catch {
+      setMessage({ ok: false, text: 'Ajustement impossible : vérifie ta connexion.' })
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
-    <form onSubmit={submit} className="flex items-center gap-2">
-      <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="+500 / -200" className="w-24 rounded border border-gray-300 px-2 py-1 text-xs" required />
-      <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Raison" className="w-40 rounded border border-gray-300 px-2 py-1 text-xs" required />
-      <button className="rounded bg-brand px-2 py-1 text-xs text-white">Appliquer</button>
-      {message && <span className="text-xs text-gray-500">{message}</span>}
+    <form onSubmit={submit} className="flex flex-wrap items-center gap-2">
+      <Input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="+500 / -200" inputMode="numeric" aria-label="Crédits" className="w-32 py-2" required />
+      <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Raison" aria-label="Raison" className="min-w-40 flex-1 py-2" required />
+      <Button type="submit" disabled={busy}>{busy ? 'Un instant…' : 'Appliquer'}</Button>
+      {message && <span role="status" className={`w-full text-sm ${message.ok ? 'text-green-700' : 'text-red-700'}`}>{message.text}</span>}
     </form>
   )
 }

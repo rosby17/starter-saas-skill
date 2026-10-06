@@ -39,6 +39,7 @@ export async function creditPaidOrder(
       await sendEmail({
         to: { email: userData.user.email },
         subject: 'Ton achat est confirmé',
+        template: 'recharge-confirmation',
         html: rechargeConfirmationTemplate({
           credits: order.credits,
           amount: `${order.amount_local || 0} ${order.currency || 'XOF'}`,

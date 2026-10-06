@@ -26,7 +26,7 @@ Puis ouvre le lien d'installation `http://localhost:3000/setup?token=…` (le `S
 ## Premier démarrage
 
 1. `/setup` : base de données et compte administrateur (voir plus haut).
-2. `/admin/keys` : colle les clés signalées comme manquantes (bouton **Renseigner**). Elles sont actives tout de suite.
+2. `/admin/keys` : une tuile par service (logo, état) ; **Configurer** ouvre la fenêtre où coller ses clés. Elles sont actives tout de suite.
 3. `/admin/payment-providers` : choisis la passerelle de chaque type de paiement.
 
 ## Mise en ligne

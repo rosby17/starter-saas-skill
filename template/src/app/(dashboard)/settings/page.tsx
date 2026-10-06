@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AccountDataActions } from '@/components/AccountDataActions'
+import { TwoFactorSettings } from '@/components/auth/TwoFactorSettings'
 
 async function saveProfile(formData: FormData) {
   'use server'
@@ -31,7 +32,7 @@ export default async function SettingsPage() {
   const { data: profile } = await supabase.from('profiles').select('first_name').eq('id', user!.id).maybeSingle()
 
   return (
-    <main className="mx-auto max-w-2xl space-y-6 p-6">
+    <main className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6">
       <h1 className="text-2xl font-bold">Mon compte</h1>
       <Card>
         <h2 className="mb-4 font-semibold">Profil</h2>
@@ -47,6 +48,11 @@ export default async function SettingsPage() {
           <PasswordInput name="password" minLength={8} placeholder="Nouveau mot de passe (8 caractères minimum)" required />
           <Button type="submit" variant="secondary">Changer le mot de passe</Button>
         </form>
+      </Card>
+      <Card>
+        <h2 className="mb-1 font-semibold">Validation en deux étapes</h2>
+        <p className="mb-4 text-sm text-gray-500">En plus du mot de passe, un code à chaque connexion : reçu par e-mail ou donné par une application. Même si quelqu’un connaît ton mot de passe, il ne peut pas entrer.</p>
+        <TwoFactorSettings />
       </Card>
       <Card>
         <h2 className="mb-1 font-semibold">Mes données</h2>

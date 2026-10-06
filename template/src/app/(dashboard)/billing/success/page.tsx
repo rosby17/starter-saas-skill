@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { BackToAccount } from "@/components/BackToAccount";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -38,7 +39,9 @@ function SuccessContent() {
   }, [cartId]);
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-8">
+    <>
+    <BackToAccount />
+    <main className="min-h-[70vh] flex items-center justify-center p-8">
       <div className="max-w-md text-center space-y-4">
         {status === "checking" && (
           <>
@@ -64,6 +67,7 @@ function SuccessContent() {
         {status === "error" && <p className="text-gray-600">Aucune référence de commande trouvée.</p>}
       </div>
     </main>
+    </>
   );
 }
 

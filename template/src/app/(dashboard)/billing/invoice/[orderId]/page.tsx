@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { serviceClient } from '@/lib/auth/service-client'
 import { site } from '@/config/site'
 import { PrintButton } from '@/components/PrintButton'
+import { BackToAccount } from '@/components/BackToAccount'
 
 // Facture imprimable (« Imprimer » → « Enregistrer au format PDF »). Visible par le propriétaire de la commande
 // ET par un administrateur. Uniquement pour une commande réellement payée.
@@ -24,6 +25,8 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
   const number = `FAC-${new Date(order.created_at).getFullYear()}-${order.id.slice(0, 8).toUpperCase()}`
 
   return (
+    <>
+    <BackToAccount />
     <main className="mx-auto max-w-2xl bg-white p-10 text-sm text-gray-800 print:p-0">
       <div className="mb-10 flex items-start justify-between">
         <div>
@@ -52,5 +55,6 @@ export default async function InvoicePage({ params }: { params: Promise<{ orderI
       <p className="text-gray-500">Moyen de paiement : {order.payment_method}</p>
       <PrintButton />
     </main>
+    </>
   )
 }

@@ -1,157 +1,94 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useConfirm } from '@/components/ui/dialog'
+import { useEffect, useRef, useState } from 'react'
+import { ServiceModal, ServiceTile, serviceState, servicesWithKeys, useSecrets } from '@/components/admin/ServiceKeys'
+import { SERVICE_SECTIONS } from '@/lib/secrets/services'
+import { Skeleton } from '@/components/ui/skeleton'
+import { clsx } from '@/lib/utils'
 
-type Secret = {
-  name: string
-  label: string
-  group: string
-  help: string
-  secret: boolean
-  generate?: boolean
-  webhookPath?: string
-  oauthCallback?: boolean
-  source: 'admin' | 'server' | 'missing'
-  required: boolean
-  unreadable: boolean
-  preview: string | null
-}
+type Filter = 'all' | 'todo' | 'done'
+const FILTERS: Array<{ id: Filter; label: string }> = [
+  { id: 'all', label: 'Tous' },
+  { id: 'todo', label: 'À configurer' },
+  { id: 'done', label: 'Configurés' },
+]
 
-const randomSecret = () => {
-  const bytes = new Uint8Array(32)
-  crypto.getRandomValues(bytes)
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
-}
-
-// Clés et intégrations : l'administrateur pose ou remplace chaque clé en un clic, sans toucher au serveur.
-// La clé est active dès l'enregistrement (pas de redéploiement).
+// Clés et intégrations : une tuile par service (logo, état, bouton), la saisie dans une fenêtre.
+// Les clés sont chiffrées et actives dès l'enregistrement (pas de redéploiement).
 export default function KeysPage() {
-  const [secrets, setSecrets] = useState<Secret[]>([])
-  const [editing, setEditing] = useState<string | null>(null)
-  const [value, setValue] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
-  const [origin, setOrigin] = useState('')
-  const confirm = useConfirm()
+  const { secrets, setSecrets, error } = useSecrets()
+  const [filter, setFilter] = useState<Filter>('all')
+  const [openId, setOpenId] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+  const focusDone = useRef(false)
 
-  const load = async () => {
-    const res = await fetch('/api/admin/secrets')
-    const data = await res.json()
-    if (data.success) setSecrets(data.secrets)
-    else setMessage({ ok: false, text: data.message })
-  }
+  const services = servicesWithKeys(secrets ?? [])
+  const ready = services.filter((s) => serviceState(s).ready).length
+  const todo = services.filter((s) => !serviceState(s).ready && serviceState(s).required).length
+
+  // Lien « Renseigner » du bandeau (?focus=NOM_DE_CLE) : ouvre directement la fenêtre du bon service.
   useEffect(() => {
-    setOrigin(window.location.origin)
-    load().then(() => {
-      const focus = new URLSearchParams(window.location.search).get('focus')
-      if (focus) setEditing(focus)
-    })
-  }, [])
+    if (!secrets || focusDone.current) return
+    focusDone.current = true // une seule fois : pas de réouverture après un enregistrement
+    const focus = new URLSearchParams(window.location.search).get('focus')
+    const target = focus && servicesWithKeys(secrets).find((s) => s.keys.includes(focus))
+    if (target) setOpenId(target.id)
+  }, [secrets])
 
-  const open = (name: string) => { setEditing(name); setValue(''); setMessage(null) }
-
-  const save = async (name: string) => {
-    setBusy(true)
-    const res = await fetch('/api/admin/secrets', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, value }),
-    })
-    const data = await res.json()
-    setBusy(false)
-    if (!data.success) return setMessage({ ok: false, text: data.message })
-    setSecrets(data.secrets)
-    setEditing(null)
-    setValue('')
-    setMessage({ ok: true, text: `${name} enregistrée et active.` })
+  const keep = (id: string) => {
+    const state = serviceState(services.find((s) => s.id === id)!)
+    return filter === 'all' || (filter === 'done' ? state.ready : !state.ready)
   }
-
-  const reset = async (name: string) => {
-    if (!(await confirm({ title: `Effacer ${name} ?`, message: "Le site reprendra la valeur du serveur, s'il y en a une.", confirmLabel: 'Effacer', danger: true }))) return
-    const res = await fetch(`/api/admin/secrets?name=${encodeURIComponent(name)}`, { method: 'DELETE' })
-    const data = await res.json()
-    if (!data.success) return setMessage({ ok: false, text: data.message })
-    setSecrets(data.secrets)
-    setMessage({ ok: true, text: `${name} effacée.` })
-  }
-
-  const missing = secrets.filter((s) => s.required && s.source === 'missing')
-  const groups = [...new Set(secrets.map((s) => s.group))]
+  const open = services.find((s) => s.id === openId) ?? null
 
   return (
-    <main className="max-w-3xl p-8">
-      <h1 className="mb-2 text-2xl font-bold">Clés et intégrations</h1>
-      <p className="mb-6 text-sm text-gray-500">
-        Colle ici les clés de tes services. Elles sont chiffrées, jamais réaffichées en entier, et actives dès l&apos;enregistrement.
-        Une clé saisie ici remplace celle du serveur.
-      </p>
+    <main className="max-w-6xl p-4 sm:p-8">
+      <h1 className="mb-1 text-2xl font-bold">Clés et intégrations</h1>
+      <p className="mb-6 text-sm text-gray-500">Les clés sont chiffrées, jamais réaffichées en entier, et prises en compte tout de suite. Une clé saisie ici remplace celle du serveur.</p>
 
-      {missing.length > 0 && (
-        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          {missing.length} clé{missing.length > 1 ? 's' : ''} manquante{missing.length > 1 ? 's' : ''} pour ce qui est activé : {missing.map((s) => s.name).join(', ')}.
+      {error && <div className="mb-4 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+      {message && <div role="status" className="mb-4 rounded-xl border border-green-100 bg-green-50 p-3 text-sm text-green-700">{message}</div>}
+
+      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4">
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">{secrets ? `${ready} service${ready > 1 ? 's' : ''} prêt${ready > 1 ? 's' : ''} sur ${services.length}` : 'Chargement…'}</p>
+          {secrets && <p className="text-sm text-gray-500">{todo ? `${todo} à configurer pour ce qui est activé.` : 'Tout l’essentiel est réglé.'}</p>}
+        </div>
+        <div role="tablist" aria-label="Filtrer les services" className="flex gap-1 rounded-full bg-gray-100 p-1">
+          {FILTERS.map((f) => (
+            <button key={f.id} type="button" role="tab" aria-selected={filter === f.id} onClick={() => setFilter(f.id)}
+              className={clsx('rounded-full px-3 py-1.5 text-sm transition-colors', filter === f.id ? 'bg-white font-medium text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900')}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {!secrets && !error && (
+        <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
+          {Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-44 rounded-2xl" />)}
         </div>
       )}
-      {message && (
-        <div className={`mb-4 rounded-xl border p-3 text-sm ${message.ok ? 'border-green-100 bg-green-50 text-green-700' : 'border-red-100 bg-red-50 text-red-700'}`}>{message.text}</div>
-      )}
 
-      <div className="space-y-6">
-        {groups.map((group) => (
-          <section key={group} className="rounded-2xl border border-gray-200 p-5">
-            <h2 className="mb-3 font-semibold">{group}</h2>
-            <div className="space-y-3">
-              {secrets.filter((s) => s.group === group).map((s) => (
-                <div key={s.name} id={s.name} className="rounded-lg border border-gray-200 px-3 py-3 text-sm">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium">{s.label}</span>
-                    <code className="text-xs text-gray-400">{s.name}</code>
-                    <span className="ml-auto flex items-center gap-2">
-                      {s.unreadable && <span className="text-xs text-red-700">à ressaisir</span>}
-                      {s.source === 'missing' ? (
-                        <span className={`text-xs ${s.required ? 'text-amber-700' : 'text-gray-400'}`}>{s.required ? 'manquante' : 'non renseignée'}</span>
-                      ) : (
-                        <span className="text-xs text-green-700">{s.source === 'admin' ? 'renseignée ici' : 'sur le serveur'} · {s.preview}</span>
-                      )}
-                      <button type="button" onClick={() => open(s.name)} className={`rounded-lg px-3 py-1 text-xs font-medium ${s.source === 'missing' ? 'bg-brand text-white' : 'border border-gray-200'}`}>
-                        {s.source === 'missing' ? 'Renseigner' : 'Remplacer'}
-                      </button>
-                      {s.source === 'admin' && (
-                        <button type="button" onClick={() => reset(s.name)} className="rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-500">Effacer</button>
-                      )}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">{s.help}</p>
-                  {s.oauthCallback && (
-                    <p className="mt-1 text-xs text-gray-500">Adresse de redirection à déclarer chez Google : <code className="select-all">{(process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '')}/auth/v1/callback</code></p>
-                  )}
-                  {s.webhookPath && origin && (
-                    <p className="mt-1 text-xs text-gray-500">Adresse du webhook à déclarer : <code className="select-all">{origin}{s.webhookPath}</code></p>
-                  )}
-                  {editing === s.name && (
-                    <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); save(s.name) }}>
-                      <input
-                        autoFocus
-                        type={s.secret && !s.generate ? 'password' : 'text'}
-                        autoComplete="off"
-                        value={value}
-                        onChange={(e) => setValue(e.target.value)}
-                        placeholder={`Colle ${s.label.toLowerCase()}`}
-                        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                      />
-                      {s.generate && (
-                        <button type="button" onClick={() => setValue(randomSecret())} className="rounded-lg border border-gray-200 px-3 py-2 text-xs">Générer</button>
-                      )}
-                      <button type="submit" disabled={busy || !value.trim()} className="rounded-lg bg-brand px-3 py-2 text-xs font-medium text-white disabled:opacity-40">Enregistrer</button>
-                      <button type="button" onClick={() => setEditing(null)} className="px-2 text-xs text-gray-500">Annuler</button>
-                    </form>
-                  )}
-                </div>
-              ))}
+      {secrets && SERVICE_SECTIONS.map((section) => {
+        const list = services.filter((s) => s.section === section && keep(s.id))
+        if (!list.length) return null
+        return (
+          <section key={section} className="mb-8">
+            <div className="mb-3 flex flex-wrap items-baseline gap-x-2">
+              <h2 className="font-semibold">{section}</h2>
+              {section === 'Paiement' && <span className="text-sm text-gray-500">une seule passerelle suffit pour commencer</span>}
+            </div>
+            <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
+              {list.map((s) => <ServiceTile key={s.id} service={s} onOpen={() => { setOpenId(s.id); setMessage(null) }} />)}
             </div>
           </section>
-        ))}
-      </div>
+        )
+      })}
+      {secrets && !services.some((s) => keep(s.id)) && <p className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">Rien dans ce filtre.</p>}
+
+      <ServiceModal service={open} onClose={() => setOpenId(null)}
+        onSaved={(next, text) => { setSecrets(next); setOpenId(null); setMessage(text) }} />
     </main>
   )
 }

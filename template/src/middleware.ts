@@ -1,9 +1,15 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { TWO_FACTOR_COOKIE, secondFactorPending } from '@/lib/auth/two-factor-gate'
 
 // Paths that never require an authenticated session. Add any marketing,
 // legal, or public API prefixes your app needs here.
 const publicPrefixes = ['/login', '/signup', '/reset-password', '/setup', '/auth', '/', '/api']
+
+// Validation en deux étapes : ces adresses restent ouvertes tant que la deuxième étape n'est pas faite
+// (l'écran du code, ses routes, la déconnexion) ; les routes techniques n'ont pas de session client.
+const TWO_FACTOR_PAGE = '/login/verification'
+const twoFactorExempt = ['/login/verification', '/api/account/2fa', '/auth', '/api/payment/webhook', '/api/cron', '/api/health', '/api/setup', '/api/monitoring', '/api/system-status']
 
 function isPublicPath(pathname: string) {
   return publicPrefixes.some(
@@ -138,12 +144,35 @@ export async function middleware(request: NextRequest) {
   const isApiRoute = pathname.startsWith('/api')
   const isPublic = isPublicPath(pathname)
 
+  // Les routes /api sont « publiques » pour le middleware (chacune vérifie la session) ; on lit quand même
+  // l'utilisateur quand il y a une session, pour bloquer celles d'une connexion sans deuxième étape.
+  const exemptFrom2fa = twoFactorExempt.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+  const hasSessionCookie = request.cookies.getAll().some((c) => c.name.startsWith('sb-'))
+  const apiWithSession = isApiRoute && hasSessionCookie && !exemptFrom2fa
+
   let user = null
-  if (!isPublic || pathname === '/login') {
+  if (!isPublic || pathname === '/login' || apiWithSession) {
     const {
       data: { user: supabaseUser },
     } = await supabase.auth.getUser()
     user = supabaseUser
+  }
+
+  // --- Deuxième étape (validation par e-mail ou par application) -------------
+  if (user && !exemptFrom2fa && (!isPublic || pathname === '/login' || apiWithSession)) {
+    const { data: { session } } = await supabase.auth.getSession()
+    const pending = await secondFactorPending(user, session?.access_token, request.cookies.get(TWO_FACTOR_COOKIE)?.value)
+    if (pending) {
+      if (isApiRoute) {
+        return NextResponse.json({ success: false, message: 'Validation en deux étapes requise : saisis ton code.' }, { status: 401 })
+      }
+      const url = request.nextUrl.clone()
+      const wanted = pathname === '/login' ? url.searchParams.get('next') || '/dashboard' : pathname + request.nextUrl.search
+      url.pathname = TWO_FACTOR_PAGE
+      url.search = ''
+      url.searchParams.set('next', wanted)
+      return redirectWithCookies(url, supabaseResponse)
+    }
   }
 
   if (!user && !isPublic && !isApiRoute) {

@@ -20,6 +20,7 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 - [ ] Connexion Google / autre : adresse de retour limitée au site ; compte relié à la bonne adresse.
 - [ ] Changement d'e-mail ou de mot de passe : demande le mot de passe actuel ou un lien de confirmation.
 - [ ] Session : durée raisonnable, déconnexion de tous les appareils possible pour un compte compromis.
+- [ ] Validation en deux étapes AU CHOIX (code par e-mail ou application), codes de secours, jamais de code dans le sujet d'un e-mail ; l'admin l'exige (`emails-et-deux-etapes.md`).
 
 ## 2. Droits d'accès et données des clients
 - [ ] Avec DEUX comptes clients : A ne voit, ne modifie, ne supprime, ne télécharge AUCUNE donnée de B (changer les identifiants dans les adresses et les requêtes).
@@ -47,6 +48,7 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 - [ ] Appels sortants : délai maximal, nouvelle tentative raisonnable, erreur gérée proprement.
 - [ ] Clés d'API remises aux clients (si le SaaS en donne) : stockées hachées, révocables, limitées.
 - [ ] CORS : seulement les origines voulues, jamais `*` avec identifiants.
+- [ ] Page « Clés et intégrations » : tuiles avec les logos officiels, état, saisie dans une fenêtre, clés chiffrées actives sans redéploiement, lien aussi dans le menu du profil ; l'aide dit le type de clé attendu (`integrations-et-cles.md`).
 
 ## 5. Sécurité technique
 - [ ] Aucun secret dans Git (historique compris), dans le code du navigateur, dans les journaux ni dans l'image Docker.
@@ -65,6 +67,8 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 - [ ] Mise en ligne reproductible (un clic) et retour en arrière possible (version précédente).
 - [ ] Listes paginées, index sur les clés étrangères, pas de requête par élément dans une boucle.
 - [ ] Mode maintenance disponible.
+- [ ] Les e-mails partent VRAIMENT : bouton « exemple de chaque e-mail » cliqué (tous « Envoyé ») ; journal des e-mails avec la réponse du fournisseur ; un e-mail urgent attend la réponse et affiche la vraie erreur.
+- [ ] Logiciel installé : mise à jour en trois temps (fond, fin du travail, assistant + retour arrière), paquet demandé avec `?b=<build>`, fenêtre qui se reconnecte et est mise à jour aussi (`logiciel-installe-mises-a-jour.md`).
 
 ## 7. Rentabilité
 - [ ] Coût réel par client et par action (IA, SMS, stockage, passerelle de paiement, serveur) chiffré avec `calcul_rentabilite.py`.
@@ -81,6 +85,8 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 - [ ] Seules les données nécessaires sont collectées ; durée de conservation définie ; sous-traitants listés.
 - [ ] E-mails marketing : désinscription en un clic.
 - [ ] Si le client construit quelque chose de réutilisable : export / import en un fichier, sans aucune donnée personnelle ni état de publication, import sûr et « tout ou rien » (`references/transfert-export-import.md`).
+- [ ] Nouveau flux de données (résumés, notifications) : politique de confidentialité mise à jour (quoi, pourquoi, combien de temps).
+- [ ] Chaque promesse de la pub, de la landing et du store vérifiée dans le code (`promesses-marketing.md`) ; chaque chiffre annoncé est mesuré.
 
 ## 9. Expérience, design et accessibilité
 - [ ] AUCUN élément natif du navigateur (listes, calendriers, cases, fenêtres `alert/confirm`) : tout aux couleurs du site.
@@ -91,6 +97,9 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 - [ ] **Simplicité** (`references/simplicite-interface.md`) : accueil à trois choses (action principale, en cours, mes objets) sans KPI ni erreurs brutes ; états en 3 mots ; interrupteur Simple | Avancé visible partout, Simple par défaut ; menu en groupes pliables sans entrée cachée ; assistant de création en 3 écrans ; « Premiers pas » qui se coche tout seul ; une personne neuve lance l'action principale SANS aide (test avec 3 personnes).
 - [ ] Toute l'interface est traduite dans chaque langue proposée (`references/traductions.md`) ; une langue longue (allemand) et une écriture de droite à gauche (arabe) ne cassent aucun écran.
 - [ ] Accessibilité de base : contraste suffisant, texte alternatif des images, langue de la page, navigation au clavier, libellés des champs.
+- [ ] Téléphone : ☰ avec les noms des pages et ← sur chaque écran connecté, « ← Mon compte » sur les pages autonomes (paiement, facture) ; aucune page ne dépasse 375 px (`mobile-navigation.md`).
+- [ ] Langue : menu déroulant d'une ligne, pas de grille. Choix d'un utilisateur : recherche pendant la frappe, pas un e-mail à taper.
+- [ ] Chiffres affichés honnêtes : « – » plutôt qu'un chiffre non mesuré ; dates avec fuseau (`suivi-a-distance-et-statistiques.md`).
 
 ## 10. Performance et référencement
 - [ ] Titre, description et aperçu réseaux sociaux (Open Graph) sur chaque page publique.

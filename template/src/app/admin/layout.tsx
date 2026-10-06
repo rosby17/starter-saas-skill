@@ -2,20 +2,23 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSecretsStatus } from "@/lib/secrets/store";
+import { AppShell, type NavItem } from "@/components/shell/AppShell";
 
-const NAV = [
-  { href: "/admin", label: "Vue d'ensemble" },
-  { href: "/admin/users", label: "Utilisateurs" },
-  { href: "/admin/orders", label: "Commandes" },
-  { href: "/admin/payment-providers", label: "Paiements" },
-  { href: "/admin/keys", label: "Clés et intégrations" },
-  { href: "/admin/deploy", label: "Mise en ligne" },
-  { href: "/admin/support", label: "Support" },
-  { href: "/admin/feedbacks", label: "Avis" },
-  { href: "/admin/announcements", label: "Annonces" },
-  { href: "/admin/sante", label: "Santé" },
-  { href: "/admin/server", label: "Ressources serveur" },
-  { href: "/admin/maintenance", label: "Maintenance" },
+// Menu de l'administration (icônes : components/shell/icons.tsx). Une nouvelle page d'admin y ajoute sa ligne.
+const NAV: NavItem[] = [
+  { href: "/admin", label: "Vue d'ensemble", icon: "overview" },
+  { href: "/admin/users", label: "Utilisateurs", icon: "users" },
+  { href: "/admin/orders", label: "Commandes", icon: "cart" },
+  { href: "/admin/payment-providers", label: "Paiements", icon: "card" },
+  { href: "/admin/keys", label: "Clés et intégrations", icon: "key" },
+  { href: "/admin/emails", label: "E-mails", icon: "mail" },
+  { href: "/admin/deploy", label: "Mise en ligne", icon: "rocket" },
+  { href: "/admin/support", label: "Support", icon: "chat" },
+  { href: "/admin/feedbacks", label: "Avis", icon: "star" },
+  { href: "/admin/announcements", label: "Annonces", icon: "megaphone" },
+  { href: "/admin/sante", label: "Santé", icon: "heart" },
+  { href: "/admin/server", label: "Ressources serveur", icon: "server" },
+  { href: "/admin/maintenance", label: "Maintenance", icon: "tool" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -31,26 +34,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const missing = (await getSecretsStatus()).filter((s) => s.required && s.source === "missing");
 
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-56 border-r border-gray-200 p-4 space-y-1">
-        <h2 className="font-bold px-2 mb-4">Administration</h2>
-        {NAV.map((item) => (
-          <Link key={item.href} href={item.href} className="block px-2 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100">
-            {item.label}
+    <AppShell items={NAV} homeHref="/admin" sectionLabel="Administration" email={user.email ?? ""} isAdmin
+      footerLink={{ href: "/dashboard", label: "Mon espace", tone: "gray" }}>
+      {missing.length > 0 && (
+        <div className="m-4 mb-0 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 sm:m-8 sm:mb-0">
+          <span className="min-w-0 flex-1">{missing.length === 1 ? "1 clé manquante" : `${missing.length} clés manquantes`} : {missing.map((s) => `${s.group} › ${s.label}`).join(", ")}</span>
+          <Link href={`/admin/keys?focus=${missing[0].name}`} className="rounded-lg bg-brand px-3 py-1 text-xs font-medium text-white">
+            Configurer
           </Link>
-        ))}
-      </aside>
-      <div className="flex-1">
-        {missing.length > 0 && (
-          <div className="m-8 mb-0 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            <span>{missing.length === 1 ? "1 clé manquante" : `${missing.length} clés manquantes`} : {missing.map((s) => s.name).join(", ")}</span>
-            <Link href={`/admin/keys?focus=${missing[0].name}#${missing[0].name}`} className="ml-auto rounded-lg bg-brand px-3 py-1 text-xs font-medium text-white">
-              Renseigner
-            </Link>
-          </div>
-        )}
-        {children}
-      </div>
-    </div>
+        </div>
+      )}
+      {children}
+    </AppShell>
   );
 }
