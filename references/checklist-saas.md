@@ -39,6 +39,7 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 - [ ] Le client voit l'historique de ses paiements et télécharge ses factures (vendeur, numéro, date, montant, devise).
 - [ ] L'admin peut vérifier, valider à la main, rembourser / annuler, ajuster des crédits ; chaque geste est journalisé.
 - [ ] Mode test de la passerelle essayé de bout en bout avant d'ouvrir.
+- [ ] **Affiliation** (si le produit a des partenaires, parrainage ou revendeurs ; méthode `references/affiliation.md`) : rattachement au parrain sur TOUS les chemins d'inscription, premier parrain gagne, jamais soi-même ; une seule commission par commande (index unique), annulée au remboursement, retirable après un délai ; soldes calculés depuis un grand livre (jamais une colonne modifiable) ; activation sur crédit atomique (jamais sous zéro) ; retrait réservé tout de suite et plafonné aux gains disponibles ; affilié limité dans le temps ; tables en RLS sans écriture du navigateur ; noms réservés pour le lien `/<nom>` ; adresse des filleuls masquée pour un affilié ; toutes les actions admin journalisées.
 
 ## 4. API et intégrations
 - [ ] Chaque route : identité vérifiée (sauf routes publiques voulues), entrée validée par un schéma (types, longueurs, valeurs permises).
@@ -90,6 +91,7 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 
 ## 9. Expérience, design et accessibilité
 - [ ] AUCUN élément natif du navigateur (listes, calendriers, cases, fenêtres `alert/confirm`) : tout aux couleurs du site.
+- [ ] **Aucune fenêtre native** : `grep -rnE "(^|[^.\w])(window\.)?(confirm|alert|prompt)\("` sur le code (site, espace client, admin) ne trouve que des fenêtres maison (`useConfirm` / `useInform`) ; la fenêtre maison a titre, texte, bouton principal, Annuler, rouge si dangereuse, Échap = annuler, Entrée = valider, focus piégé, `role="alertdialog"` + `aria-modal`, et s'affiche bien en clair ET en sombre.
 - [ ] Charte appliquée partout (couleurs, police, logo, icône d'onglet), y compris e-mails, factures, pages d'erreur.
 - [ ] Parfait sur téléphone (375 px) : menus, tableaux, formulaires, fenêtres.
 - [ ] Chaque action donne un retour : chargement, succès, erreur compréhensible (en français, avec la marche à suivre).
