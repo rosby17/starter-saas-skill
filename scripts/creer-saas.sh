@@ -87,6 +87,12 @@ section('auth', 'additional_redirect_urls', '["http://localhost:3000", "http://1
 # Inutiles en local, et lourds à télécharger : statistiques (logflare, vector) et fonctions edge.
 section('analytics', 'enabled', 'false')
 section('edge_runtime', 'enabled', 'false')
+# Deuxième étape « avec une application » (TOTP de Supabase), utilisée par l'écran Sécurité du modèle (references/emails-et-deux-etapes.md).
+if re.search(r'^\[auth\.mfa\.totp\]', s, flags=re.M):
+    section('auth.mfa.totp', 'enroll_enabled', 'true')
+    section('auth.mfa.totp', 'verify_enabled', 'true')
+else:
+    s += '\n[auth.mfa.totp]\nenroll_enabled = true\nverify_enabled = true\n'
 open(p, 'w').write(s)
 print(f'Base locale : ports {base}-{base + 9} (API http://127.0.0.1:{base + 1}, tableau de bord http://127.0.0.1:{base + 3})')
 PY
