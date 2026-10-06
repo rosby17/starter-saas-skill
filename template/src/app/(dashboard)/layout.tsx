@@ -4,6 +4,7 @@ import { LogoutButton } from '@/components/LogoutButton'
 import { DashboardShell } from '@/components/DashboardShell'
 import { ErrorReporter } from '@/components/monitoring/ErrorReporter'
 import { ProviderStatusBanner } from '@/components/monitoring/ProviderStatusBanner'
+import { InsufficientCreditsGate } from '@/components/credits/InsufficientCreditsGate'
 
 // Cadre de toutes les pages connectées : menu (config/site.ts), compte, DÉCONNEXION.
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -16,6 +17,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <DashboardShell email={user.email ?? ''} isAdmin={!!profile?.is_admin} logout={<LogoutButton />}>
       <ErrorReporter />
       <ProviderStatusBanner />
+      <InsufficientCreditsGate />
       {children}
     </DashboardShell>
   )

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server";
 
 /** Sums every credit ledger row for a user into a single balance. */
 export async function getCreditsBalance(admin: SupabaseClient, userId: string): Promise<number> {
@@ -10,7 +11,8 @@ export async function getCreditsBalance(admin: SupabaseClient, userId: string): 
 /**
  * Débite `amount` crédits AVANT le travail payant (IA, SMS…). Atomique : contrôle du solde et débit dans la même
  * transaction, sous un verrou par client (migration 0009) ; deux demandes simultanées ne dépensent jamais deux fois.
- * Lève une erreur si le solde est insuffisant.
+ * Lève `InsufficientCreditsError` si le solde est insuffisant : la route la transforme en réponse 403 standard avec
+ * `creditsErrorResponse(error)`, ce qui ouvre la fenêtre « Recharger mes crédits » partout (InsufficientCreditsGate).
  */
 export async function debitCredits(
   admin: SupabaseClient,
@@ -20,5 +22,20 @@ export async function debitCredits(
 ): Promise<void> {
   const { data: debited, error } = await admin.rpc("debit_credits", { p_user_id: userId, p_amount: amount, p_reason: reason });
   if (error) throw error;
-  if (!debited) throw new Error("Insufficient credits");
+  if (!debited) throw new InsufficientCreditsError();
+}
+
+export class InsufficientCreditsError extends Error {
+  constructor() {
+    super("Insufficient credits");
+  }
+}
+
+/** Réponse standard « crédits insuffisants » (403 + error_code), ou null si l'erreur est autre chose. */
+export function creditsErrorResponse(error: unknown): NextResponse | null {
+  if (!(error instanceof InsufficientCreditsError)) return null;
+  return NextResponse.json(
+    { success: false, error_code: "insufficient_credits", message: "Crédits insuffisants : rechargez votre compte pour continuer." },
+    { status: 403 }
+  );
 }

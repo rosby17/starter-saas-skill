@@ -4,6 +4,8 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const { startSecretsSync } = await import('./instrumentation-node')
     await startSecretsSync()
+    const { startServerResourceSampler } = await import('./lib/server-resource-history')
+    startServerResourceSampler()
   }
 }
 

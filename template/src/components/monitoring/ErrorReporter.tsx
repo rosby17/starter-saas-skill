@@ -27,6 +27,10 @@ export function ErrorReporter() {
       const tracked = url.origin === window.location.origin && url.pathname.startsWith('/api/') && !IGNORED.includes(url.pathname)
       try {
         const response = await original(input, init)
+        if (tracked && response.status === 403 && !duplicate(`credits:${url.pathname}`)) {
+          const data = await response.clone().json().catch(() => null)
+          if (data?.error_code === 'insufficient_credits') window.dispatchEvent(new CustomEvent('insufficient-credits', { detail: typeof data.message === 'string' ? data.message : null }))
+        }
         if (tracked && response.status >= 400 && !duplicate(`${method} ${url.pathname}:${response.status}`)) {
           const data = await response.clone().json().catch(() => null)
           const message = data?.message ?? data?.error

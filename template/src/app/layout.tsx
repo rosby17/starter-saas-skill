@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { site } from '@/config/site'
 import { DialogProvider } from '@/components/ui/dialog'
+import { CookieConsentBanner } from '@/components/CookieConsentBanner'
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -15,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang={site.locale.slice(0, 2)}>
       <body>
         <DialogProvider>{children}</DialogProvider>
+        <CookieConsentBanner />
       </body>
     </html>
   )

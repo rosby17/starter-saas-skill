@@ -14,6 +14,7 @@ const NAV = [
   { href: "/admin/feedbacks", label: "Avis" },
   { href: "/admin/announcements", label: "Annonces" },
   { href: "/admin/sante", label: "Santé" },
+  { href: "/admin/server", label: "Ressources serveur" },
   { href: "/admin/maintenance", label: "Maintenance" },
 ];
 
