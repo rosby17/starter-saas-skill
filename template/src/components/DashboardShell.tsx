@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { site } from '@/config/site'
 import { clsx } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
+import { ViewModeProvider, ViewModeToggle, useViewMode } from '@/components/ViewMode'
 
 const ICONS: Record<string, string> = {
   home: 'M3 12l9-9 9 9M5 10v10h14V10',
@@ -19,20 +20,44 @@ const ICONS: Record<string, string> = {
 }
 
 // Menu de gauche (fixe sur ordinateur, tiroir sur téléphone) + bandeau du haut.
-export function DashboardShell({ email, isAdmin, logout, children }: { email: string; isAdmin: boolean; logout: React.ReactNode; children: React.ReactNode }) {
+// Entrée de menu : `group` la range sous un titre pliable ; `advanced: true` ne l'affiche qu'en tableau de bord Avancé.
+type NavItem = { href: string; label: string; icon: string; group?: string; advanced?: boolean }
+
+export function DashboardShell(props: { email: string; isAdmin: boolean; logout: React.ReactNode; children: React.ReactNode }) {
+  return <ViewModeProvider><Shell {...props} /></ViewModeProvider>
+}
+
+function Shell({ email, isAdmin, logout, children }: { email: string; isAdmin: boolean; logout: React.ReactNode; children: React.ReactNode }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const [closed, setClosed] = useState<Record<string, boolean>>({})        // groupes repliés (par titre)
+  const { advanced } = useViewMode()
+
+  const items = (site.dashboardNav as NavItem[]).filter((i) => advanced || !i.advanced)
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
+  const link = (item: NavItem) => (
+    <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
+      className={clsx('flex items-center gap-3 rounded-lg px-3 py-2 text-sm', isActive(item.href) ? 'bg-brand text-white' : 'text-gray-700 hover:bg-gray-100')}>
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={ICONS[item.icon] || ICONS.list} /></svg>
+      {item.label}
+    </Link>
+  )
+  const groups = Array.from(new Set(items.map((i) => i.group).filter(Boolean))) as string[]
 
   const nav = (
     <nav className="space-y-1 p-3">
-      {site.dashboardNav.map((item) => {
-        const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
+      {items.filter((i) => !i.group).map(link)}
+      {groups.map((g) => {
+        const list = items.filter((i) => i.group === g)
+        const shut = closed[g] && !list.some((i) => isActive(i.href))      // le groupe de la page où l'on est reste ouvert
         return (
-          <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
-            className={clsx('flex items-center gap-3 rounded-lg px-3 py-2 text-sm', active ? 'bg-brand text-white' : 'text-gray-700 hover:bg-gray-100')}>
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={ICONS[item.icon] || ICONS.list} /></svg>
-            {item.label}
-          </Link>
+          <div key={g} className="pt-2">
+            <button type="button" aria-expanded={!shut} onClick={() => setClosed({ ...closed, [g]: !closed[g] })}
+              className="flex w-full items-center gap-1 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-600">
+              <span className={clsx('transition-transform', shut && '-rotate-90')}>▾</span>{g}
+            </button>
+            {!shut && list.map(link)}
+          </div>
         )
       })}
       {isAdmin && (
@@ -62,6 +87,7 @@ export function DashboardShell({ email, isAdmin, logout, children }: { email: st
         <header className="flex h-14 items-center gap-4 border-b bg-white px-4">
           <button className="rounded-lg p-2 hover:bg-gray-100 md:hidden" aria-label="Menu" onClick={() => setOpen(true)}>☰</button>
           <div className="ml-auto flex items-center gap-4">
+            <ViewModeToggle />
             <span className="hidden text-sm text-gray-500 sm:inline">{email}</span>
             {logout}
           </div>

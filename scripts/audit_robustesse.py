@@ -158,7 +158,8 @@ def check_app_shell(root, code, paths):
             add('MOYENNE', 'Erreurs', 'Pas de page d’erreur globale', f'{app}/global-error.tsx',
                 'Une erreur dans la mise en page principale contourne error.tsx et affiche la page brute de Next.js.', 'Ajouter global-error.tsx (avec ses propres balises html et body).')
     all_code = '\n'.join(code.values())
-    if code and not any(re.search(r'(^|/)(health|healthz|status|ping)(/|\.)', x) for x in paths):
+    projet = base.texte_projet(root)
+    if code and not any(re.search(r'(^|/)(health|healthz|status|ping)(/|\.)', x) for x in paths) and not re.search(r'[\'"/](?:api/)?(?:health|healthz|sante|ping)[\'"/\s?]', projet, re.I):
         add('MOYENNE', 'Surveillance', 'Aucune adresse de contrôle de santé', '(projet)',
             'L’hébergeur et les outils de surveillance ne peuvent pas savoir si l’application répond ; une panne passe inaperçue.', 'Une route /api/health qui renvoie 200.')
     df = root / 'Dockerfile'
@@ -166,11 +167,11 @@ def check_app_shell(root, code, paths):
         add('MOYENNE', 'Surveillance', 'Le conteneur n’a pas de contrôle de santé', 'Dockerfile',
             'Sans HEALTHCHECK, l’hébergeur (Coolify, Docker) considère l’application prête même si elle a planté au démarrage, et une mise à jour cassée remplace la version qui marchait.',
             'Ajouter `HEALTHCHECK CMD wget -qO- http://127.0.0.1:3000/api/health || exit 1`.')
-    if code and not re.search(r'sentry|onRequestError|bugsnag|rollbar|logtail|betterstack|axiom|highlight\.io|glitchtip|reportError|captureException', all_code, re.I):
+    if code and not re.search(r'sentry|onRequestError|bugsnag|rollbar|logtail|betterstack|axiom|highlight\.io|glitchtip|reportError|captureException|rapports?\.noter|rapport_erreur|error_logs?|journal\.noter', all_code + '\n' + projet, re.I):
         add('MOYENNE', 'Surveillance', 'Les erreurs des clients ne sont remontées nulle part', '(projet)',
             'Quand une page plante chez un client, personne n’est prévenu : on l’apprend (parfois) par un client mécontent.',
             'Brancher un suivi des erreurs (GlitchTip ou Sentry auto-hébergeable) ou au minimum `onRequestError` dans instrumentation.ts qui écrit dans un journal consulté.')
-    if code and not re.search(r'process\.env\[[^\]]+\]\s*\)|REQUIRED_\w*ENV|assert\w*Env|z\.object\([^)]*process\.env|createEnv\(|envSchema', all_code):
+    if base.pile(root) == 'next' and code and not re.search(r'process\.env\[[^\]]+\]\s*\)|REQUIRED_\w*ENV|assert\w*Env|z\.object\([^)]*process\.env|createEnv\(|envSchema', all_code):
         add('MOYENNE', 'Configuration', 'Variables d’environnement non vérifiées au démarrage', '(projet)',
             'Une clé oubliée ne se voit qu’au premier client qui tombe dessus (paiement, connexion), avec une erreur incompréhensible.',
             'Vérifier au démarrage la présence des variables indispensables et refuser de démarrer sinon.')

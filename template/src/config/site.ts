@@ -27,7 +27,9 @@ export const site = {
     { href: '/billing-history', label: 'Mes paiements', icon: 'list' },
     { href: '/support', label: 'Aide', icon: 'help' },
     { href: '/settings', label: 'Mon compte', icon: 'user' },
-  ] as { href: string; label: string; icon: 'home' | 'card' | 'help' | 'user' | 'list' }[],
+  ] as { href: string; label: string; icon: 'home' | 'card' | 'help' | 'user' | 'list'
+    // Facultatif : `group` range l'entrée sous un titre pliable ; `advanced: true` ne l'affiche qu'en tableau de bord Avancé (ex. { group: 'Suivi', advanced: true }).
+    group?: string; advanced?: boolean }[],
   features: [
     { title: 'Fonctionnalité 1', text: 'Ce que ça apporte, en une phrase concrète.' },
     { title: 'Fonctionnalité 2', text: 'Ce que ça apporte, en une phrase concrète.' },

@@ -202,3 +202,8 @@ cd ~/.claude/skills/starter-saas && git pull
 | Le site affiche « maintenance » | **Admin → Maintenance** → désactiver. |
 
 Une autre question ? Demande à Claude dans le dossier du projet : il connaît le modèle (`CLAUDE.md`).
+
+
+## Savoir-faire appris sur des produits réels
+
+Fiches de `references/` ajoutées après KappGen (06/10/2026) : `simplicite-interface.md` (rendre un produit simple : mode Simple / Avancé, menu en groupes, assistant en 3 écrans, « Premiers pas »), `transfert-export-import.md` (exporter / importer un espace de travail en un zip), `traductions.md` (12 langues sans rien oublier), `travail-parallele-livraison.md` (plusieurs sessions Claude, livraison, essais sûrs), `audit-autre-pile.md` (auditer un produit qui n'est pas Next.js). Briques prêtes dans le modèle : `ViewMode.tsx`, `GettingStarted.tsx`, groupes de menu dans `DashboardShell.tsx`.

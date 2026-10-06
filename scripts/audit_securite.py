@@ -49,6 +49,30 @@ def files(root, exts=None):
                 yield p
 
 
+PROJET_EXT = {'.py', '.js', '.mjs', '.ts', '.tsx', '.html', '.md', '.conf', '.json', '.sh'}
+_TEXTE = {}
+
+
+def texte_projet(root, limite=1_500_000):
+    """Texte de tous les fichiers du projet (Python, JS, HTML, Markdown…), pour les questions « existe-t-il quelque part… » sur une pile
+    qui n'est pas Next.js (serveur Python, JavaScript maison). Mis en cache ; les fichiers énormes sont tronqués."""
+    if root not in _TEXTE:
+        morceaux = []
+        for p in files(root, PROJET_EXT):
+            if 'node_modules' in p.parts:
+                continue
+            morceaux.append(read(p)[:200_000])
+            if sum(len(m) for m in morceaux) > limite:
+                break
+        _TEXTE[root] = '\n'.join(morceaux)
+    return _TEXTE[root]
+
+
+def pile(root):
+    """'next' si le projet est un Next.js ; sinon 'autre' (les règles propres à Next / Supabase ne s'appliquent pas)."""
+    return 'next' if '"next"' in read(root / 'package.json') else 'autre'
+
+
 def read(p):
     try:
         return p.read_text(encoding='utf-8', errors='ignore')
@@ -299,9 +323,20 @@ def check_code(root):
         for m in re.finditer(r'dangerouslySetInnerHTML', text):
             add('À VÉRIFIER', 'Injection', 'HTML injecté sans échappement (dangerouslySetInnerHTML)', f'{r}:{line_of(text, m.start())}',
                 'Si le contenu vient d’un utilisateur, c’est une faille XSS (vol de session).', 'Nettoyer avec sanitize-html / DOMPurify, ou afficher en texte.')
-        for m in re.finditer(r'\beval\(|new Function\(|\.innerHTML\s*=', text):
+        for m in re.finditer(r'\beval\(|new Function\(', text):
             add('MOYENNE', 'Injection', 'Exécution ou insertion de code dynamique', f'{r}:{line_of(text, m.start())}',
-                'eval / new Function / innerHTML avec une donnée externe permettent d’exécuter du code.', 'Supprimer ou remplacer par une solution sans exécution dynamique.')
+                'eval / new Function avec une donnée externe permettent d’exécuter du code.', 'Supprimer ou remplacer par une solution sans exécution dynamique.')
+        inner = list(re.finditer(r'\.innerHTML\s*\+?=', text))
+        if inner:                      # un seul signal par fichier : une interface en JavaScript maison en a des dizaines
+            echappeur = re.search(r'\b(?:const|let|var|function)\s+(?:esc|echap\w*|escape\w*|escapeHtml|sanit\w+)\b', text) or re.search(r'DOMPurify|sanitize', text)
+            ligne = line_of(text, inner[0].start())
+            if echappeur:
+                add('À VÉRIFIER', 'Injection', f'Insertion de HTML (innerHTML) : {len(inner)} endroit(s), échappeur présent', f'{r}:{ligne}',
+                    'Le fichier échappe ses valeurs avec une fonction dédiée : reste à vérifier qu’AUCUNE donnée externe n’est insérée sans elle (`${...}` sans `esc(`).',
+                    'Relire les `${...}` de ces gabarits ; tout texte venant d’un utilisateur, d’un fichier ou d’un réseau passe par l’échappeur.')
+            else:
+                add('MOYENNE', 'Injection', 'Exécution ou insertion de code dynamique', f'{r}:{ligne}',
+                    f'innerHTML avec une donnée externe permet d’exécuter du code ({len(inner)} endroit(s) dans ce fichier).', 'Utiliser textContent, ou échapper les valeurs avant de les insérer.')
         for m in re.finditer(r'(?:query|execute|raw|unsafe|\$queryRawUnsafe|\.sql)\(\s*`[^`]*\$\{', text):
             add('HAUTE', 'Injection', 'Requête SQL construite avec une variable', f'{r}:{line_of(text, m.start())}',
                 'Une valeur insérée dans le texte d’une requête SQL permet l’injection SQL.', 'Requêtes paramétrées ($1, ?) ou constructeur de requêtes.')
@@ -346,7 +381,9 @@ def check_code(root):
 
     # Limitation de débit
     all_code = '\n'.join(read(p) for p in code_files[:3000])
-    if code_files and not re.search(r'rate.?limit|ratelimit|Ratelimit|limiter|throttle|upstash', all_code, re.I):
+    projet = texte_projet(root)
+    limite = r'rate.?limit|ratelimit|Ratelimit|limiter|throttle|upstash|essais\.bloque|lockout|brute.?force|failed_attempts|login_attempts|trop d.essais|too many (?:attempts|requests)'
+    if code_files and not re.search(limite, all_code + '\n' + projet, re.I):
         add('MOYENNE', 'Abus', 'Aucune limitation du nombre de tentatives', '(projet)',
             'Connexion, inscription, mot de passe oublié et paiement peuvent être martelés (force brute, spam, coûts).',
             'Limiter par adresse IP et par compte sur ces routes.')

@@ -1,6 +1,6 @@
 ---
 name: starter-saas
-description: Crée un SaaS complet et opérationnel à partir d'une description (écrite ou dictée) : landing page, authentification avec déconnexion, espace client, administration, tarifs, migrations de base de données générées automatiquement, build vérifié et déploiement. Fait aussi l'AUDIT complet d'un SaaS existant (le sien ou celui de quelqu'un d'autre) sur 11 domaines : authentification, droits d'accès, paiements, API, sécurité, robustesse (pannes, sauvegardes), rentabilité (marges, coûts de l'IA, prix, point mort), légal et données personnelles, design et accessibilité, performance et référencement, qualité du code ; rapport par domaine dans le chat, puis corrections. Utilise-le quand l'utilisateur dit « starter saas », « crée un SaaS », « nouveau SaaS », décrit une application web à fabriquer, ou demande d'auditer un SaaS, d'en vérifier la sécurité, la rentabilité ou la solidité, ou d'en corriger les failles.
+description: Crée un SaaS complet et opérationnel à partir d'une description (écrite ou dictée) : landing page, authentification avec déconnexion, espace client, administration, tarifs, migrations de base de données générées automatiquement, build vérifié et déploiement. Fait aussi l'AUDIT complet d'un SaaS existant (le sien ou celui de quelqu'un d'autre) sur 11 domaines : authentification, droits d'accès, paiements, API, sécurité, robustesse (pannes, sauvegardes), rentabilité (marges, coûts de l'IA, prix, point mort), légal et données personnelles, design et accessibilité, performance et référencement, qualité du code ; rapport par domaine dans le chat, puis corrections. Sait aussi SIMPLIFIER un produit que les testeurs trouvent « trop compliqué » (accueil épuré, mode Simple / Avancé, assistant en 3 écrans, « Premiers pas »), faire exporter et importer un espace de travail en un fichier, traduire dans 12 langues, et auditer une pile qui n'est pas Next.js. Utilise-le quand l'utilisateur dit « starter saas », « crée un SaaS », « nouveau SaaS », décrit une application web à fabriquer, ou demande d'auditer un SaaS, d'en vérifier la sécurité, la rentabilité ou la solidité, ou d'en corriger les failles, ou dit « c'est trop compliqué », « simplifie l'interface », « exporter / importer », « traduis dans toutes les langues ».
 ---
 
 # starter-saas : de la description au SaaS qui tourne
@@ -18,6 +18,7 @@ Next.js 15 (App Router) + Supabase + Tailwind + Docker :
 - **Administration** (`/admin`) : vue d'ensemble, utilisateurs, support, avis, annonces, mode maintenance.
 - **Base de données** : migrations Supabase rejouables (profils, crédits, commandes, annonces, support, avis), sécurité par ligne (RLS) partout.
 - **Paiement orchestré** (même flux pour tous tes SaaS) : le client choisit un TYPE de paiement (mobile money, carte, PayPal), l'administrateur choisit la passerelle active pour chaque type (`/admin/payment-providers`), les passerelles sont des adaptateurs interchangeables (`src/lib/payments/gateways/`, Maketou, Tara Money, Warappay (mobile money, carte, PayPal), GeniusPay, K-Pay (carte) et Binance Pay manuel fournis ; montants convertis en FCFA d'après les taux ; webhooks signés dans `src/app/api/payment/webhook/<passerelle>/` ; les clés sont des variables d'environnement, voir `.env.example`), l'identité vient de la session et le prix du catalogue serveur, le crédit est atomique (jamais deux fois), avec webhook, vérification au retour, cron de rattrapage et verrous. **Facturation et administration** : historique des paiements et factures imprimables côté client (`/billing-history`), commandes côté admin (`/admin/orders` : vérifier, marquer payée, abandonner), ajustement manuel de crédits, journal d'audit, crons `update-rates` (taux de change) et `expire-credits` (crédits à durée de validité, `validityDays` dans `pricing.ts`). Vendeur des factures : `site.company`. Retire ce bloc si le produit est gratuit.
+- **Interface simple ou avancée** : `ViewModeProvider` / `ViewModeToggle` / `useViewMode` (`components/ViewMode.tsx`, interrupteur « Simple | Avancé » dans l'en-tête, Simple par défaut), menu en **groupes pliables** (`group` et `advanced` dans `site.dashboardNav`), `GettingStarted` (« Premiers pas » qui se coche tout seul). Méthode complète : `references/simplicite-interface.md`.
 - **Facultatif** : e-mails (Brevo).
 - **Déploiement** : `Dockerfile` (build « standalone »), route `/api/health`.
 - **Supervision des erreurs** : journal `error_logs` (migration 0012, référence ERR-… donnée au client), gravité « qui doit agir ? » (rouge = notre bug seulement ; panne fournisseur marquée `error_code: 'provider_unavailable'` = jamais critique), page `/admin/sante` (une phrase d'état, 5 cartes maximum, fenêtre 24 h), résolution automatique à 24 h et purge à 30 jours, bannière « services ralentis » (`/api/system-status`), `fetchWithConnectRetry` (`src/lib/http/fetch-retry.ts`, ne rejoue que les connexions jamais établies). Toute route qui appelle un fournisseur externe renvoie `error_code: 'provider_unavailable'` quand il ne répond pas, après remboursement. Détails : `references/supervision-exploitation.md`.
@@ -28,7 +29,7 @@ Next.js 15 (App Router) + Supabase + Tailwind + Docker :
 
 Tout le branding est dans `src/config/site.ts` (nom, slogan, menus, fonctionnalités, FAQ) et `src/lib/pricing.ts` (prix).
 
-**Deux modes.** Créer un SaaS : étapes 1 à 8 ci-dessous. Auditer un SaaS existant (« audite ce SaaS », « vérifie la sécurité / la rentabilité / la solidité de… », un dossier, un dépôt ou un ZIP reçu) : section « Mode audit » en bas.
+**Trois modes.** Créer un SaaS : étapes 1 à 8 ci-dessous. Auditer un SaaS existant (« audite ce SaaS », « vérifie la sécurité / la rentabilité / la solidité de… », un dossier, un dépôt ou un ZIP reçu) : section « Mode audit » en bas. Simplifier un produit trop compliqué ou lui ajouter export / import / traductions : section « Savoir-faire appris sur des produits réels » juste avant le mode audit.
 
 ## 1. Comprendre (2 minutes)
 
@@ -112,6 +113,15 @@ Puis la rentabilité et la robustesse :
 
 Réponse courte : ce qui tourne (adresse), les écrans et tables générés, ce qui reste à faire par l'utilisateur (clés, DNS, texte légal), les hypothèses prises.
 
+## Savoir-faire appris sur des produits réels (KappGen, 05-06/10/2026)
+
+Ces fiches viennent d'un vrai produit (logiciel + site, 12 langues, plusieurs sessions Claude en parallèle). Les lire AVANT de refaire la même chose :
+- **« Trop de boutons, on ne comprend pas »** → `references/simplicite-interface.md` : 4 principes, 7 gestes (accueil à 3 choses, états en 3 mots, interrupteur Simple | Avancé, menu en groupes pliables — jamais d'entrée cachée —, assistant en 3 écrans, « Premiers pas », chaque page en deux vues), méthode phase par phase, pièges. Briques prêtes dans `template/` (`ViewMode.tsx`, `GettingStarted.tsx`, `DashboardShell.tsx`).
+- **« Je veux partager mon espace de travail avec quelqu'un »** → `references/transfert-export-import.md` : un zip, ce qui part et ne part jamais, import sûr (chemins, tailles, tout ou rien, nom unique, licence, routines refaites), tests.
+- **Interface en plusieurs langues** → `references/traductions.md` : source + repli anglais, règle « chaque texte traduit en anglais dans le même changement », outil de lot avec contrôle des `{n}`, pièges des dictionnaires.
+- **Plusieurs sessions sur le même dépôt, livraison, essais sans abîmer les vraies données** → `references/travail-parallele-livraison.md`.
+- **Auditer un produit en Python / JavaScript maison** → `references/audit-autre-pile.md` (les scanners reconnaissent maintenant cette pile ; revue à la main de ce qu'ils ne voient pas).
+
 ## Mode audit
 
 Le SaaS à auditer (le sien, ou celui qu'on lui envoie) est jugé sur la grille UNIQUE des **11 domaines d'un bon SaaS** (`references/checklist-saas.md`) : 1 authentification et comptes, 2 droits d'accès et données des clients, 3 paiements et facturation, 4 API et intégrations, 5 sécurité technique, 6 robustesse et exploitation, 7 rentabilité, 8 données personnelles et légal, 9 expérience, design et accessibilité, 10 performance et référencement, 11 qualité du code et évolutivité. « Audite ce SaaS » = les 11 domaines. « Vérifie la sécurité / la rentabilité / la solidité » = la rubrique demandée, avec sa méthode détaillée ci-dessous.
@@ -133,6 +143,7 @@ Méthodes détaillées par rubrique :
 | Rentabilité | `references/audit-rentabilite.md` | `scripts/audit_rentabilite.py` + `scripts/calcul_rentabilite.py` | `AUDIT-RENTABILITE.md` |
 | Robustesse | `references/audit-robustesse.md` | `scripts/audit_robustesse.py` | `AUDIT-ROBUSTESSE.md` |
 | Supervision et exploitation | `references/supervision-exploitation.md` | (revue manuelle, section 7) | dans `AUDIT-ROBUSTESSE.md` |
+| Pile autre que Next.js (Python, JavaScript maison…) | `references/audit-autre-pile.md` | les mêmes (ils reconnaissent la pile) | `AUDIT-COMPLET.md` |
 
 En bref :
 1. **Récupère le code** (dossier, `git clone` ou ZIP dans `~/Documents/dev/audits/<nom>`). Rien d'exécuté à l'aveugle (`--ignore-scripts`), aucune connexion à la base de production sans accord (et alors en lecture seule), aucun test contre un site en ligne sans l'accord de son propriétaire.
@@ -142,7 +153,7 @@ En bref :
 5. **Rapports** : chacun commence par une note A à E et les 3 points principaux en langage simple, puis chaque point avec niveau, fichier:ligne, preuve (scénario d'attaque, coût en argent, scénario de panne) et correction ; et ce qui a été vérifié sans problème. Secrets : dire où, jamais les afficher.
 6. Montre un résumé (les trois notes, les 3 urgences toutes rubriques confondues) et demande UN accord, puis **corrige** sur `audit/<rubrique>`, CRITIQUE → HAUTE → MOYENNE, un commit par correction, migrations neuves. Les prix et les offres ne changent qu'avec l'accord explicite du propriétaire. Revérifie (`tsc`, lint, build, scanners relancés, calcul refait) et donne les notes avant / après, plus ce que le propriétaire doit faire lui-même (révoquer une clé, régler les sauvegardes, changer un prix).
 
-Les scanners se testent : `python3 tests/test_audit.py`, `python3 tests/test_rentabilite_robustesse.py` et `python3 tests/test_produit.py` (faux SaaS pleins de défauts connus : tout doit être trouvé, et rien sur leur version corrigée). Les mêmes audits s'appliquent aux SaaS créés avec ce skill (étape 7).
+Les scanners se testent : `python3 tests/test_audit.py`, `python3 tests/test_rentabilite_robustesse.py`, `python3 tests/test_produit.py` (faux SaaS pleins de défauts connus : tout doit être trouvé, et rien sur leur version corrigée) et `python3 tests/test_autre_pile.py` (projet Python + JavaScript maison sain : aucune fausse alerte). **Une fausse alerte sur un vrai produit se corrige dans le scanner ET se note dans ce dernier test** : le kit apprend de chaque audit. Les mêmes audits s'appliquent aux SaaS créés avec ce skill (étape 7).
 
 ## Règles
 
@@ -150,4 +161,7 @@ Les scanners se testent : `python3 tests/test_audit.py`, `python3 tests/test_ren
 - Toute leçon d'exploitation tirée d'un incident (panne, alerte inutile, charge serveur) s'ajoute à `references/supervision-exploitation.md`, et son script réutilisable à `template/ops/`.
 - Une amélioration générale (pas propre à un produit) se reporte aussi dans `template/` de ce skill pour tous les prochains SaaS.
 - Autre pile que Next.js + Supabase demandée : dis-le en une phrase, adapte, et note le choix dans la SPEC.
+- **Double sens** : le kit transmet à chaque produit ce qu'il a appris des autres (modèle, fiches, scanners), ET apprend de chaque produit sur lequel il travaille (nouvelle fiche dans `references/`, brique dans `template/`, règle de scanner avec son test). En fin de chantier sur un produit réel, demande-toi : « qu'ai-je appris qui servira au prochain SaaS ? » et ajoute-le ici avant de dire « terminé ».
+- **On ne cache jamais une fonction pour simplifier un écran : on la range** (groupe pliable, « Personnaliser », mode Avancé). Le défaut est le mode Simple.
+- Tout nouveau texte visible est traduit dans TOUTES les langues proposées par le produit (au minimum l'anglais dans le même changement).
 - **Aucun contrôle natif du navigateur** : lecteurs audio et vidéo, menus déroulants (`select`), cases à cocher et boutons radio, champs de fichier, curseurs (`range`), champs date/heure, barres de défilement et infobulles sont toujours redessinés aux couleurs de la charte du SaaS (variables de `globals.css`, en clair et en sombre). Avant de livrer, chercher `<audio`, `<video controls`, `<select`, `type="checkbox|radio|file|range|date|time"` et les remplacer par des composants maison réutilisables (`src/components/ui/`).

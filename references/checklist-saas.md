@@ -80,6 +80,7 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 - [ ] Consentement avant tout traceur publicitaire ; mesure d'audience respectueuse sinon.
 - [ ] Seules les données nécessaires sont collectées ; durée de conservation définie ; sous-traitants listés.
 - [ ] E-mails marketing : désinscription en un clic.
+- [ ] Si le client construit quelque chose de réutilisable : export / import en un fichier, sans aucune donnée personnelle ni état de publication, import sûr et « tout ou rien » (`references/transfert-export-import.md`).
 
 ## 9. Expérience, design et accessibilité
 - [ ] AUCUN élément natif du navigateur (listes, calendriers, cases, fenêtres `alert/confirm`) : tout aux couleurs du site.
@@ -87,6 +88,8 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 - [ ] Parfait sur téléphone (375 px) : menus, tableaux, formulaires, fenêtres.
 - [ ] Chaque action donne un retour : chargement, succès, erreur compréhensible (en français, avec la marche à suivre).
 - [ ] États vides utiles (« Aucun projet : créer le premier »), premier pas guidé après l'inscription.
+- [ ] **Simplicité** (`references/simplicite-interface.md`) : accueil à trois choses (action principale, en cours, mes objets) sans KPI ni erreurs brutes ; états en 3 mots ; interrupteur Simple | Avancé visible partout, Simple par défaut ; menu en groupes pliables sans entrée cachée ; assistant de création en 3 écrans ; « Premiers pas » qui se coche tout seul ; une personne neuve lance l'action principale SANS aide (test avec 3 personnes).
+- [ ] Toute l'interface est traduite dans chaque langue proposée (`references/traductions.md`) ; une langue longue (allemand) et une écriture de droite à gauche (arabe) ne cassent aucun écran.
 - [ ] Accessibilité de base : contraste suffisant, texte alternatif des images, langue de la page, navigation au clavier, libellés des champs.
 
 ## 10. Performance et référencement

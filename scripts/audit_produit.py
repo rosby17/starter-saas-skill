@@ -44,6 +44,12 @@ def has_page(paths, *names):
     return any(rx.search(p) for p in pages(paths))
 
 
+def has_route(root, *names):
+    """Pile qui n'est pas Next.js : la page (ou la route du serveur) existe-t-elle quelque part dans le projet ? (« /confidentialite », « /legal »…)"""
+    rx = re.compile(r'[\'"`/](?:' + '|'.join(names) + r')[\'"`/\s<>#?]', re.I)
+    return bool(rx.search(base.texte_projet(root)))
+
+
 # ---------------------------------------------------------------------------
 # Authentification et comptes
 # ---------------------------------------------------------------------------
@@ -63,7 +69,7 @@ def check_auth(root, code, paths):
     for p, text in code.items():
         for m in re.finditer(r'(minLength\s*=\s*\{?\s*|\.min\(\s*|password\.length\s*<\s*)([1-7])\b', text):
             ctx = text[max(0, m.start() - 200):m.end() + 50].lower()
-            if 'pass' in ctx or 'mot' in ctx:
+            if re.search(r'password|passwd|mot[ _-]?de[ _-]?passe|motdepasse|\bmdp\b', ctx):
                 add('MOYENNE', 'Authentification', f'Mot de passe trop court accepté ({m.group(2)} caractères)', f'{base.rel(root, p)}:{base.line_of(text, m.start())}',
                     'Les mots de passe courts se devinent en quelques minutes.', 'Imposer 8 caractères au minimum (10 pour un compte administrateur), côté serveur aussi.')
                 break
@@ -126,11 +132,12 @@ def check_legal(root, code, paths):
     collects = re.search(r'email|e-mail|signUp|inscription', all_code, re.I)
     if not collects:
         return
-    if not has_page(paths, 'privacy', 'confidentialite', 'confidentialité', 'politique-de-confidentialite', 'privacy-policy', 'donnees-personnelles'):
+    if not has_page(paths, 'privacy', 'confidentialite', 'confidentialité', 'politique-de-confidentialite', 'privacy-policy', 'donnees-personnelles') \
+            and not has_route(root, 'privacy', 'confidentialite', 'politique-de-confidentialite', 'privacy-policy', 'donnees-personnelles'):
         add('HAUTE', 'Données personnelles', 'Pas de politique de confidentialité', '(projet)',
             'Obligatoire dès qu’on collecte une adresse e-mail (RGPD, lois africaines sur les données) ; exigée aussi par Google, Stripe, les stores.',
             'Page /confidentialite : données collectées, finalités, durée de conservation, sous-traitants, droits et contact.')
-    if not has_page(paths, 'terms', 'cgu', 'cgv', 'conditions', 'legal', 'mentions-legales'):
+    if not has_page(paths, 'terms', 'cgu', 'cgv', 'conditions', 'legal', 'mentions-legales') and not has_route(root, 'terms', 'cgu', 'cgv', 'conditions', 'legal', 'mentions-legales'):
         add('MOYENNE', 'Données personnelles', 'Pas de conditions d’utilisation / de vente', '(projet)',
             'Sans conditions, rien ne cadre les remboursements, les abus ni la responsabilité.', 'Pages CGU / CGV (et mentions légales) liées dans le pied de page.')
     if not re.search(r'deleteUser|delete-account|delete_account|supprimer (mon|le|son) compte|suppression du compte|account deletion', all_code, re.I):
@@ -252,7 +259,8 @@ def check_quality(root, code, paths):
     anys = sum(len(re.findall(r':\s*any\b|as any\b', t)) for t in code.values())
     if anys > 30:
         add('À VÉRIFIER', 'Qualité', f'{anys} types « any »', '(projet)', 'TypeScript ne protège plus ces endroits : les erreurs apparaissent chez le client.', 'Typer les données (types de la base générés, schémas zod).')
-    if not any(re.search(r'(^|/)(supabase/migrations|migrations|prisma/migrations|drizzle)/', p) for p in paths) and re.search(r'supabase|prisma|drizzle|pg\b|postgres', joined(code), re.I):
+    serveur_bd = re.search(r'"(?:@supabase/[\w-]+|@prisma/client|prisma|drizzle-orm|pg|postgres)"', base.read(root / 'package.json')) or re.search(r'from [\'"](?:pg|postgres|@supabase/[\w-]+|@prisma/client|drizzle-orm)[\'"]', joined(code))
+    if not any(re.search(r'(^|/)(supabase/migrations|migrations|prisma/migrations|drizzle)/', p) for p in paths) and serveur_bd:
         add('MOYENNE', 'Qualité', 'Base de données sans migrations', '(projet)', 'La structure de la base n’est écrite nulle part : impossible de la recréer ou de la faire évoluer sans risque.', 'Un fichier de migration par changement, versionné dans Git.')
 
 
