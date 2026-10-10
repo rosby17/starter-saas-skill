@@ -43,13 +43,8 @@ USER nextjs
 
 EXPOSE 3000
 ENV PORT=3000
-# « :: » écoute en IPv6 ET en IPv4 : le test de santé de Coolify appelle http://localhost:3000/api/health,
-# qui désigne ::1 dans le conteneur ; avec 0.0.0.0 (IPv4 seul) il est refusé et Coolify annule le déploiement.
+# « :: » écoute en IPv6 ET en IPv4 : le test de santé de Coolify appelle http://localhost:3000,
+# qui désigne ::1 dans le conteneur ; avec 0.0.0.0 (IPv4 seul) il est refusé et le déploiement est annulé.
 ENV HOSTNAME="::"
-
-# Coolify / Docker : l'application n'est déclarée prête que si elle répond. Une mise à jour qui plante au démarrage
-# ne remplace pas la version qui marche.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:3000/api/health > /dev/null || exit 1
 
 CMD ["node", "server.js"]

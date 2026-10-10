@@ -6,8 +6,20 @@ export type CoolifyServer = { uuid: string; name: string; ip: string }
 
 const api = (baseUrl: string) => `${baseUrl.replace(/\/+$/, '')}/api/v1`
 
+// Attention : Coolify injecte LUI-MÊME une variable COOLIFY_URL dans chaque application, égale à l'adresse du site
+// (« https://site,https://www.site »). Si c'est elle qu'on lit (pas l'adresse saisie dans Clés et intégrations), on
+// l'ignore : l'adresse du tableau de bord se déduit alors du domaine (coolify.<domaine>), à défaut celle par défaut.
+export function coolifyBaseUrl(raw = process.env.COOLIFY_URL || ''): string {
+  const site = (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/+$/, '')
+  const looksInjected = raw.includes(',') || (!!site && raw.replace(/\/+$/, '') === site)
+  if (raw && !looksInjected) return raw
+  const host = (raw.split(',')[0] || site).replace(/^https?:\/\//, '').replace(/\/.*$/, '')
+  const domain = host.split('.').slice(-2).join('.')
+  return domain.includes('.') ? `https://coolify.${domain}` : ''
+}
+
 export function coolify(baseUrl: string, token: string) {
-  const base = api(baseUrl)
+  const base = api(coolifyBaseUrl(baseUrl))
   const call = <T>(path: string, init?: Parameters<typeof callJson>[3]) => callJson<T>('Coolify', `${base}${path}`, token, init)
 
   return {
@@ -114,6 +126,8 @@ export function coolify(baseUrl: string, token: string) {
       await call(`/services/${uuid}`, { method: 'PATCH', body: { docker_compose_raw: Buffer.from(fixed).toString('base64') } })
       return true
     },
+
+    listServices: () => call<Array<{ uuid: string; name?: string; docker_compose_raw?: string }>>('/services'),
 
     startService: (uuid: string) => call(`/services/${uuid}/start`, { method: 'POST' }),
     restartService: (uuid: string) => call(`/services/${uuid}/restart`, { method: 'POST' }),

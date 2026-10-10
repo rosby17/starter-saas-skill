@@ -1,12 +1,5 @@
-import { Header } from '@/components/marketing/Header'
-import { Footer } from '@/components/marketing/Footer'
-
+// Pages publiques : chaque page pose sa barre de navigation (Navbar) et son pied de page (Contact),
+// comme sur le site d'origine.
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <div className="flex-1">{children}</div>
-      <Footer />
-    </div>
-  )
+  return <>{children}</>
 }

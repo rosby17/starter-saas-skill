@@ -6,7 +6,7 @@ import { clsx } from '@/lib/utils'
 // Tableau de bord SIMPLE (défaut) ou AVANCÉ : même produit, deux niveaux de détail. Rien n'est supprimé : le mode avancé montre simplement plus.
 // Choix gardé dans le navigateur. Les entrées de menu `advanced: true` (site.dashboardNav) n'apparaissent qu'en avancé ;
 // dans une page : `const { advanced } = useViewMode()` puis `{advanced && <Details />}`.
-// Appris de KappGen (retour des testeurs : « trop de boutons ») : voir references/simplicite-interface.md.
+// Retour de testeurs (« trop de boutons ») : voir references/simplicite-interface.md du kit.
 export type ViewMode = 'simple' | 'avance'
 const CLE = 'view-mode'
 

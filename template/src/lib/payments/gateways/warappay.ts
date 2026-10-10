@@ -8,12 +8,20 @@ export const warappay: PaymentGateway = {
   paymentMethod: 'Warappay',
   isConfigured: () => !!process.env.WARAPPAY_API_KEY && !!process.env.WARAPPAY_PRODUCT_CODE && !!process.env.WARAPPAY_WEBHOOK_SECRET,
 
+  // Lecture d'un paiement qui n'existe pas : 401 = clé refusée ; toute autre réponse = clé acceptée.
+  async checkKey() {
+    try {
+      const r = await fetch('https://api.warappay.com/api/v1/checkout/00000000-0000-0000-0000-000000000000', { headers: { Accept: 'application/json', Authorization: `Bearer ${process.env.WARAPPAY_API_KEY}` }, signal: AbortSignal.timeout(5000) })
+      return r.status !== 401 && r.status !== 403
+    } catch { return null }
+  },
+
   async createCheckout({ orderId, plan, customer, origin, amountFcfa, paymentType }) {
     const payload: Record<string, unknown> = {
       product_code: process.env.WARAPPAY_PRODUCT_CODE,
       email: customer.email,
       customer_name: `${customer.firstName} ${customer.lastName}`.trim(),
-      redirect_url: `${origin}/billing/success?cartId=${orderId}`,
+      redirect_url: `${origin}/paiement/succes?cartId=${orderId}`,
       meta: { order_id: orderId, planId: plan.id, payment_type: paymentType },
       amount: amountFcfa,
       // Doit correspondre à la devise de la boutique Warappay (XOF = Afrique de l'Ouest, XAF = Afrique centrale) :
@@ -23,7 +31,6 @@ export const warappay: PaymentGateway = {
     if (customer.phone) payload.customer_phone = customer.phone
 
     const response = await fetch('https://api.warappay.com/api/v1/checkout', {
-      signal: AbortSignal.timeout(15_000),
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.WARAPPAY_API_KEY}` },
       body: JSON.stringify(payload),

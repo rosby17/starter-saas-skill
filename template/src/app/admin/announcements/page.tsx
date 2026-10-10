@@ -6,8 +6,7 @@ export default async function AdminAnnouncementsPage() {
   const { data: announcements } = await supabase
     .from("announcements")
     .select("id, title, published, created_at")
-    .order("created_at", { ascending: false })
-    .limit(200);
+    .order("created_at", { ascending: false });
 
   return (
     <main className="p-8">

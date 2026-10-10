@@ -15,12 +15,19 @@ export async function GET() {
   if (!auth.authorized) return auth.error
   try {
     const settings = await getPaymentProviderSettings(adminDatabase())
+    // Clé réellement acceptée par la passerelle (une seule vérification par passerelle).
+    const ids = [...new Set(Object.values(PAYMENT_PROVIDERS).flat().map((p) => p.id))]
+    const keyOk = new Map(await Promise.all(ids.map(async (id) => {
+      const g = getGateway(id)
+      return [id, g?.isConfigured() && g.checkKey ? await g.checkKey() : null] as const
+    })))
     const categories = PAYMENT_CATEGORIES.map((category) => ({
       ...category,
       providers: PAYMENT_PROVIDERS[category.id].map((provider) => ({
         ...provider,
         active: settings[category.id].active === provider.id,
         configured: getGateway(provider.id)?.isConfigured() ?? false,
+        keyRefused: keyOk.get(provider.id) === false,
       })),
     }))
     return NextResponse.json({ success: true, categories })

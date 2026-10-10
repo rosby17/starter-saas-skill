@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   if (!isAuthorizedCron(request)) return new Response('Unauthorized', { status: 401 })
   if (!(await acquireCronLock('update-rates'))) return NextResponse.json({ success: true, skipped: 'already running' })
   try {
-    const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD', { signal: AbortSignal.timeout(15_000) })
+    const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD')
     if (!res.ok) throw new Error(`Taux indisponibles : ${res.statusText}`)
     const data = await res.json()
     const eur = Number(data.rates?.EUR)

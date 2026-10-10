@@ -1,7 +1,7 @@
 import { clsx } from '@/lib/utils'
 
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={clsx('rounded-2xl border border-gray-200 bg-white p-6', className)} {...props} />
+  return <div className={clsx('rounded-2xl border border-gray-200 bg-surface p-6', className)} {...props} />
 }
 
 export function Badge({ tone = 'gray', children }: { tone?: 'gray' | 'green' | 'red' | 'amber'; children: React.ReactNode }) {

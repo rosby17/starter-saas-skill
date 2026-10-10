@@ -1,19 +1,15 @@
 import type { PaymentGateway } from '../types'
 import { binance } from './binance'
-import { geniuspay } from './geniuspay'
-import { kpay } from './kpay'
-import { maketou } from './maketou'
 import { taramoney } from './taramoney'
 import { warappay } from './warappay'
+import { wave } from './wave'
 
 // Enregistre ici chaque nouvelle passerelle.
 const GATEWAYS: Record<string, PaymentGateway> = {
-  [maketou.id]: maketou,
   [taramoney.id]: taramoney,
   [warappay.id]: warappay,
-  [kpay.id]: kpay,
-  [geniuspay.id]: geniuspay,
   [binance.id]: binance,
+  [wave.id]: wave,
 }
 
 export const getGateway = (id: string): PaymentGateway | null => GATEWAYS[id] ?? null

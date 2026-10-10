@@ -29,6 +29,8 @@ export type SecretDefinition = {
   oauthCallback?: boolean
   /** Chemin du webhook à coller chez la passerelle (affiché avec l'adresse du site). */
   webhookPath?: string
+  /** Valeur utilisée par le code quand rien n'est posé : affichée (et modifiable) dans le champ de l'admin. */
+  defaultValue?: string
 }
 
 const gw = (id: string): SecretRequirement => ({ kind: 'gateway', id })
@@ -45,6 +47,8 @@ export const SECRET_CATALOG: SecretDefinition[] = [
     help: 'Doit être un expéditeur vérifié dans Brevo.' },
   { name: 'BREVO_SENDER_NAME', label: "Nom d'expéditeur", group: 'E-mails (Brevo)', secret: false, requirement: { kind: 'optional' },
     help: 'Nom affiché dans la boîte de réception.' },
+  { name: 'ADMIN_NOTIFY_EMAIL', label: 'E-mail qui reçoit les alertes', group: 'E-mails (Brevo)', secret: false, requirement: { kind: 'optional' },
+    help: 'Ton adresse : tu y reçois une alerte à chaque vente et à chaque nouvelle demande.' },
   { name: 'BREVO_SMTP_LOGIN', label: 'Identifiant SMTP', group: 'E-mails (Brevo)', secret: false, requirement: { kind: 'optional' },
     help: 'Brevo → SMTP & API → onglet SMTP : « Identifiant ». Sert aux e-mails de connexion du site en ligne (confirmation, mot de passe oublié).' },
   { name: 'BREVO_SMTP_KEY', label: 'Clé SMTP', group: 'E-mails (Brevo)', secret: true, requirement: { kind: 'optional' },
@@ -69,9 +73,6 @@ export const SECRET_CATALOG: SecretDefinition[] = [
     help: 'Cloudflare → Mon profil → Jetons API → Créer → modèle « Modifier la zone DNS ». Si ton domaine est chez Cloudflare.' },
 
   // --- Paiement
-  { name: 'MAKETOU_API_KEY', label: 'Clé API', group: 'Maketou', secret: true, requirement: gw('maketou'), help: 'Tableau de bord Maketou.' },
-  { name: 'MAKETOU_PRODUCT_ID', label: 'Identifiant du produit', group: 'Maketou', secret: false, requirement: gw('maketou'), help: 'productDocumentId du produit Maketou.' },
-
   { name: 'TARA_API_KEY', label: 'Clé API', group: 'Tara Money', secret: true, requirement: gw('taramoney'), help: 'Tableau de bord Tara Money.' },
   { name: 'TARA_BUSINESS_ID', label: 'Identifiant business', group: 'Tara Money', secret: false, requirement: gw('taramoney'), help: 'Tableau de bord Tara Money.' },
   { name: 'TARA_WEBHOOK_SECRET', label: 'Secret du webhook', group: 'Tara Money', secret: true, requirement: gw('taramoney'), generate: true,
@@ -81,20 +82,18 @@ export const SECRET_CATALOG: SecretDefinition[] = [
   { name: 'WARAPPAY_PRODUCT_CODE', label: 'Code produit (prix libre)', group: 'Warappay', secret: false, requirement: gw('warappay'), help: 'Un produit à prix variable pour tous les forfaits.' },
   { name: 'WARAPPAY_WEBHOOK_SECRET', label: 'Secret du webhook', group: 'Warappay', secret: true, requirement: gw('warappay'), webhookPath: '/api/payment/webhook/warappay',
     help: 'Donné par Warappay quand tu déclares l’adresse du webhook.' },
-  { name: 'WARAPPAY_CURRENCY', label: 'Devise de la boutique', group: 'Warappay', secret: false, requirement: { kind: 'optional' }, help: 'XOF (par défaut) ou XAF.' },
+  { name: 'WARAPPAY_CURRENCY', label: 'Devise de la boutique', group: 'Warappay', secret: false, requirement: { kind: 'optional' }, defaultValue: 'XOF', help: 'XOF ou XAF.' },
 
-  { name: 'KPAY_API_KEY', label: 'Clé API', group: 'K-Pay', secret: true, requirement: gw('kpay'), help: 'Tableau de bord K-Pay.' },
-  { name: 'KPAY_SECRET_KEY', label: 'Clé secrète', group: 'K-Pay', secret: true, requirement: gw('kpay'), help: 'Tableau de bord K-Pay.' },
-  { name: 'KPAY_WEBHOOK_SECRET', label: 'Secret du webhook', group: 'K-Pay', secret: true, requirement: gw('kpay'), webhookPath: '/api/payment/webhook/kpay',
-    help: 'Donné par K-Pay quand tu déclares l’adresse du webhook.' },
-
-  { name: 'GENIUSPAY_API_KEY', label: 'Clé API', group: 'GeniusPay', secret: true, requirement: gw('geniuspay'), help: 'Tableau de bord GeniusPay.' },
-  { name: 'GENIUSPAY_API_SECRET', label: 'Secret API', group: 'GeniusPay', secret: true, requirement: gw('geniuspay'), help: 'Tableau de bord GeniusPay.' },
-  { name: 'GENIUSPAY_WEBHOOK_SECRET', label: 'Secret du webhook', group: 'GeniusPay', secret: true, requirement: gw('geniuspay'), webhookPath: '/api/payment/webhook/geniuspay',
-    help: 'Donné par GeniusPay quand tu déclares l’adresse du webhook.' },
+  { name: 'WAVE_NUMBER', label: 'Numéro Wave du partenaire', group: 'Wave (manuel)', secret: false, requirement: { kind: 'optional' }, help: 'Numéro Wave qui reçoit les paiements (avec l’indicatif). Sans lui, Wave n’apparaît pas sur la page de paiement.' },
+  { name: 'WAVE_NAME', label: 'Nom affiché dans Wave', group: 'Wave (manuel)', secret: false, requirement: { kind: 'optional' }, help: 'Le nom que le client voit dans Wave avant d’envoyer.' },
 
   { name: 'BINANCE_PAY_ID', label: 'Binance Pay ID', group: 'Binance Pay (manuel)', secret: false, requirement: gw('binance'),
-    help: 'Affiché au client, qui paie puis attend ta validation dans Commandes.' },
+    help: 'Ton identifiant Binance Pay, affiché au client sur la page de paiement.' },
+  { name: 'BINANCE_PAY_NAME', label: 'Nom affiché dans Binance', group: 'Binance Pay (manuel)', secret: false, requirement: { kind: 'optional' }, help: 'Le nom que le client voit avant d’envoyer.' },
+  { name: 'USDT_TRC20_ADDRESS', label: 'Adresse USDT (TRC20)', group: 'Binance Pay (manuel)', secret: false, requirement: { kind: 'optional' }, help: 'Pour ceux qui paient en USDT sans compte Binance (réseau TRON uniquement).' },
+  // --- Intelligence artificielle (parcours personnalisé des formations)
+  { name: 'KIE_API_KEY', label: 'Clé kie.ai (Claude)', group: 'Intelligence artificielle', secret: true, requirement: { kind: 'optional' },
+    help: "Clé de ton compte kie.ai (kie.ai → API Key). Elle sert à analyser le questionnaire d'accueil d'une formation et à proposer à chaque élève son parcours personnalisé. Sans elle, le parcours est calculé par des règles simples." },
 ]
 
 const BY_NAME = new Map(SECRET_CATALOG.map((d) => [d.name, d]))

@@ -1,15 +1,15 @@
 import { site } from '@/config/site'
 
-// Logo : le fichier site.logo (dans public/) s'il existe, sinon un carré aux couleurs de la marque + le nom du site.
+// Logo : le logo rond (site.logo) + le nom, comme dans la barre du site public.
 export function Logo({ className = '' }: { className?: string }) {
-  if (site.logo) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={site.logo} alt={site.name} className={`h-8 w-auto ${className}`} />
-  }
   return (
-    <span className={`inline-flex items-center gap-2 font-bold tracking-tight ${className}`}>
-      <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-sm text-white shadow-sm">{site.name.slice(0, 1)}</span>
-      <span>{site.name}</span>
+    <span className={`inline-flex items-center gap-3 font-medium tracking-tight ${className}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={site.logo} alt="" className="h-9 w-9 rounded-full border border-gray-200 object-cover" />
+      <span>
+        {site.name}
+        <span className="text-brand">.</span>
+      </span>
     </span>
   )
 }

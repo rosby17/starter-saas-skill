@@ -1,12 +1,11 @@
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { TWO_FACTOR_COOKIE } from '@/lib/auth/two-factor-gate'
+import { publicOrigin } from '@/lib/site-url'
 
 // Logout: POST only (a link or an image must never log someone out).
-export async function POST(request: NextRequest) {
+// Redirection vers l'adresse PUBLIQUE du site : derrière le proxy, request.url vaut l'adresse interne (https://[::]:3000).
+export async function POST() {
   const supabase = await createClient()
   await supabase.auth.signOut()
-  const response = NextResponse.redirect(new URL('/login', request.url), { status: 303 })
-  response.cookies.delete(TWO_FACTOR_COOKIE) // la preuve de deuxième étape part avec la session
-  return response
+  return NextResponse.redirect(new URL('/login', publicOrigin()), { status: 303 })
 }

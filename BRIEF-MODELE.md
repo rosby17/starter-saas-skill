@@ -20,11 +20,14 @@ Pour chaque chose que le client crée ou gère :
 - **Nom** (ex. Rendez-vous) : ses champs (date, client, statut…), qui peut la voir, qui peut la modifier.
 
 ## 3. L'argent
+- **Type de SaaS** : formation / boutique / à l'usage (crédits) / un mélange
+- **Modules** : formations, boutique, communauté, appels, avis, demandes, crédits
 - **Modèle** : gratuit / abonnement mensuel-annuel / crédits / paiement unique / à vie
 - **Offres et prix** (nom, prix, ce qui est inclus, durée d'essai) :
 - **Devise affichée** : FCFA (XOF/XAF) / EUR / USD
-- **Moyens de paiement** : Mobile Money / carte / PayPal / crypto (Binance) / aucun
-- **Passerelles** (si tu sais) : Maketou, Tara Money, Warappay, GeniusPay, K-Pay, autre :
+- **Moyens de paiement** (page de paiement du kit) : Mobile Money / Wave / carte / PayPal / crypto (Binance Pay, USDT)
+- **Numéro WhatsApp** qui reçoit les captures des paiements manuels :
+- **Passerelles** : Tara Money, Warappay (bascule automatique entre les deux)
 - **Infos pour les factures** : raison sociale, adresse, numéro fiscal
 
 ## 4. Charte graphique

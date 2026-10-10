@@ -133,6 +133,20 @@ export async function getSecretsStatus(): Promise<SecretStatus[]> {
   })
 }
 
+/** Valeurs ENTIÈRES des clés demandées (valeur posée, sinon valeur par défaut du code), pour pré-remplir
+ *  la fenêtre de l'admin : l'administrateur voit (œil) et corrige directement ce qui est en place.
+ *  Réservé aux routes qui ont vérifié requireAdmin(). */
+export function getSecretValues(names: string[]): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const name of names) {
+    const def = getSecretDefinition(name)
+    if (!def) continue
+    const value = process.env[name]
+    out[name] = !isPlaceholder(value) ? value! : def.defaultValue ?? ''
+  }
+  return out
+}
+
 export async function countMissingRequiredSecrets(): Promise<number> {
   return (await getSecretsStatus()).filter((s) => s.required && s.source === 'missing').length
 }

@@ -25,7 +25,7 @@ SQL
 fail=0
 for pass in 1 2; do
   for f in $(ls "$PROJ"/supabase/migrations/*.sql | sort); do
-    if out=$(psqlc < "$f" 2>&1); then echo "ok  (passage $pass) $(basename "$f")"; else echo "ECHEC (passage $pass) $(basename "$f")"; echo "$out" | head -5; fail=1; fi
+    if out=$(psqlc < "$f" 2>&1); then echo "ok  (passage $pass) $(basename "$f")"; else echo "ECHEC (passage $pass) $(basename "$f")"; echo "$out" | grep -v NOTICE | head -6; fail=1; fi
   done
 done
 for t in $(ls "$PROJ"/supabase/tests/*.sql 2>/dev/null | sort); do

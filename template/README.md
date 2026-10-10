@@ -1,76 +1,56 @@
 # {{APP_NAME}}
 
-SaaS généré avec le skill **starter-saas** (Next.js 15, Supabase, Tailwind, Docker).
+SaaS créé avec le kit **starter-saas** : site public, comptes clients, espace client, administration, paiements africains et internationaux, mise en ligne sur ton serveur. Un seul modèle pour tous les types de SaaS :
 
-## Lancer en local
+| Type de SaaS | Ce qui est prêt | Modules (`src/config/site.ts`) |
+|---|---|---|
+| **Formation / cours en ligne** | Formations en parcours (leçons en étapes, vidéos privées, quiz, questionnaire d'accueil, plan personnalisé par l'IA), accompagnements, précommande (10 % puis 60 %), abonnement « Rester à jour », communauté façon WhatsApp, avis vérifiés et projets d'élèves, appel d'une heure à réserver | `formations`, `communaute`, `avis`, `appels` |
+| **Boutique de produits numériques et services** | Catalogue en rayons, fichiers à télécharger, liens vers un logiciel externe, services sur devis avec formulaires de départ | `boutique`, `demandes` |
+| **SaaS à l'usage** (voix, images, générateurs d'applications…) | Packs de crédits, solde, historique, fenêtre « crédits insuffisants », débit atomique avant chaque action payante, expiration | `credits` |
+
+Tous les types partagent la **page de paiement verrouillée** du kit (voir plus bas), la facture PDF, les e-mails, les statistiques et l'administration.
+
+## Ce que voit chacun
+
+| Qui | Ce qu'il fait |
+|---|---|
+| **Visiteur** | Accueil construit à partir du catalogue, pages Formations et Boutique, fiche de chaque produit. Il peut acheter **sans compte** : son compte est créé avec son e-mail au paiement. |
+| **Client** | Son espace : achats, parcours des formations, crédits, communauté, appels, demandes, factures, compte (photo, pseudo, validation en deux étapes, export et suppression de ses données). |
+| **Administrateur** (`/admin`) | Statistiques, commandes (validation des paiements manuels), clients, formations et produits (leçons, fichiers, annonces), appels, demandes, avis, support, annonces, clés et intégrations, moyens de paiement, e-mails, santé du site, ressources serveur, mise en ligne, maintenance. |
+
+## Personnaliser
+
+1. `src/config/site.ts` : nom, personne, logo, accroche de l'accueil, « À propos », FAQ, réseaux, numéro WhatsApp, fuseau horaire, **modules**.
+2. `src/app/globals.css` : `--brand` et `--brand-dim` (couleur de marque). Police : `src/app/fonts/brand-font.ts`.
+3. `public/logo.svg`, `src/app/icon.png`, `public/pwa/*` (icônes de l'application installable), `public/og.png` (aperçu des liens), `public/invoice-logo.png` (facultatif, logo des factures).
+4. `/admin/products` : remplace le **catalogue d'exemple** (formation, accompagnement, abonnement, communauté, appel, pack de crédits, service sur devis) par tes produits et tes prix.
+
+## La page de paiement (verrouillée)
+
+Moyens proposés au client : **Mobile Money** (Orange, MTN, Moov… toujours facturé en FCFA), **Wave** (envoi au numéro réglé + capture WhatsApp), **carte bancaire**, **PayPal**, **crypto** (Binance Pay ou USDT TRC20 avec QR code). Seuls les moyens configurés apparaissent.
+
+- Passerelles : Tara Money et Warappay (Mobile Money, carte, PayPal), avec bascule automatique sur l'autre si l'une refuse ; Wave et Binance / USDT en validation manuelle dans `/admin/orders`.
+- Réglages : clés dans `/admin/keys`, passerelle active par moyen dans `/admin/payment-providers`.
+- Prix par zone (FCFA en Afrique, € en Europe, $ dans les Amériques), adresse IP, pays et zone notés sur chaque commande.
+- **Verrou** : `npm run lint` et `npm run build` vérifient que les fichiers de la brique n'ont pas bougé (`paiement.lock.json`, `scripts/verrou-paiement.mjs`). On ne les modifie pas dans un projet ; une amélioration se fait dans le kit et se réinstalle partout.
+
+## Démarrer en local
 
 ```bash
 npm install
 npm run dev
 ```
 
-Puis ouvre le lien d'installation `http://localhost:3000/setup?token=…` (le `SETUP_TOKEN` est dans `.env.local`). Docker Desktop doit être lancé : l'assistant démarre la base de données (Supabase open source, ports propres à ce projet dans `supabase/config.toml`), crée les tables et ton compte administrateur. Aucun compte Supabase à créer.
+Puis ouvre `http://localhost:3000/setup` : l'assistant démarre la base de données locale (Supabase open source dans Docker), applique les migrations et crée ton compte administrateur.
 
-## Où changer quoi
+## Mettre en ligne
 
-| Je veux changer… | Fichier |
-|---|---|
-| Nom, slogan, menus, fonctionnalités, FAQ, e-mail de support, infos de facturation, logo | `src/config/site.ts` |
-| Couleurs et police (charte graphique) | `src/app/globals.css`, bloc **CHARTE GRAPHIQUE** (+ `src/app/layout.tsx` pour une police Google) |
-| Logo, icône d'onglet | `public/logo.svg` + `site.logo` ; `src/app/icon.png` (512×512) |
-| Offres et prix | `src/lib/pricing.ts` |
-| Clés des services (paiement, e-mails, tâches) | **dans l'admin** : `/admin/keys` « Clés et intégrations » |
-| Passerelle active par moyen de paiement | **dans l'admin** : `/admin/payment-providers` |
-| Base de données | une migration NEUVE dans `supabase/migrations/`, puis `supabase migration up` en local ; en ligne, elle passe à la prochaine mise en ligne complète |
+Dans `/admin/deploy` : domaine, serveur Coolify, dépôt GitHub privé, base de données sur ton serveur, tâches planifiées, puis déploiement. Les clés de `/admin/keys` sont recopiées en ligne.
 
-## Premier démarrage
-
-1. `/setup` : base de données et compte administrateur (voir plus haut).
-2. `/admin/keys` : une tuile par service (logo, état) ; **Configurer** ouvre la fenêtre où coller ses clés. Elles sont actives tout de suite.
-3. `/admin/payment-providers` : choisis la passerelle de chaque type de paiement.
-
-## Mise en ligne
-
-**Admin → Mise en ligne** (`/admin/deploy`), depuis ton ordinateur la première fois : avec les jetons Coolify (droit root), GitHub et Hostinger/Cloudflare collés dans `/admin/keys`, un clic fait tout : DNS (domaine, www, api), dépôt GitHub privé, **base Supabase installée sur ton serveur Coolify** (`api.<domaine>`, migrations, compte admin, réglages et clés recopiés), application, variables, tâches planifiées, construction, test HTTPS de `/api/health`. Ensuite « Redéployer », aussi depuis le site en ligne.
-Image Docker (`Dockerfile`, build « standalone »).
-
-## Paiements : comment ça marche
-
-1. Le client choisit un **type** de paiement (Mobile Money, carte, PayPal, crypto), jamais une passerelle.
-2. `POST /api/payment/checkout` : identité lue dans la **session**, prix lu dans le **catalogue serveur**, passerelle lue dans le **réglage admin**. La commande est enregistrée « en attente ».
-3. Chaque passerelle est un adaptateur : `src/lib/payments/gateways/<id>.ts`.
-4. Le crédit passe toujours par `creditPaidOrder` : atomique, jamais deux fois. Il est déclenché par le webhook signé, la vérification au retour du client ou la tâche de rattrapage.
-
-**Ajouter une passerelle :**
-1. Créer un fichier dans `gateways/` et l'enregistrer dans `gateways/index.ts`.
-2. La lister dans `providers.ts` pour les types de paiement qu'elle accepte.
-3. Déclarer ses clés dans `src/lib/secrets/catalog.ts` : elles apparaissent alors dans l'admin.
-4. Ajouter une route webhook ou une vérification au retour.
-
-## Sécurité
-
-Déjà en place :
-- sécurité ligne par ligne sur chaque table ;
-- routes admin derrière `requireAdmin()` ;
-- tâches automatiques derrière `CRON_SECRET` ;
-- webhooks vérifiés par signature ;
-- clés de l'admin chiffrées (AES-256-GCM, table `app_secrets` inaccessible depuis le navigateur) ;
-- journal d'audit ;
-- limitation du nombre de tentatives ;
-- en-têtes de sécurité (`next.config.ts`).
-
-Règles : jamais de secret dans Git ni dans le code, dépôt GitHub en privé.
-
-Avant chaque mise en ligne :
+## Vérifier avant de livrer
 
 ```bash
-npx tsc --noEmit
+npx tsc --noEmit && npm run lint && npm run build
 ```
 
-```bash
-npm run build
-```
-
-```bash
-npm audit --omit=dev
-```
+Puis un essai réel dans le navigateur : inscription → connexion → achat → déconnexion.

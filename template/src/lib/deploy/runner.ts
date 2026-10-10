@@ -4,7 +4,6 @@ import { isPlaceholder } from '@/lib/secrets/catalog'
 import { exportSecretsFor, saveSecret } from '@/lib/secrets/store'
 import { site } from '@/config/site'
 import { coolify } from './coolify'
-import { CRON_TASKS } from './cron-tasks'
 import { applyMigrations, copyAdmins, copyRows, waitForDatabase, type Db } from './database'
 import { cloudflare, hostinger, type DnsProvider } from './dns'
 import { createDeployKey, ensurePrivateRepo, githubLogin, pushProject } from './github'
@@ -119,8 +118,7 @@ export async function getDeployState(): Promise<DeployState | null> {
 }
 
 async function saveState(state: DeployState) {
-  const { error } = await serviceClient().from('system_settings').upsert({ key: STATE_KEY, value: state, updated_at: new Date().toISOString() }, { onConflict: 'key' })
-  if (error) console.error('État de la mise en ligne non enregistré :', error.message)
+  await serviceClient().from('system_settings').upsert({ key: STATE_KEY, value: state, updated_at: new Date().toISOString() }, { onConflict: 'key' })
 }
 
 const env = (name: string) => (isPlaceholder(process.env[name]) ? '' : process.env[name]!)
@@ -207,7 +205,9 @@ async function execute(state: DeployState, initial: DeploySettings) {
     await step('github', async () => {
       const token = need('GITHUB_TOKEN', 'Jeton GitHub')
       const login = await githubLogin(token)
-      const repoName = settings.repoFullName?.split('/')[1] || domain.replace(/\./g, '-')
+      // Dépôt : celui déjà choisi, sinon le dépôt GitHub d'origine de ce dossier (git remote origin), sinon un nouveau.
+      const origin = await originRepoName(login)
+      const repoName = settings.repoFullName?.split('/')[1] || origin || domain.replace(/\./g, '-')
       const repo = await ensurePrivateRepo(token, login, repoName)
       await pushProject(token, repo.fullName)
       settings = await saveDeploySettings({ repoFullName: repo.fullName })
@@ -297,7 +297,11 @@ async function execute(state: DeployState, initial: DeploySettings) {
     })
 
     await step('cron', async () => {
-      await cf.ensureScheduledTasks(settings.appUuid!, CRON_TASKS)
+      const call = (path: string) => `wget -q -O /dev/null --header="Authorization: Bearer $CRON_SECRET" http://127.0.0.1:3000${path}`
+      await cf.ensureScheduledTasks(settings.appUuid!, [
+        { name: 'Taux de change', command: call('/api/cron/update-rates'), frequency: '0 3 * * *' },
+        { name: 'Rattrapage des paiements', command: call('/api/cron/reconcile-orders'), frequency: '*/15 * * * *' },
+      ])
     })
 
     await step('deploy', async () => {
@@ -328,5 +332,18 @@ async function execute(state: DeployState, initial: DeploySettings) {
     state.running = false
     state.finishedAt = new Date().toISOString()
     await saveState(state)
+  }
+}
+
+/** Nom du dépôt GitHub d'origine de ce dossier, s'il appartient au compte du jeton (ex. « mon-saas »). */
+async function originRepoName(login: string): Promise<string | null> {
+  try {
+    const { execFile } = await import('child_process')
+    const url = await new Promise<string>((resolve, reject) =>
+      execFile('git', ['remote', 'get-url', 'origin'], { cwd: process.cwd() }, (err, out) => (err ? reject(err) : resolve(String(out).trim()))))
+    const m = url.match(/github\.com[:/]([^/]+)\/([^/.]+?)(?:\.git)?$/i)
+    return m && m[1].toLowerCase() === login.toLowerCase() ? m[2] : null
+  } catch {
+    return null
   }
 }

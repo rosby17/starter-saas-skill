@@ -1,70 +1,59 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { serviceClient } from "@/lib/auth/service-client";
 import { expirePendingOrders } from "@/lib/orders/expire-pending";
 import { creditPaidOrder } from "@/lib/orders/credit-order";
-import { fetchGeniusPayPayment, settleGeniusPayOrder } from "@/lib/payments/geniuspay-settle";
 import { markFailed, settlePaid } from "@/lib/payments/settle";
 import { gatewayForPaymentMethod } from "@/lib/payments/gateways";
+import { readOrderCookie } from "@/lib/orders/order-cookie";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
+
+export const dynamic = "force-dynamic";
 
 /**
- * Polled by the client-side billing success page while it waits for payment
- * confirmation.
- *
- * - TaraMoney: the webhook is the source of truth for crediting; this route
- *   just reports current order status.
- * - Maketou: has no webhook at all, so this route actively polls Maketou's
- *   cart-status API and credits the order itself when it sees "completed".
- *   (Also backed up by the reverify-maketou-orders cron for users who close
- *   the tab before this ever runs.)
+ * Interrogée par la page /paiement/succes en attendant la confirmation du paiement.
+ * Accès : le propriétaire connecté de la commande, OU le navigateur qui l'a lancée (cookie signé, achat sans compte).
+ * Le webhook de la passerelle fait foi ; ici on relit aussi la passerelle quand elle le permet (webhook en retard ou perdu).
  */
 export async function GET(request: Request) {
   try {
-    const authClient = await createClient();
-    const { data: { user } } = await authClient.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ success: false, message: "Your session has expired. Please log in again." }, { status: 401 });
+    if (!checkRateLimit(`verify:${clientIp(request)}`, 60, 60_000).success) {
+      return NextResponse.json({ success: false, message: "Trop de requêtes." }, { status: 429 });
+    }
+    const cartId = new URL(request.url).searchParams.get("cartId") || "";
+    if (!/^[0-9a-f-]{36}$/i.test(cartId)) {
+      return NextResponse.json({ success: false, message: "Commande inconnue." }, { status: 400 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const cartId = searchParams.get("cartId");
-    if (!cartId) {
-      return NextResponse.json({ success: false, message: "cartId is required." }, { status: 400 });
+    const { data: { user } } = await (await createClient()).auth.getUser();
+    const cookieOrderId = await readOrderCookie();
+    const supabase = serviceClient();
+    const { data: orderData } = await supabase.from("orders").select("*").eq("id", cartId).maybeSingle();
+
+    // Même réponse pour « n'existe pas » et « pas à toi ».
+    const ownsBySession = !!user && orderData?.user_id === user.id;
+    const ownsByCookie = cookieOrderId === cartId;
+    if (!orderData || (!ownsBySession && !ownsByCookie)) {
+      return NextResponse.json({ success: false, message: "Commande introuvable." }, { status: 404 });
     }
 
-    const supabase = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const done = (s: string) => s === "success" || s === "completed";
 
-    const { data: orderData } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("id", cartId)
-      .eq("user_id", user.id)
-      .single();
-
-    if (!orderData) {
-      return NextResponse.json({ success: false, message: "Order not found." }, { status: 404 });
-    }
-
-    // Passerelle sans webhook (ex. Maketou) : on l'interroge pour toute commande pas encore créditée (pending OU failed :
-    // un paiement peut aboutir chez elle après l'expiration locale). Le crédit reste atomique.
-    if (orderData.status !== "success" && orderData.status !== "completed") {
+    // Passerelle qui sait répondre à « est-ce payé ? » : on l'interroge pour toute commande pas encore livrée.
+    if (!done(orderData.status) && !orderData.status.startsWith("flagged")) {
       const gateway = gatewayForPaymentMethod(orderData.payment_method);
       if (gateway?.checkStatus) {
-        const state = await gateway.checkStatus({ id: orderData.id, payment_ref: orderData.payment_ref }).catch(() => 'unknown' as const);
+        const state = await gateway.checkStatus({ id: orderData.id, payment_ref: orderData.payment_ref });
         if (state === "paid") {
           await creditPaidOrder(supabase, orderData);
-          orderData.status = "success"; // crédité par cet appel ou déjà crédité par un autre : dans les deux cas c'est payé
+          orderData.status = "success";
         }
       }
     }
 
-    // Warappay : le webhook fait foi, mais on relit aussi le paiement au retour du client (webhook en retard ou perdu).
-    if (orderData.payment_method === "Warappay" && orderData.status !== "success" && orderData.status !== "completed" && process.env.WARAPPAY_API_KEY) {
+    // Warappay : relecture du paiement au retour du client.
+    if (orderData.payment_method === "Warappay" && !done(orderData.status) && !orderData.status.startsWith("flagged") && process.env.WARAPPAY_API_KEY) {
       const response = await fetch(`https://api.warappay.com/api/v1/checkout/${orderData.payment_ref || cartId}`, {
-        signal: AbortSignal.timeout(15_000),
         headers: { Authorization: `Bearer ${process.env.WARAPPAY_API_KEY}` },
       });
       if (response.ok) {
@@ -74,33 +63,29 @@ export async function GET(request: Request) {
       }
     }
 
-    // GeniusPay : relecture du paiement par l'API (source de vérité).
-    if (orderData.payment_method === "GeniusPay" && orderData.payment_ref && orderData.status !== "success" && orderData.status !== "completed") {
-      const payment = await fetchGeniusPayPayment(orderData.payment_ref);
-      if (payment) orderData.status = await settleGeniusPayOrder(supabase, orderData, payment);
-    }
-
-    if (orderData.status === "pending") {
-      const { expiredIds } = await expirePendingOrders(supabase, { orderId: cartId, userId: user.id });
+    // Binance (manuel) : jamais expirée automatiquement, elle attend la validation de l'administrateur.
+    if (orderData.status === "pending" && orderData.payment_method !== "Binance Pay (manuel)") {
+      const { expiredIds } = await expirePendingOrders(supabase, { orderId: cartId, userId: orderData.user_id });
       if (expiredIds.includes(cartId)) orderData.status = "failed";
     }
 
-    const isCompleted = orderData.status === "success" || orderData.status === "completed";
-
+    const completed = done(orderData.status);
     return NextResponse.json({
       success: true,
-      cart: { id: cartId, status: isCompleted ? "completed" : "waiting_payment" },
+      cart: { id: cartId, status: completed ? "completed" : orderData.status.startsWith("flagged") ? "review" : orderData.status === "failed" ? "failed" : "waiting_payment" },
       order: {
         amount: orderData.amount_local || 0,
         currency: orderData.currency || "XOF",
-        plan_name: orderData.plan_name || "Credits",
+        plan_name: orderData.plan_name || "Ton achat",
+        email: orderData.customer_email,
+        manual: orderData.payment_method === "Binance Pay (manuel)",
       },
+      signedIn: ownsBySession,
+      // Compte créé par CET achat, dans CE navigateur : on peut l'ouvrir directement (voir /api/payment/enter).
+      canEnter: completed && !ownsBySession && ownsByCookie && !!orderData.new_account,
     });
   } catch (error) {
-    console.error("Verify error:", error);
-    return NextResponse.json(
-      { success: false, message: "The service is temporarily unavailable. Please try again shortly." },
-      { status: 500 }
-    );
+    console.error("Erreur verify :", error);
+    return NextResponse.json({ success: false, message: "Le service est momentanément indisponible. Réessaie dans un instant." }, { status: 500 });
   }
 }

@@ -48,13 +48,13 @@ export function Select({ value, onChange, options, placeholder = 'Choisir…', c
         aria-controls={listId}
         onClick={() => { setOpen((o) => !o); setActive(Math.max(0, options.findIndex((o) => o.value === value))) }}
         onKeyDown={onKey}
-        className="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-sm transition-colors hover:border-gray-400 focus:border-brand focus:outline-none disabled:opacity-50"
+        className="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-300 bg-surface px-3 py-2 text-left text-sm transition-colors hover:border-gray-400 focus:border-brand focus:outline-none disabled:opacity-50"
       >
         <span className={current ? '' : 'text-gray-400'}>{current?.label ?? placeholder}</span>
         <svg className={clsx('h-4 w-4 text-gray-500 transition-transform', open && 'rotate-180')} viewBox="0 0 20 20" fill="currentColor" aria-hidden><path d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4z" /></svg>
       </button>
       {open && (
-        <ul id={listId} role="listbox" className="absolute z-40 mt-1 max-h-64 w-full min-w-48 overflow-auto rounded-xl border border-gray-200 bg-white p-1 shadow-lg">
+        <ul id={listId} role="listbox" className="absolute z-40 mt-1 max-h-64 w-full min-w-48 overflow-auto rounded-xl border border-gray-200 bg-surface p-1 shadow-lg">
           {options.map((o, i) => (
             <li
               key={o.value}

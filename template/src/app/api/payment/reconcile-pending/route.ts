@@ -36,7 +36,7 @@ export async function POST() {
     for (const order of orders || []) {
       const gateway = gatewayForPaymentMethod(order.payment_method);
       if (!gateway?.checkStatus) continue;
-      if ((await gateway.checkStatus({ id: order.id, payment_ref: order.payment_ref }).catch(() => 'unknown' as const)) === "paid" && (await creditPaidOrder(supabase, order))) {
+      if ((await gateway.checkStatus({ id: order.id, payment_ref: order.payment_ref })) === "paid" && (await creditPaidOrder(supabase, order))) {
         creditedCount += 1;
       }
     }

@@ -22,3 +22,9 @@ export function checkRateLimit(key: string, limit: number, windowMs: number) {
   entry.count += 1;
   return { success: true };
 }
+
+/** Adresse IP du visiteur (derrière le proxy de Coolify / Traefik). Sert uniquement à limiter les abus. */
+export function clientIp(request: Request): string {
+  const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  return forwarded || request.headers.get('x-real-ip') || 'inconnue'
+}

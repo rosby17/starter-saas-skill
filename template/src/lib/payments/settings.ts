@@ -8,6 +8,7 @@ export type PaymentProviderSettings = Record<PaymentCategoryId, { active: string
 function defaults(): PaymentProviderSettings {
   return {
     mobile_money: { active: DEFAULT_ACTIVE_PROVIDER.mobile_money },
+    wave: { active: DEFAULT_ACTIVE_PROVIDER.wave },
     card: { active: DEFAULT_ACTIVE_PROVIDER.card },
     paypal: { active: DEFAULT_ACTIVE_PROVIDER.paypal },
     crypto: { active: DEFAULT_ACTIVE_PROVIDER.crypto },

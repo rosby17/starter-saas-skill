@@ -32,7 +32,7 @@ export function RadioCard({ checked, onSelect, label, description, extra }: {
 export function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: React.ReactNode }) {
   return (
     <button type="button" role="checkbox" aria-checked={checked} onClick={() => onChange(!checked)} className="flex items-start gap-2 text-left text-sm">
-      <span className={clsx('mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded border-2 transition-colors', checked ? 'border-brand bg-brand text-white' : 'border-gray-300 bg-white')}>
+      <span className={clsx('mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded border-2 transition-colors', checked ? 'border-brand bg-brand text-white' : 'border-gray-300 bg-surface')}>
         {checked && <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden><path d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.6l7.3-7.3a1 1 0 0 1 1.4 0z" /></svg>}
       </span>
       <span>{label}</span>
@@ -44,7 +44,7 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
   return (
     <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)} className="inline-flex items-center gap-2 text-sm">
       <span className={clsx('relative h-5 w-9 rounded-full transition-colors', checked ? 'bg-brand' : 'bg-gray-300')}>
-        <span className={clsx('absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all', checked ? 'left-4.5' : 'left-0.5')} />
+        <span className={clsx('absolute top-0.5 h-4 w-4 rounded-full bg-surface shadow transition-all', checked ? 'left-4.5' : 'left-0.5')} />
       </span>
       {label && <span>{label}</span>}
     </button>

@@ -36,7 +36,7 @@ export function InsufficientCreditsGate() {
         <h2 id="credits-title" className="text-base font-bold text-gray-900">Crédits insuffisants</h2>
         {message && <p className="mt-1.5 text-sm text-gray-600">{message}</p>}
         <div className="mt-5 flex flex-col gap-2">
-          <Link href="/billing" onClick={() => setOpen(false)} className="inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-hover">
+          <Link href="/credits" onClick={() => setOpen(false)} className="inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-hover">
             Recharger mes crédits
           </Link>
           <Button variant="ghost" onClick={() => setOpen(false)}>Plus tard</Button>

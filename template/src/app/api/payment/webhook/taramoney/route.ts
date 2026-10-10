@@ -39,16 +39,14 @@ export async function POST(request: Request) {
       const { data: reversed } = await supabase.from("orders").select("id, user_id, credits, status").eq("id", productId).maybeSingle();
       if (reversed?.status === "success") {
         console.error(`[ACTION REQUIRED] TaraMoney signale « ${status} » pour la commande ${productId} (utilisateur ${reversed.user_id}, ${reversed.credits} crédits déjà accordés). À examiner à la main.`);
-        const { error } = await supabase.from("orders").update({ status: "flagged_reversal" }).eq("id", productId).eq("status", "success");
-        if (error) throw error; // 500 : TaraMoney renverra le webhook
+        await supabase.from("orders").update({ status: "flagged_reversal" }).eq("id", productId).eq("status", "success");
       }
       return NextResponse.json({ success: true, message: "Reversal flagged for manual review." });
     }
 
     if (normalizedStatus !== "SUCCESS") {
       if (productId && FAILURE_STATUSES.includes(normalizedStatus)) {
-        const { error } = await supabase.from("orders").update({ status: "failed" }).eq("id", productId).eq("status", "pending");
-        if (error) throw error;
+        await supabase.from("orders").update({ status: "failed" }).eq("id", productId).eq("status", "pending");
       }
       return NextResponse.json({ success: true, message: "Payment not successful, ignoring." });
     }
@@ -64,8 +62,7 @@ export async function POST(request: Request) {
     // Le montant encaissé doit couvrir le montant dû AVANT de créditer (bug de conversion, panier trafiqué…).
     if (!paidAmountCoversOrder(amount, order.amount_fcfa ?? order.amount_local)) {
       console.error(`[ACTION REQUIRED] TaraMoney confirme « SUCCESS » pour ${productId} mais le montant reçu (${amount}) est inférieur au dû (${order.amount_fcfa ?? order.amount_local}). Crédits NON accordés.`);
-      const { error } = await supabase.from("orders").update({ status: "flagged_underpaid" }).eq("id", productId).eq("status", "pending");
-      if (error) throw error;
+      await supabase.from("orders").update({ status: "flagged_underpaid" }).eq("id", productId).eq("status", "pending");
       return NextResponse.json({ success: true, message: "Amount mismatch, flagged for manual review." });
     }
 

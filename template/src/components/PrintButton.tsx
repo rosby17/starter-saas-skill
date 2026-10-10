@@ -2,8 +2,8 @@
 
 export function PrintButton() {
   return (
-    <button onClick={() => window.print()} className="mt-8 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover print:hidden">
-      Imprimer / enregistrer en PDF
+    <button onClick={() => window.print()} className="rounded-full border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-100 print:hidden">
+      Imprimer
     </button>
   )
 }

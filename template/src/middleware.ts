@@ -2,19 +2,15 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { TWO_FACTOR_COOKIE, secondFactorPending } from '@/lib/auth/two-factor-gate'
 
-// Paths that never require an authenticated session. Add any marketing,
-// legal, or public API prefixes your app needs here.
-const publicPrefixes = ['/login', '/signup', '/reset-password', '/setup', '/auth', '/', '/api']
+// Pages réservées aux comptes connectés (tout le reste est public : boutique, pages de vente, paiement…).
+const privatePrefixes = ['/mes-achats', '/credits', '/communaute', '/appels', '/cours', '/demandes', '/dashboard', '/settings', '/support', '/billing-history', '/billing', '/admin']
 
-// Validation en deux étapes : ces adresses restent ouvertes tant que la deuxième étape n'est pas faite
-// (l'écran du code, ses routes, la déconnexion) ; les routes techniques n'ont pas de session client.
+// Validation en deux étapes : ces adresses restent accessibles pendant qu'on saisit le code.
 const TWO_FACTOR_PAGE = '/login/verification'
-const twoFactorExempt = ['/login/verification', '/api/account/2fa', '/auth', '/api/payment/webhook', '/api/cron', '/api/health', '/api/setup', '/api/monitoring', '/api/system-status']
+const twoFactorExempt = [TWO_FACTOR_PAGE, '/api/account/2fa', '/auth', '/api/payment/webhook', '/api/cron', '/api/health']
 
 function isPublicPath(pathname: string) {
-  return publicPrefixes.some(
-    (prefix) => pathname === prefix || (prefix !== '/' && pathname.startsWith(`${prefix}/`))
-  )
+  return !privatePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
 }
 
 function redirectWithCookies(url: URL, supabaseResponse: NextResponse, status = 307) {
@@ -43,7 +39,8 @@ async function localAdminExists(): Promise<boolean> {
     })
     adminExists = res.ok && ((await res.json()) as unknown[]).length > 0
   } catch {
-    return true // base injoignable : on laisse passer, la page affichera son erreur
+    // Base injoignable : on laisse passer, la page affichera son erreur.
+    return true
   }
   return adminExists
 }
@@ -61,10 +58,6 @@ export async function middleware(request: NextRequest) {
     }
     return new NextResponse('Configuration incomplète : NEXT_PUBLIC_SUPABASE_URL manquant sur le serveur.', { status: 503 })
   }
-
-  // Contrôle de santé (Docker, Coolify) : jamais bloqué par la maintenance ni par la session, sinon le conteneur
-  // serait jugé malade pendant une maintenance et redémarré.
-  if (pathname === '/api/health') return NextResponse.next()
 
   if (process.env.NODE_ENV !== 'production' && !isSetup && !pathname.startsWith('/api/') && !pathname.startsWith('/auth/') && !(await localAdminExists())) {
     const url = request.nextUrl.clone()
@@ -99,9 +92,8 @@ export async function middleware(request: NextRequest) {
   // --- Maintenance-mode gate -------------------------------------------
   // Reads a single row from `system_settings` (key = 'maintenance') so the
   // whole app can be paused from the admin dashboard without a redeploy.
-  // TODO: create the `system_settings` table + RLS policy that allows public
-  // SELECT on this one key before relying on this gate.
-  const maintenanceExemptPaths = ['/maintenance', '/admin', '/api/admin', '/login', '/signup', '/reset-password', '/auth', '/api/payment/webhook', '/api/cron', '/api/health']
+  // Table + public SELECT policy on this key: supabase/migrations/0001_init.sql.
+  const maintenanceExemptPaths = ['/maintenance', '/admin', '/api/admin', '/login', '/signup', '/reset-password', '/auth', '/api/payment/webhook', '/api/cron', '/api/health', '/sw.js', '/manifest.webmanifest', '/offline.html']
   const isMaintenanceExempt = maintenanceExemptPaths.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   )
@@ -158,7 +150,7 @@ export async function middleware(request: NextRequest) {
     user = supabaseUser
   }
 
-  // --- Deuxième étape (validation par e-mail ou par application) -------------
+  // --- Deuxième étape (code par e-mail ou application d'authentification) -----
   if (user && !exemptFrom2fa && (!isPublic || pathname === '/login' || apiWithSession)) {
     const { data: { session } } = await supabase.auth.getSession()
     const pending = await secondFactorPending(user, session?.access_token, request.cookies.get(TWO_FACTOR_COOKIE)?.value)
@@ -206,6 +198,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|.*\\.svg|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.webp).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|.*\\.svg|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.webp|.*\\.mp4|.*\\.otf).*)',
   ],
 }

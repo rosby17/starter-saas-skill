@@ -28,6 +28,7 @@ export default function DeployPage() {
   const [domain, setDomain] = useState('')
   const [ip, setIp] = useState('')
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
+  const [advanced, setAdvanced] = useState(false)
   const [offer, setOffer] = useState<{ domain: string; available: boolean; price: { id: string; amount: number; currency: string } | null } | null>(null)
   const [accept, setAccept] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -60,7 +61,30 @@ export default function DeployPage() {
 
   if (!data) return <main className="p-8 text-sm text-gray-500">Chargement…</main>
   const s = data.settings
-  const provider = s.dnsProvider || 'hostinger'
+
+  // Sur le site EN LIGNE, il est déjà déployé et Coolify le reconstruit à chaque envoi sur GitHub :
+  // rien à configurer. L'assistant d'installation ne sert qu'à installer sur un NOUVEAU serveur.
+  if (!data.local && !advanced) {
+    const host = typeof window !== 'undefined' ? window.location.host : s.domain
+    return (
+      <main className="mx-auto max-w-3xl p-6 md:p-8">
+        <h1 className="mb-2 text-2xl font-bold">Mise en ligne</h1>
+        <section className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-6">
+          <p className="text-lg font-semibold text-green-800">Ton site est en ligne ✓</p>
+          <p className="mt-1 text-sm text-green-700">{host}</p>
+          <p className="mt-4 text-sm text-gray-700">
+            Il se met à jour <strong>tout seul</strong> : à chaque fois que du code est envoyé sur GitHub, ton serveur (Coolify, chez OVH)
+            reconstruit le site en quelques minutes. Tu n’as rien à faire, ni jeton à coller, ni bouton à cliquer.
+          </p>
+        </section>
+        <button type="button" onClick={() => setAdvanced(true)} className="mt-6 text-sm text-gray-500 underline underline-offset-4 hover:text-gray-900">
+          Installer sur un nouveau serveur (avancé)
+        </button>
+      </main>
+    )
+  }
+
+  const provider = s.dnsProvider || 'manual'
   const missing = ['COOLIFY_URL', 'COOLIFY_API_TOKEN', ...(data.local ? ['GITHUB_TOKEN'] : []), ...(provider === 'hostinger' ? ['HOSTINGER_API_TOKEN'] : provider === 'cloudflare' ? ['CLOUDFLARE_API_TOKEN'] : [])].filter((k) => !data.keys[k])
   const ready = missing.length === 0 && !!s.domain && !!s.serverUuid && !!s.serverIp
   const server = data.servers.find((x) => x.uuid === s.serverUuid)
@@ -119,7 +143,7 @@ export default function DeployPage() {
         <div role="radiogroup" className="mb-3 grid gap-2 sm:grid-cols-3">
           <RadioCard checked={provider === 'hostinger'} onSelect={() => post({ action: 'save', dnsProvider: 'hostinger' })} label="Hostinger" />
           <RadioCard checked={provider === 'cloudflare'} onSelect={() => post({ action: 'save', dnsProvider: 'cloudflare' })} label="Cloudflare" />
-          <RadioCard checked={provider === 'manual'} onSelect={() => post({ action: 'save', dnsProvider: 'manual' })} label="Ailleurs" />
+          <RadioCard checked={provider === 'manual'} onSelect={() => post({ action: 'save', dnsProvider: 'manual' })} label="OVH ou autre" />
         </div>
         <div className="flex gap-2">
           <input value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="monsaas.com" className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:outline-none" />

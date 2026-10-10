@@ -5,6 +5,7 @@ import { ServiceModal, ServiceTile, serviceState, servicesWithKeys, useSecrets }
 import { SERVICE_SECTIONS } from '@/lib/secrets/services'
 import { Skeleton } from '@/components/ui/skeleton'
 import { clsx } from '@/lib/utils'
+import { GoogleLoginSwitch } from '@/components/admin/GoogleLoginSwitch'
 
 type Filter = 'all' | 'todo' | 'done'
 const FILTERS: Array<{ id: Filter; label: string }> = [
@@ -42,14 +43,15 @@ export default function KeysPage() {
   const open = services.find((s) => s.id === openId) ?? null
 
   return (
-    <main className="max-w-6xl p-4 sm:p-8">
-      <h1 className="mb-1 text-2xl font-bold">Clés et intégrations</h1>
-      <p className="mb-6 text-sm text-gray-500">Les clés sont chiffrées, jamais réaffichées en entier, et prises en compte tout de suite. Une clé saisie ici remplace celle du serveur.</p>
+    <main className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
+      <h1 className="mb-1 text-3xl md:text-4xl">Clés et intégrations</h1>
+      <p className="mb-6 text-sm text-gray-500">Les clés sont chiffrées dans la base et prises en compte tout de suite. Chaque fenêtre affiche la valeur en place (œil pour les secrets) : corrige-la directement. Une clé saisie ici remplace celle du serveur.</p>
 
       {error && <div className="mb-4 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
       {message && <div role="status" className="mb-4 rounded-xl border border-green-100 bg-green-50 p-3 text-sm text-green-700">{message}</div>}
+      <div className="mb-8"><GoogleLoginSwitch /></div>
 
-      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4">
+      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-200 bg-surface p-4">
         <div className="min-w-0 flex-1">
           <p className="font-semibold">{secrets ? `${ready} service${ready > 1 ? 's' : ''} prêt${ready > 1 ? 's' : ''} sur ${services.length}` : 'Chargement…'}</p>
           {secrets && <p className="text-sm text-gray-500">{todo ? `${todo} à configurer pour ce qui est activé.` : 'Tout l’essentiel est réglé.'}</p>}
@@ -57,7 +59,7 @@ export default function KeysPage() {
         <div role="tablist" aria-label="Filtrer les services" className="flex gap-1 rounded-full bg-gray-100 p-1">
           {FILTERS.map((f) => (
             <button key={f.id} type="button" role="tab" aria-selected={filter === f.id} onClick={() => setFilter(f.id)}
-              className={clsx('rounded-full px-3 py-1.5 text-sm transition-colors', filter === f.id ? 'bg-white font-medium text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900')}>
+              className={clsx('rounded-full px-3 py-1.5 text-sm transition-colors', filter === f.id ? 'bg-surface font-medium text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900')}>
               {f.label}
             </button>
           ))}

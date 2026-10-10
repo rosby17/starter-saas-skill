@@ -10,12 +10,11 @@ export const taramoney: PaymentGateway = {
   async createCheckout({ orderId, plan, currency, origin, amountFcfa }) {
     const secret = process.env.TARA_WEBHOOK_SECRET!
     const toHttps = (url: string) => url.replace(/^http:\/\//, 'https://')
-    const returnUrl = toHttps(`${origin}/billing/success?cartId=${orderId}`)
+    const returnUrl = toHttps(`${origin}/paiement/succes?cartId=${orderId}`)
     const webHookUrl = toHttps(`${origin}/api/payment/webhook/taramoney?key=${encodeURIComponent(secret)}`)
     const price = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(plan.amountLocal)
 
     const response = await fetch('https://www.dklo.co/api/tara/paymentlinks', {
-      signal: AbortSignal.timeout(15_000),
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

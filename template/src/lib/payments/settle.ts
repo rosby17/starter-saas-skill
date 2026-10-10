@@ -20,8 +20,7 @@ export async function settlePaid(
   const tolerance = Math.max(expected * 0.02, currency === 'usd' ? 0.5 : 5)
   if (paidAmount !== null && Number.isFinite(paidAmount) && expected > 0 && paidAmount < expected - tolerance) {
     console.error(`[ACTION REQUISE] ${label} : commande ${order.id} payée ${paidAmount} pour ${expected} dus. Rien n'a été livré : vérification manuelle.`)
-    const { error } = await supabase.from('orders').update({ status: 'flagged_underpaid' }).eq('id', order.id).in('status', ['pending', 'failed', 'expired'])
-    if (error) console.error(`[ACTION REQUISE] Commande ${order.id} non marquée « montant insuffisant » :`, error.message)
+    await supabase.from('orders').update({ status: 'flagged_underpaid' }).eq('id', order.id).in('status', ['pending', 'failed', 'expired'])
     return 'flagged_underpaid'
   }
   await creditPaidOrder(supabase, order, `via ${label}`)
@@ -29,6 +28,5 @@ export async function settlePaid(
 }
 
 export async function markFailed(supabase: SupabaseClient, orderId: string) {
-  const { error } = await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId).eq('status', 'pending')
-  if (error) console.error(`Commande ${orderId} non marquée « échouée » :`, error.message)
+  await supabase.from('orders').update({ status: 'failed' }).eq('id', orderId).eq('status', 'pending')
 }

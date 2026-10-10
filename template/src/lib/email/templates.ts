@@ -1,70 +1,140 @@
 /**
- * Modèles des e-mails envoyés par le site (HTML simple, à habiller aux couleurs du SaaS).
- * Chaque modèle se déclare aussi dans EMAIL_EXAMPLES (en bas) avec des données fictives : le bouton
- * « M'envoyer un exemple de chaque e-mail » (Administration › E-mails) les envoie tous à l'admin.
- * Règle : jamais de code ni de secret dans le SUJET d'un e-mail (les sujets sont journalisés).
+ * E-mails transactionnels. CLAIRS par défaut (blanc, rouge #C8102E) ; ils passent en sombre seulement si la messagerie
+ * du lecteur est en thème sombre (prefers-color-scheme : Apple Mail, iOS, Outlook ; Gmail adapte lui-même ses couleurs).
+ * Tout texte inséré passe par esc() : un nom ou un titre ne doit jamais injecter de HTML.
  */
 
-// Tout texte inséré dans un e-mail HTML passe par esc() : un nom ou un forfait ne doit jamais injecter de HTML.
-const esc = (value: unknown) =>
+export const esc = (value: unknown) =>
   String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
 
-const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "{{APP_NAME}}";
+import { contactChannel, contactLink, site } from "@/config/site";
+
+const APP_NAME = site.name;
+const CONTACT = contactLink();
+
+// Couleurs claires en ligne (lues partout) ; les classes rm-* les remplacent en thème sombre.
+const DARK_CSS = `
+  :root { color-scheme: light dark; supported-color-schemes: light dark; }
+  @media (prefers-color-scheme: dark) {
+    .rm-bg { background:#0D0D0D !important; }
+    .rm-card { background:#141414 !important; border-color:#2A2A2A !important; color:#FAFAFA !important; }
+    .rm-muted { color:#9A9A9A !important; }
+    .rm-soft { background:#1E1E1E !important; }
+    .rm-link { color:#D6D6D6 !important; }
+  }`;
 
 function wrapper(bodyHtml: string): string {
-  return `
-  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1f2937;">
-    <h2 style="margin: 0 0 16px;">${APP_NAME}</h2>
-    ${bodyHtml}
-    <p style="margin-top: 32px; font-size: 12px; color: #9ca3af;">
-      Message automatique de ${APP_NAME}.
-    </p>
-  </div>`;
+  return `<!doctype html><html><head><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><style>${DARK_CSS}</style></head>
+  <body style="margin:0;padding:0;">
+  <div class="rm-bg" style="background:#F5F5F7;padding:32px 12px;">
+    <div class="rm-card" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 28px;background:#FFFFFF;border:1px solid #E5E5EA;border-radius:18px;color:#1C1C1E;font-size:15px;line-height:1.6;">
+      <p style="margin:0 0 24px;font-size:18px;font-weight:600;letter-spacing:-0.02em;">${APP_NAME}<span style="color:#C8102E;">.</span></p>
+      ${bodyHtml}
+      <p class="rm-muted" style="margin-top:32px;font-size:12px;color:#6E6E73;">
+        Une question ? Réponds à cet e-mail ou écris-nous sur <a class="rm-link" href="${CONTACT}" style="color:#3A3A3C;">${contactChannel()}</a>.
+      </p>
+    </div>
+  </div>
+  </body></html>`;
 }
 
-export function welcomeTemplate({ firstName }: { firstName?: string }): string {
+function button(href: string, label: string): string {
+  return `<p style="margin:28px 0;"><a href="${esc(href)}" style="display:inline-block;background:#C8102E;color:#ffffff;text-decoration:none;font-weight:600;padding:14px 26px;border-radius:999px;">${esc(label)}</a></p>`;
+}
+
+const linkNote = (href: string) =>
+  `<p class="rm-muted" style="font-size:12px;color:#6E6E73;">Le bouton ne marche pas ? Copie ce lien dans ton navigateur :<br><span class="rm-link" style="word-break:break-all;color:#3A3A3C;">${esc(href)}</span></p>
+   <p class="rm-muted" style="font-size:12px;color:#6E6E73;">Ce lien te connecte directement : ne le transfère à personne. Il expire au bout d'une heure ; tu peux en redemander un à tout moment sur la page Connexion.</p>`;
+
+/** Accès livré après un paiement, un accès donné par l'admin ou un import : l'e-mail de bienvenue. */
+export function accessReadyTemplate({ name, products, loginUrl, amount, invoice }: { name?: string | null; products: string[]; loginUrl: string; amount?: string | null; invoice?: string | null }): string {
+  const list = products.map((p) => `<li style="margin:4px 0;"><strong>${esc(p)}</strong></li>`).join("");
   return wrapper(`
-    <p>Bonjour ${esc(firstName || "")},</p>
-    <p>Bienvenue sur ${APP_NAME} ! Ton compte est prêt.</p>
+    <p style="font-size:22px;font-weight:600;letter-spacing:-0.02em;margin:0 0 12px;">Bienvenue${name ? ` ${esc(name)}` : ""} 🎉</p>
+    <p>${amount ? `Ton paiement de <strong>${esc(amount)}</strong> est confirmé. ` : ""}Ton accès est prêt :</p>
+    <ul style="padding-left:18px;">${list}</ul>
+    <p>En entrant, je te pose quelques petites questions pour préparer <strong>ton</strong> parcours. Ensuite, tu avances leçon par leçon, à ton rythme, avec les vrais fichiers de mes projets.</p>
+    ${button(loginUrl, "Commencer ma formation")}
+    ${invoice ? `<p style="font-size:14px;">🧾 Ta facture <strong>${esc(invoice)}</strong> est jointe à cet e-mail (PDF). Tu la retrouves aussi dans « Factures ».</p>` : ""}
+    <p class="rm-muted" style="font-size:13px;color:#6E6E73;">Tout reste dans ton espace : leçons, fichiers, groupe d’entraide et factures, depuis n’importe quel téléphone.</p>
+    ${linkNote(loginUrl)}
   `);
 }
 
-export function rechargeConfirmationTemplate({
-  credits,
-  amount,
-  planName,
-}: {
-  credits: number;
-  amount: string;
-  planName: string;
-}): string {
+/** Réservation (précommande, 10 %) confirmée : pas encore d'accès, la place est gardée. */
+export function reservationTemplate({ name, product, amount, invoice, loginUrl }: { name?: string | null; product: string; amount?: string | null; invoice?: string | null; loginUrl: string }): string {
   return wrapper(`
-    <p>Ton achat est confirmé.</p>
-    <p><strong>${esc(planName)}</strong> : ${esc(amount)}</p>
-    <p>${credits.toLocaleString("fr-FR")} crédits ont été ajoutés à ton compte.</p>
+    <p style="font-size:22px;font-weight:600;letter-spacing:-0.02em;margin:0 0 12px;">Ta place est réservée${name ? `, ${esc(name)}` : ""} ✅</p>
+    <p>${amount ? `Ton paiement de <strong>${esc(amount)}</strong> est confirmé. ` : ""}Tu es sur la liste d’attente de <strong>${esc(product)}</strong>.</p>
+    <p>Dès la sortie de la formation, je te préviens le premier. Tu finiras alors avec <strong>60 % du prix</strong> au lieu de 100 %, et ton accès s’ouvrira tout de suite.</p>
+    ${invoice ? `<p style="font-size:14px;">🧾 Ta facture <strong>${esc(invoice)}</strong> est jointe à cet e-mail (PDF).</p>` : ""}
+    ${button(loginUrl, "Voir ma réservation")}
+    ${linkNote(loginUrl)}
   `);
 }
 
-export function genericNotificationTemplate({
-  title,
-  message,
-}: {
-  title: string;
-  message: string;
-}): string {
+/** Nouveauté d'une formation (nouveau module, nouvelle leçon) envoyée aux élèves. */
+export function courseUpdateTemplate({ name, title, body, url }: { name?: string | null; title: string; body?: string | null; url: string }): string {
   return wrapper(`
-    <h3 style="margin: 0 0 8px;">${esc(title)}</h3>
-    <p>${esc(message)}</p>
+    <p>Bonjour ${esc(name || "")},</p>
+    <p style="font-size:20px;font-weight:600;letter-spacing:-0.02em;margin:16px 0 8px;">${esc(title)}</p>
+    ${body ? `<p style="white-space:pre-line;">${esc(body)}</p>` : ""}
+    <p>C’est déjà dans ton espace, à la suite de ton parcours.</p>
+    ${button(url, "Voir la nouveauté")}
   `);
 }
 
-/** Code de validation en deux étapes. Le code est dans le CORPS uniquement, jamais dans le sujet. */
+/** Lien de connexion demandé depuis la page Connexion. */
+export function loginLinkTemplate({ loginUrl }: { loginUrl: string }): string {
+  return wrapper(`
+    <p>Bonjour,</p>
+    <p>Voici ton lien pour te connecter à ton espace et retrouver tes achats.</p>
+    ${button(loginUrl, "Me connecter")}
+    ${linkNote(loginUrl)}
+    <p class="rm-muted" style="font-size:12px;color:#6E6E73;">Tu n'as rien demandé ? Ignore simplement cet e-mail.</p>
+  `);
+}
+
+/** Demande enregistrée (accompagnement, service sur devis, monétisation). */
+export function requestReceivedTemplate({ name, kind, loginUrl }: { name?: string | null; kind: string; loginUrl: string }): string {
+  return wrapper(`
+    <p>Bonjour ${esc(name || "")},</p>
+    <p>Ta demande « <strong>${esc(kind)}</strong> » est bien enregistrée. Je te réponds rapidement, et tu peux suivre son avancement dans ton espace.</p>
+    ${button(loginUrl, "Suivre ma demande")}
+    ${linkNote(loginUrl)}
+  `);
+}
+
+/** Réponse ou changement de statut d'une demande. */
+export function requestUpdateTemplate({ name, kind, status, reply, url }: { name?: string | null; kind: string; status: string; reply?: string | null; url: string }): string {
+  return wrapper(`
+    <p>Bonjour ${esc(name || "")},</p>
+    <p>Ta demande « <strong>${esc(kind)}</strong> » est maintenant : <strong>${esc(status)}</strong>.</p>
+    ${reply ? `<div class="rm-soft" style="margin:16px 0;padding:14px 16px;border-left:3px solid #C8102E;background:#F2F2F7;border-radius:8px;white-space:pre-line;">${esc(reply)}</div>` : ""}
+    ${button(url, "Voir ma demande")}
+  `);
+}
+
+/** Alerte envoyée à l'administrateur (nouvelle vente, nouvelle demande). */
+export function adminAlertTemplate({ title, lines, url }: { title: string; lines: string[]; url: string }): string {
+  return wrapper(`
+    <p style="font-weight:600;">${esc(title)}</p>
+    <ul style="padding-left:18px;">${lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
+    ${button(url, "Ouvrir l'administration")}
+  `);
+}
+
+export function genericNotificationTemplate({ title, message }: { title: string; message: string }): string {
+  return wrapper(`<p style="font-weight:600;">${esc(title)}</p><p>${esc(message)}</p>`);
+}
+
+/** Code de la validation en deux étapes (par e-mail). Jamais le code dans le sujet. */
 export function twoFactorCodeTemplate({ code, purpose }: { code: string; purpose: "login" | "enable" }): string {
   return wrapper(`
-    <p>${purpose === "enable" ? "Voici ton code pour activer la validation en deux étapes par e-mail :" : "Voici ton code de connexion :"}</p>
-    <p style="font-size: 32px; font-weight: 700; letter-spacing: 8px; margin: 16px 0;">${esc(code)}</p>
+    <p>${purpose === "enable" ? "Voici ton code pour activer la validation en deux étapes par e-mail :" : "Voici ton code de connexion 🔐 :"}</p>
+    <p style="font-size:32px;font-weight:700;letter-spacing:8px;margin:16px 0;">${esc(code)}</p>
     <p>Il est valable 10 minutes et ne sert qu'une fois.</p>
-    <p style="color: #6b7280; font-size: 13px;">Tu n'as rien demandé ? Ignore cet e-mail et change ton mot de passe : quelqu'un le connaît peut-être.</p>
+    <p class="rm-muted" style="font-size:13px;color:#6E6E73;">Tu n'as rien demandé ? Ignore cet e-mail et change ton mot de passe : quelqu'un le connaît peut-être.</p>
   `);
 }
 
@@ -78,26 +148,34 @@ export type EmailExample = { id: string; label: string; subject: string; html: (
 async function authTemplate(file: string): Promise<string> {
   const { readFile } = await import("node:fs/promises");
   const path = await import("node:path");
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const html = await readFile(path.join(process.cwd(), "public", "email-templates", file), "utf8");
   return html
-    .replace(/\{\{\s*\.ConfirmationURL\s*\}\}/g, `${site}/auth/callback?exemple=1`)
-    .replace(/\{\{\s*\.SiteURL\s*\}\}/g, site)
-    .replace(/\{\{\s*\.RedirectTo\s*\}\}/g, `${site}/reset-password`)
+    .replace(/\{\{\s*\.ConfirmationURL\s*\}\}/g, `${siteUrl}/auth/callback?exemple=1`)
+    .replace(/\{\{\s*\.SiteURL\s*\}\}/g, siteUrl)
+    .replace(/\{\{\s*\.RedirectTo\s*\}\}/g, `${siteUrl}/reset-password`)
     .replace(/\{\{\s*\.TokenHash\s*\}\}/g, "exemple")
     .replace(/\{\{\s*\.Token\s*\}\}/g, "123456")
     .replace(/\{\{\s*\.NewEmail\s*\}\}/g, "nouvelle.adresse@exemple.com")
     .replace(/\{\{\s*\.Email\s*\}\}/g, "client@exemple.com");
 }
 
+// « M'envoyer un exemple de chaque e-mail » (Administration › E-mails) : chaque nouveau modèle s'ajoute ici.
 export const EMAIL_EXAMPLES: EmailExample[] = [
-  { id: "welcome", label: "Bienvenue", subject: `Bienvenue sur ${APP_NAME}`, html: () => welcomeTemplate({ firstName: "Awa" }) },
-  { id: "recharge-confirmation", label: "Achat confirmé", subject: "Ton achat est confirmé",
-    html: () => rechargeConfirmationTemplate({ credits: 5000, amount: "5 000 XOF", planName: "Forfait Créateur" }) },
-  { id: "notification", label: "Notification", subject: "Une nouvelle notification",
-    html: () => genericNotificationTemplate({ title: "Ta vidéo est prête", message: "Elle t'attend dans ton espace." }) },
-  { id: "two-factor-code", label: "Code de connexion (validation en deux étapes)", subject: TWO_FACTOR_SUBJECT,
-    html: () => twoFactorCodeTemplate({ code: "482913", purpose: "login" }) },
+  { id: "access-ready", label: "Accès prêt (achat confirmé)", subject: "🎉 Bienvenue : ton accès est prêt",
+    html: () => accessReadyTemplate({ name: "Awa", products: ["Formation exemple"], loginUrl: `${site.url}/login`, amount: "15 000 FCFA", invoice: "F-2026-0001" }) },
+  { id: "reservation", label: "Place réservée (précommande)", subject: "✅ Ta place est réservée",
+    html: () => reservationTemplate({ name: "Awa", product: "Formation exemple", amount: "1 500 FCFA", invoice: "F-2026-0002", loginUrl: `${site.url}/login` }) },
+  { id: "course-update", label: "Nouveauté d'une formation", subject: "📣 Nouveau module disponible",
+    html: () => courseUpdateTemplate({ name: "Awa", title: "Module 2 : aller plus loin", body: "Trois nouvelles leçons t'attendent.", url: `${site.url}/mes-achats` }) },
+  { id: "login-link", label: "Lien de connexion", subject: `Ton lien de connexion ${APP_NAME}`, html: () => loginLinkTemplate({ loginUrl: `${site.url}/login` }) },
+  { id: "request-received", label: "Demande reçue", subject: "Ta demande est bien reçue", html: () => requestReceivedTemplate({ name: "Awa", kind: "Projet sur mesure", loginUrl: `${site.url}/demandes` }) },
+  { id: "request-update", label: "Réponse à une demande", subject: "Du nouveau sur ta demande",
+    html: () => requestUpdateTemplate({ name: "Awa", kind: "Projet sur mesure", status: "En cours", reply: "Voici notre proposition.", url: `${site.url}/demandes` }) },
+  { id: "admin-alert", label: "Alerte administrateur (vente)", subject: "🎉 Nouvelle vente : Formation exemple",
+    html: () => adminAlertTemplate({ title: "Nouvelle vente", lines: ["Montant : 15 000 FCFA (Mobile Money)", "Client : Awa · awa@exemple.com"], url: `${site.url}/admin/orders` }) },
+  { id: "notification", label: "Notification", subject: "Une nouvelle notification", html: () => genericNotificationTemplate({ title: "Ton appel est confirmé", message: "Rendez-vous mardi à 15 h." }) },
+  { id: "two-factor-code", label: "Code de connexion (validation en deux étapes)", subject: TWO_FACTOR_SUBJECT, html: () => twoFactorCodeTemplate({ code: "482913", purpose: "login" }) },
   { id: "auth-confirmation", label: "Confirmation d'inscription (Supabase)", subject: "Confirme ton adresse e-mail", html: () => authTemplate("confirmation.html") },
   { id: "auth-recovery", label: "Mot de passe oublié (Supabase)", subject: "Choisis un nouveau mot de passe", html: () => authTemplate("recovery.html") },
   { id: "auth-email-change", label: "Changement d'adresse (Supabase)", subject: "Confirme ta nouvelle adresse", html: () => authTemplate("email-change.html") },

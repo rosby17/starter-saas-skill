@@ -142,6 +142,9 @@ def check_secrets(root):
             where = f"{leak.get('File')}:{leak.get('StartLine')}" + (f" (commit {leak.get('Commit', '')[:7]})" if leak.get('Commit') else '')
             if re.search(r'(^|/)\.env\.(example|sample|template)$|test|fixture|mock', leak.get('File', ''), re.I):
                 continue
+            # Fichiers générés (build Next.js, dépendances) : identifiants de build, jamais des secrets du projet.
+            if re.search(r'(^|/)(\.next|\.next-dev|node_modules|dist|build|\.turbo|\.vercel)/', leak.get('File', '')):
+                continue
             add('CRITIQUE', 'Secrets', f"Secret dans le code ou l'historique Git ({leak.get('RuleID')})", where,
                 'Un secret a été écrit dans un fichier suivi par Git. Même supprimé depuis, il reste dans l’historique.',
                 'Révoquer et régénérer ce secret chez le fournisseur, puis le lire depuis une variable d’environnement.')

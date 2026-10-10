@@ -1,103 +1,92 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { ServiceLogo, ServiceModal, servicesWithKeys, useSecrets } from '@/components/admin/ServiceKeys'
 import { clsx } from '@/lib/utils'
 
-type Provider = { id: string; label: string; active: boolean; configured: boolean }
+type Provider = { id: string; label: string; active: boolean; configured: boolean; keyRefused: boolean }
 type Category = { id: string; label: string; description: string; providers: Provider[] }
 
-// Une seule passerelle active par type de paiement, présentée en tuiles (logo officiel, état, actions).
-// Le choix agit tout de suite sur le checkout ; « Clés » ouvre la même fenêtre que /admin/keys.
+// Une seule passerelle active par type de paiement. Le choix agit tout de suite sur le checkout.
+// Une carte par type de paiement ; chaque passerelle est une tuile (active, prête, ou clés à renseigner).
 export default function PaymentProvidersPage() {
-  const [categories, setCategories] = useState<Category[] | null>(null)
+  const [categories, setCategories] = useState<Category[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
-  const [openId, setOpenId] = useState<string | null>(null)
-  const { secrets, setSecrets } = useSecrets()
-  const services = servicesWithKeys(secrets ?? [])
+  const [saving, setSaving] = useState<string | null>(null)
 
   const load = async () => {
-    try {
-      const res = await fetch('/api/admin/payment-providers')
-      const data = await res.json()
-      if (data.success) setCategories(data.categories)
-      else setError(data.message)
-    } catch {
-      setError('Impossible de lire les moyens de paiement. Recharge la page.')
-    }
+    const res = await fetch('/api/admin/payment-providers')
+    const data = await res.json()
+    if (data.success) setCategories(data.categories)
+    else setError(data.message)
   }
   useEffect(() => { load() }, [])
 
-  const choose = async (category: Category, provider: Provider) => {
+  const choose = async (category: string, providerId: string) => {
     setError(null)
-    setMessage(null)
-    const res = await fetch(`/api/admin/payment-providers/${category.id}`, {
+    setSaving(`${category}:${providerId}`)
+    const res = await fetch(`/api/admin/payment-providers/${category}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ providerId: provider.id }),
+      body: JSON.stringify({ providerId }),
     })
     const data = await res.json()
     if (!data.success) setError(data.message)
-    else setMessage(`${category.label} : ${provider.label} est maintenant la passerelle active.`)
-    load()
+    await load()
+    setSaving(null)
   }
 
-  const open = services.find((s) => s.id === openId) ?? null
-
   return (
-    <main className="max-w-6xl p-4 sm:p-8">
-      <h1 className="mb-1 text-2xl font-bold">Moyens de paiement</h1>
-      <p className="mb-6 text-sm text-gray-500">Pour chaque type de paiement, choisis la passerelle utilisée. Une seule est active à la fois ; tes clients ne voient jamais son nom.</p>
-      {error && <div className="mb-4 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
-      {message && <div role="status" className="mb-4 rounded-xl border border-green-100 bg-green-50 p-3 text-sm text-green-700">{message}</div>}
+    <main className="mx-auto max-w-5xl space-y-6 px-4 py-6 md:px-8 md:py-8">
+      <header>
+        <h1 className="text-3xl md:text-4xl">Moyens de paiement</h1>
+        <p className="mt-2 max-w-2xl text-sm text-gray-500">Pour chaque type de paiement, choisis la passerelle que tes clients verront. Une seule est active à la fois ; le changement est immédiat.</p>
+      </header>
+      {error && <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
 
-      {!categories && !error && (
-        <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
-          {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
-        </div>
-      )}
-
-      {categories?.map((category) => (
-        <section key={category.id} className="mb-8">
-          <div className="mb-3 flex flex-wrap items-baseline gap-x-2">
-            <h2 className="font-semibold">{category.label}</h2>
-            <span className="text-sm text-gray-500">{category.description}</span>
-          </div>
-          <div role="radiogroup" aria-label={category.label} className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(270px,1fr))]">
-            {category.providers.map((provider) => {
-              const service = services.find((s) => s.id === provider.id)
-              return (
-                <div key={provider.id} className={clsx('flex flex-col gap-3 rounded-2xl border bg-white p-4', provider.active ? 'border-brand ring-1 ring-brand' : 'border-gray-200')}>
-                  <div className="flex items-center gap-3">
-                    <ServiceLogo service={{ name: provider.label, logo: service?.logo ?? '/logos/services/cle.svg' }} />
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold">{provider.label}</p>
-                      {provider.configured ? <Badge tone="green">Clés en place</Badge> : <Badge tone={provider.active ? 'red' : 'gray'}>Clés à configurer</Badge>}
-                    </div>
-                  </div>
-                  {service && <p className="flex-1 text-sm text-gray-500">{service.description}</p>}
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" role="radio" aria-checked={provider.active}
-                      variant={provider.active ? 'secondary' : 'primary'} onClick={() => { if (!provider.active) choose(category, provider) }}>
-                      {provider.active ? '✓ Active' : 'Choisir'}
-                    </Button>
-                    {service && (
-                      <Button type="button" variant="ghost" onClick={() => setOpenId(service.id)}>{provider.configured ? 'Modifier les clés' : 'Configurer'}</Button>
-                    )}
-                  </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        {categories.map((category) => {
+          const active = category.providers.find((p) => p.active)
+          return (
+            <section key={category.id} className="flex flex-col rounded-3xl border border-gray-200 bg-surface p-6">
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl">{category.label}</h2>
+                  <p className="mt-1 text-sm text-gray-500">{category.description}</p>
                 </div>
-              )
-            })}
-          </div>
-        </section>
-      ))}
-
-      <ServiceModal service={open} onClose={() => setOpenId(null)}
-        onSaved={(next, text) => { setSecrets(next); setOpenId(null); setMessage(text); load() }} />
+                <span className={clsx('shrink-0 rounded-full border px-3 py-1 text-xs', active ? 'border-green-200 bg-green-50 text-green-800' : 'border-gray-200 text-gray-500')}>
+                  {active ? `Actif : ${active.label}` : 'Aucun actif'}
+                </span>
+              </div>
+              <div role="radiogroup" aria-label={category.label} className="mt-5 grid gap-2 sm:grid-cols-2">
+                {category.providers.map((p) => (
+                  <button key={p.id} type="button" role="radio" aria-checked={p.active} disabled={saving !== null} onClick={() => !p.active && choose(category.id, p.id)}
+                    className={clsx('flex items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left transition-colors disabled:opacity-70',
+                      p.active ? 'border-brand bg-brand/5' : 'border-gray-200 hover:border-gray-300')}>
+                    <span className={clsx('grid h-5 w-5 shrink-0 place-items-center rounded-full border-2', p.active ? 'border-brand' : 'border-gray-300')}>
+                      {p.active && <span className="h-2.5 w-2.5 rounded-full bg-brand" />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium">{p.label}</span>
+                      <span className={clsx('block text-xs', p.keyRefused ? 'font-medium text-red-700' : p.configured ? 'text-gray-500' : 'text-amber-700')}>
+                        {saving === `${category.id}:${p.id}` ? 'Activation…' : p.keyRefused ? 'Clé refusée : à recoller' : p.configured ? 'Prêt' : 'Clés manquantes'}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {category.providers.some((p) => p.active && p.keyRefused) && (
+                <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
+                  {category.providers.find((p) => p.active)?.label} refuse la clé API enregistrée : tes clients passent automatiquement par {category.providers.find((p) => !p.active && p.configured && !p.keyRefused)?.label ?? 'une autre passerelle'}. Génère une nouvelle clé dans ton tableau de bord {category.providers.find((p) => p.active)?.label}, puis colle-la dans <Link href="/admin/keys" className="underline">Clés et intégrations</Link>.
+                </p>
+              )}
+              {category.providers.some((p) => !p.configured) && (
+                <Link href="/admin/keys" className="mt-4 text-xs text-gray-500 underline-offset-2 hover:text-gray-900 hover:underline">Renseigner les clés manquantes →</Link>
+              )}
+            </section>
+          )
+        })}
+      </div>
     </main>
   )
 }

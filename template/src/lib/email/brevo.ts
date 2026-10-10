@@ -9,6 +9,7 @@
  */
 
 import { serviceClient } from "@/lib/auth/service-client";
+import { site } from "@/config/site";
 
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
@@ -26,6 +27,8 @@ interface EmailParams {
   template?: string;
   /** Envoi d'exemple depuis l'administration (marqué comme tel dans le journal). */
   example?: boolean;
+  /** Pièces jointes (ex. facture PDF) : contenu en base64. */
+  attachments?: { name: string; content: string }[];
 }
 
 export type EmailResult = {
@@ -78,7 +81,7 @@ async function logEmail(params: EmailParams, result: EmailResult) {
 }
 
 export async function sendEmailDetailed(params: EmailParams): Promise<EmailResult> {
-  const { to, subject, html, replyTo, priority = "normal" } = params;
+  const { to, subject, html, replyTo, priority = "normal", attachments } = params;
   let result: EmailResult;
   if (priority === "low" && process.env.DISABLE_LOW_PRIORITY_EMAILS === "true") {
     result = { ok: true, status: "skipped", message: "E-mail peu important sauté (DISABLE_LOW_PRIORITY_EMAILS)." };
@@ -92,13 +95,14 @@ export async function sendEmailDetailed(params: EmailParams): Promise<EmailResul
         headers: { "Content-Type": "application/json", accept: "application/json", "api-key": process.env.BREVO_API_KEY },
         body: JSON.stringify({
           sender: {
-            email: process.env.BREVO_SENDER_EMAIL || "hello@yoursaas.app",
-            name: process.env.BREVO_SENDER_NAME || "{{APP_NAME}}",
+            email: process.env.BREVO_SENDER_EMAIL || site.supportEmail,
+            name: process.env.BREVO_SENDER_NAME || site.name,
           },
           to: [{ email: to.email, name: to.name || to.email }],
           subject,
           htmlContent: html,
           ...(replyTo ? { replyTo } : {}),
+          ...(attachments?.length ? { attachment: attachments } : {}),
         }),
       });
       const body = await res.text();

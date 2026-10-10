@@ -12,8 +12,11 @@ Appris de KappGen (06/10/2026). La page des clés était une liste de cartes rep
   (enveloppe pour SMTP, immeuble pour les mentions légales, téléphone pour le Mobile Money).
 - **En haut** : « 6 services prêts sur 10 · 2 à configurer » + filtres en pilules (Tous / À configurer / Configurés).
 - **La saisie dans une fenêtre** (Échap et clic à côté ferment) : logo + nom, lien « Où la trouver » qui mène à la bonne page du fournisseur
-  (avec le chemin écrit : « Brevo › Paramètres › Clés API »), les champs (secret masqué, valeur actuelle montrée « •••• 1234 »,
-  « laisser vide pour garder »), « Annuler / Enregistrer ». Ne jamais déplier une tuile dans la grille : ça casse la mise en page.
+  (avec le chemin écrit : « Brevo › Paramètres › Clés API »), les champs PRÉ-REMPLIS avec la valeur en place
+  (ou la `defaultValue` du catalogue quand le code en a une), un secret masqué avec l'œil pour l'afficher, tout modifiable
+  directement ; seuls les champs changés partent, un champ vidé retire la valeur de l'admin ; « Annuler / Enregistrer ».
+  JAMAIS de champ vide « laisser vide pour garder » (retour de Roosevelt, 10/10/2026 : on doit voir ce qui est en place).
+  Lecture des valeurs : `GET /api/admin/secrets?values=NOM1,NOM2` (admin seulement, `no-store`, journalisée). Ne jamais déplier une tuile dans la grille : ça casse la mise en page.
 - **Trouvable** : dans le menu ET dans le menu du profil (avatar) de l'administrateur.
 - Les clés sont chiffrées en base et prises en compte tout de suite, sans redéploiement ; « retirer » rend la valeur de l'hébergeur.
 

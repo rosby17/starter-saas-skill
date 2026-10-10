@@ -41,12 +41,12 @@ export function DatePicker({ value, onChange, placeholder = 'Choisir une date', 
   return (
     <div ref={root} className="relative">
       <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="dialog" aria-expanded={open}
-        className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-sm hover:border-gray-400 focus:border-brand focus:outline-none">
+        className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-surface px-3 py-2 text-left text-sm hover:border-gray-400 focus:border-brand focus:outline-none">
         <span className={selected ? '' : 'text-gray-400'}>{selected ? selected.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : placeholder}</span>
         <svg className="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden><path d="M6 2a1 1 0 0 1 1 1v1h6V3a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1zM4 8v8h12V8H4z" /></svg>
       </button>
       {open && (
-        <div role="dialog" aria-label="Calendrier" className="absolute z-40 mt-1 w-72 rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
+        <div role="dialog" aria-label="Calendrier" className="absolute z-40 mt-1 w-72 rounded-xl border border-gray-200 bg-surface p-3 shadow-lg">
           <div className="mb-2 flex items-center justify-between">
             <button type="button" onClick={() => shift(-1)} className="rounded-lg px-2 py-1 hover:bg-gray-100" aria-label="Mois précédent">‹</button>
             <span className="text-sm font-medium capitalize">{MONTHS[view.getMonth()]} {view.getFullYear()}</span>

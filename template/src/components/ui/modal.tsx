@@ -42,7 +42,7 @@ export function Modal({ open, onClose, title, subtitle, icon, children, footer, 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/40 p-4" onMouseDown={onClose}>
       <div ref={box} role="dialog" aria-modal="true" aria-labelledby={titleId} onMouseDown={(e) => e.stopPropagation()}
-        className={clsx('w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl', className)}>
+        className={clsx('w-full max-w-lg rounded-2xl border border-gray-200 bg-surface p-6 shadow-xl', className)}>
         <div className="flex items-start gap-3">
           {icon}
           <div className="min-w-0 flex-1">

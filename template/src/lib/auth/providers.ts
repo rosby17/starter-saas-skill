@@ -2,7 +2,8 @@
 let cache: { at: number; google: boolean } | null = null
 
 export async function googleEnabled(): Promise<boolean> {
-  if (cache && Date.now() - cache.at < 60_000) return cache.google
+  // « Activé » est gardé une minute ; « pas activé » seulement 10 s, pour que le bouton apparaisse vite après l'activation.
+  if (cache && Date.now() - cache.at < (cache.google ? 60_000 : 10_000)) return cache.google
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   let google = false

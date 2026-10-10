@@ -27,9 +27,7 @@ export async function acquireCronLock(name: string): Promise<boolean> {
 
 export async function releaseCronLock(name: string): Promise<void> {
   try {
-    // Supabase ne lève pas d'exception : on lit l'erreur, sinon un verrou bloqué passerait inaperçu jusqu'à son expiration.
-    const { error } = await serviceClient().from('cron_locks').delete().eq('name', name)
-    if (error) throw error
+    await serviceClient().from('cron_locks').delete().eq('name', name)
   } catch (error) {
     console.error('Verrou non libéré :', name, error)
   }

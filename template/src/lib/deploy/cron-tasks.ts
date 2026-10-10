@@ -3,6 +3,8 @@ const call = (path: string) => `wget -q -O /dev/null --header="Authorization: Be
 
 export const CRON_TASKS = [
   { name: 'Taux de change', command: call('/api/cron/update-rates'), frequency: '0 3 * * *' },
+  // Relit les passerelles pour livrer les paiements arrivés sans webhook, puis annule les commandes en attente depuis plus de 30 min.
+  { name: 'Paiements : rattrapage et annulation après 30 min', command: call('/api/cron/reconcile-orders'), frequency: '*/5 * * * *' },
   { name: 'Expiration des crédits', command: call('/api/cron/expire-credits'), frequency: '30 3 * * *' },
-  { name: 'Rattrapage Maketou', command: call('/api/cron/reverify-maketou-orders'), frequency: '*/15 * * * *' },
+  { name: 'Rappels de renouvellement des abonnements', command: call('/api/cron/subscription-reminders'), frequency: '0 8 * * *' },
 ]

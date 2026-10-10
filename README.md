@@ -24,11 +24,12 @@ Tout ce qui se répète d'un SaaS à l'autre est déjà prêt : tu ne parles que
 
 | Partie | Contenu |
 |---|---|
-| Site public | Accueil, fonctionnalités, tarifs, FAQ, pages légales, référencement Google (sitemap, robots), pages 404 et erreur |
+| Type de SaaS | Un seul modèle pour tout : **plateforme de formation** (parcours de cours, communauté, avis vérifiés, appels à réserver), **boutique** de produits numériques et de services, **SaaS à l'usage** avec crédits (voix, images, générateur d'applications). Tu allumes ou coupes chaque module dans `site.ts` |
+| Site public | Accueil construit à partir de ton catalogue, formations, boutique, fiche de chaque produit, FAQ, pages légales, référencement Google (sitemap, robots), application installable, pages 404 et erreur |
 | Comptes | Inscription, connexion, mot de passe oublié, déconnexion, pages privées protégées |
-| Espace client | Tableau de bord, tes fonctionnalités à toi, abonnement, historique des paiements et factures, aide (tickets), mon compte |
-| Administration | Vue d'ensemble, utilisateurs, commandes, moyens de paiement, **clés et intégrations**, support, avis, annonces, mode maintenance, journal d'audit |
-| Paiements | Mobile Money, carte, PayPal, crypto : Maketou, Tara Money, Warappay, GeniusPay, K-Pay, Binance Pay (manuel). Tu choisis la passerelle active depuis l'admin |
+| Espace client | Mes achats, parcours des formations, crédits, communauté, appels, demandes, factures PDF, aide, mon compte (photo, deux étapes, export et suppression des données) |
+| Administration | Statistiques, commandes, clients, formations et produits (leçons, fichiers, annonces), appels, demandes, avis, support, annonces, moyens de paiement, **clés et intégrations** (champs pré-remplis, œil pour les secrets), e-mails, santé, ressources serveur, maintenance |
+| Paiements | **La page de paiement verrouillée du kit**, la même sur tous tes SaaS : Mobile Money (toujours en FCFA), Wave, carte, PayPal, crypto (Binance Pay ou USDT avec QR code). Tara Money et Warappay avec bascule automatique, paiements manuels validés en un clic, facture PDF par e-mail. Personne ne peut la modifier par erreur : le build refuse |
 | Technique | Next.js 15, Supabase, Tailwind, Docker. Base de données par migrations automatiques, sécurité ligne par ligne sur chaque table |
 
 ## 2. Avant de commencer (10 minutes, une seule fois)
@@ -96,10 +97,10 @@ Ton SaaS doit ressembler à ta marque, pas à un modèle. Donne à Claude :
 ## 6. Après la création : 5 réglages
 
 1. **Connecte-toi** avec le compte administrateur créé dans l'assistant d'installation.
-2. **Colle tes clés.** Ouvre **Admin → Clés et intégrations**. Un bandeau te montre les clés manquantes : clique sur **Renseigner**, colle la clé, **Enregistrer**. Elle est active tout de suite, chiffrée, et jamais réaffichée en entier. Pour les secrets à inventer, le bouton **Générer** le fait pour toi.
-3. **Choisis tes moyens de paiement.** **Admin → Paiements** : une passerelle par type (Mobile Money, carte, PayPal). L'adresse du webhook à déclarer chez la passerelle est affichée dans « Clés et intégrations ».
-4. **Complète tes informations.** Dans `src/config/site.ts` : e-mail de support et informations de facturation (raison sociale, adresse). Relis les pages légales : ce sont des textes de départ, pas un avis juridique.
-5. **Tâches automatiques** (taux de change, expiration des crédits, rattrapage Maketou) : programmées toutes seules à la mise en ligne.
+2. **Colle tes clés.** Ouvre **Admin → Clés et intégrations**. Un bandeau te montre les clés manquantes : clique sur **Renseigner**, colle la clé, **Enregistrer**. Elle est active tout de suite et chiffrée ; en rouvrant la fenêtre, tu revois la valeur en place (l'œil affiche les secrets) et tu la corriges directement. Pour les secrets à inventer, le bouton **Générer** le fait pour toi.
+3. **Choisis tes moyens de paiement.** **Admin → Paiements** : une passerelle par type (Mobile Money, carte, PayPal). Wave et la crypto apparaissent dès que leur numéro ou leur adresse est collé dans les clés. L'adresse du webhook à déclarer chez la passerelle est affichée dans « Clés et intégrations ».
+4. **Complète tes informations.** Dans `src/config/site.ts` : e-mail de support, numéro WhatsApp, informations de facturation (raison sociale, adresse), modules. Puis remplace le **catalogue d'exemple** dans **Admin → Formations et produits**. Relis les pages légales : ce sont des textes de départ, pas un avis juridique.
+5. **Tâches automatiques** (taux de change, rattrapage des paiements, rappels d'abonnement, expiration des crédits) : programmées toutes seules à la mise en ligne.
 
 ## 7. Mettre en ligne
 

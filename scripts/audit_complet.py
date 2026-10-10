@@ -65,6 +65,30 @@ def domain_of(source, f):
             'Expérience': 'ux', 'Référencement': 'perf', 'Performance': 'perf', 'Qualité': 'qualite'}.get(c, 'qualite')
 
 
+def payment_lock_findings(root):
+    """Page de paiement du kit : obligatoire sur tout SaaS web audité (references/paiement-verrouille.md)."""
+    root = Path(root)
+    if not (root / 'package.json').exists():
+        return []
+    fix = 'Installer la brique : bash <skill>/scripts/installer-paiement.sh <projet>, puis adapter le site autour (jamais l’inverse).'
+    base = {'categorie': 'Paiement', 'domaine': 'paiement', 'source': 'paiement'}
+    lock = root / 'paiement.lock.json'
+    if not lock.exists():
+        return [{**base, 'niveau': 'HAUTE', 'titre': 'Page de paiement non conforme au kit (aucun verrou)', 'ou': 'paiement.lock.json',
+                 'detail': 'Le site n’a pas la page de paiement validée du kit (Mobile Money en FCFA, Wave, carte, PayPal, crypto, livraison atomique, facture).', 'correction': fix}]
+    import hashlib, json
+    try:
+        files = json.loads(lock.read_text(encoding='utf-8'))['files']
+    except Exception:
+        return [{**base, 'niveau': 'HAUTE', 'titre': 'Verrou de paiement illisible', 'ou': 'paiement.lock.json', 'detail': 'Fichier abîmé.', 'correction': fix}]
+    bad = [p for p, h in files.items() if not (root / p).exists()
+           or hashlib.sha256((root / p).read_text(encoding='utf-8').replace('\r\n', '\n').encode()).hexdigest() != h]
+    if bad:
+        return [{**base, 'niveau': 'HAUTE', 'titre': f'Page de paiement modifiée ({len(bad)} fichier(s) verrouillé(s))', 'ou': ', '.join(bad[:5]),
+                 'detail': 'La brique de paiement commune a été modifiée dans le projet : comportement non validé, build bloqué.', 'correction': 'Revenir aux fichiers du kit (réinstaller la brique) ; une amélioration se fait dans le kit.'}]
+    return []
+
+
 def collect(root):
     out = []
     with redirect_stdout(io.StringIO()):  # les scanners écrivent parfois des messages : on les garde pour le rapport
@@ -75,6 +99,7 @@ def collect(root):
     for source, mod in (('securite', audit_securite), ('rentabilite', audit_rentabilite), ('robustesse', audit_robustesse), ('produit', audit_produit)):
         for f in mod.findings:
             out.append({**f, 'domaine': domain_of(source, f), 'source': source})
+    out += payment_lock_findings(root)
     # Un même problème vu par deux scanners n'apparaît qu'une fois.
     seen, unique = set(), []
     for f in out:

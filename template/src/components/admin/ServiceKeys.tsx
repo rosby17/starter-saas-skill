@@ -60,7 +60,7 @@ export function ServiceBadge({ state }: { state: ServiceState }) {
 export function ServiceTile({ service, onOpen, extra }: { service: ServiceWithKeys; onOpen: () => void; extra?: React.ReactNode }) {
   const state = serviceState(service)
   return (
-    <div className={clsx('flex flex-col gap-3 rounded-2xl border bg-white p-4', state.ready ? 'border-green-200' : 'border-gray-200')}>
+    <div className={clsx('flex flex-col gap-3 rounded-2xl border bg-surface p-5', state.ready ? 'border-green-200' : 'border-gray-200')}>
       <div className="flex items-center gap-3">
         <ServiceLogo service={service} />
         <div className="min-w-0">
@@ -107,26 +107,56 @@ export function ServiceModal({ service, onClose, onSaved }: {
   onClose: () => void
   onSaved: (secrets: Secret[], message: string) => void
 }) {
+  // Champs pré-remplis avec la valeur EN PLACE (ou la valeur par défaut du code) : on voit (œil) et on corrige directement.
+  const [initial, setInitial] = useState<Record<string, string>>({})
   const [values, setValues] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [origin, setOrigin] = useState('')
   const confirm = useConfirm()
+  const names = service?.secrets.map((s) => s.name).join(',') ?? ''
 
-  useEffect(() => { setValues({}); setError(null); setOrigin(window.location.origin) }, [service?.id])
+  useEffect(() => {
+    setValues({}); setInitial({}); setError(null); setOrigin(window.location.origin)
+    if (!names) return
+    let cancelled = false
+    setLoading(true)
+    fetch(`/api/admin/secrets?values=${encodeURIComponent(names)}`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return
+        if (data.success) { setInitial(data.values); setValues(data.values) }
+        else setError(data.message || 'Valeurs actuelles illisibles.')
+      })
+      .catch(() => !cancelled && setError('Valeurs actuelles illisibles : vérifie ta connexion.'))
+      .finally(() => !cancelled && setLoading(false))
+    return () => { cancelled = true }
+  }, [service?.id, names])
 
   if (!service) return null
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!Object.values(values).some((v) => v.trim())) return setError('Rien à enregistrer : remplis au moins un champ.')
+    // Seuls les champs modifiés partent ; un champ vidé retire la valeur posée dans l'admin.
+    const changed = Object.fromEntries(Object.entries(values).filter(([k, v]) => v.trim() !== (initial[k] ?? '').trim() && v.trim()))
+    const cleared = service.secrets.filter((s) => s.source === 'admin' && !(values[s.name] ?? '').trim() && (initial[s.name] ?? '').trim())
+    if (!Object.keys(changed).length && !cleared.length) return setError('Aucune modification à enregistrer.')
     setBusy(true)
     setError(null)
     try {
-      const res = await fetch('/api/admin/secrets', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values }) })
-      const data = await res.json()
-      if (!data.success) return setError(data.message)
-      onSaved(data.secrets, `${service.name} : enregistré et actif tout de suite.`)
+      let data: { success: boolean; message?: string; secrets?: Secret[] } = { success: true }
+      if (Object.keys(changed).length) {
+        const res = await fetch('/api/admin/secrets', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values: changed }) })
+        data = await res.json()
+        if (!data.success) return setError(data.message ?? 'Enregistrement impossible.')
+      }
+      for (const s of cleared) {
+        const res = await fetch(`/api/admin/secrets?name=${encodeURIComponent(s.name)}`, { method: 'DELETE' })
+        data = await res.json()
+        if (!data.success) return setError(data.message ?? 'Suppression impossible.')
+      }
+      onSaved(data.secrets ?? [], `${service.name} : enregistré et actif tout de suite.`)
     } catch {
       setError('Enregistrement impossible : vérifie ta connexion et réessaie.')
     } finally {
@@ -147,11 +177,11 @@ export function ServiceModal({ service, onClose, onSaved }: {
       footer={<>
         <span className="mr-auto text-xs text-gray-500">Chiffré dans la base, actif tout de suite.</span>
         <Button type="button" variant="ghost" onClick={onClose}>Annuler</Button>
-        <Button type="submit" form="service-keys-form" disabled={busy}>{busy ? 'Enregistrement…' : 'Enregistrer'}</Button>
+        <Button type="submit" form="service-keys-form" disabled={busy || loading}>{busy ? 'Enregistrement…' : 'Enregistrer'}</Button>
       </>}>
       {service.where && (
         <p className="mb-4 text-sm text-gray-600">
-          Où la trouver : <a href={service.where.url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent underline-offset-2 hover:underline">{service.where.label}</a>
+          Où la trouver : <a href={service.where.url} target="_blank" rel="noopener noreferrer" className="font-medium text-brand underline-offset-2 hover:underline">{service.where.label}</a>
         </p>
       )}
       {error && <div className="mb-4 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
@@ -162,7 +192,8 @@ export function ServiceModal({ service, onClose, onSaved }: {
             <div key={s.name}>
               <label htmlFor={`cle-${s.name}`} className="mb-1 flex flex-wrap items-baseline gap-x-2 text-sm font-medium text-gray-800">
                 {s.label}
-                {filled && <span className="text-xs font-normal text-gray-500">actuelle : {s.preview}{s.source === 'server' ? ' (serveur)' : ''}</span>}
+                {s.source === 'server' && <span className="text-xs font-normal text-gray-500">valeur du serveur</span>}
+                {!filled && s.defaultValue && <span className="text-xs font-normal text-gray-500">valeur par défaut</span>}
                 {s.unreadable && <span className="text-xs font-normal text-red-700">à ressaisir</span>}
                 {!s.optional && !filled && <span className="text-xs font-normal text-gray-400">{s.required ? 'indispensable' : ''}</span>}
               </label>
@@ -171,7 +202,8 @@ export function ServiceModal({ service, onClose, onSaved }: {
                   const props = {
                     id: `cle-${s.name}`, autoComplete: s.secret ? 'new-password' : 'off', spellCheck: false, value: values[s.name] ?? '',
                     onChange: (e: React.ChangeEvent<HTMLInputElement>) => setValues({ ...values, [s.name]: e.target.value }),
-                    placeholder: filled ? 'Laisser vide pour garder la valeur actuelle' : `Colle ${s.label.toLowerCase()}`,
+                    placeholder: loading ? 'Chargement…' : `Colle ${s.label.toLowerCase()}`,
+                    disabled: loading,
                   }
                   // Secret masqué (œil pour l'afficher), valeur non secrète en clair.
                   return s.secret
