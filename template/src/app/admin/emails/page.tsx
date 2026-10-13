@@ -98,7 +98,7 @@ export default function AdminEmailsPage() {
           <h2 className="font-semibold">Derniers e-mails</h2>
           <Button type="button" variant="ghost" className="ml-auto" onClick={() => load(page)}>Rafraîchir</Button>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white">
+        <div className="rounded-2xl border border-gray-200 bg-surface">
           {!rows && !error && <p className="p-4 text-sm text-gray-500">Chargement…</p>}
           {rows && !rows.length && <p className="p-6 text-center text-sm text-gray-500">Aucun e-mail envoyé pour l’instant.</p>}
           <ul className="divide-y divide-gray-100">

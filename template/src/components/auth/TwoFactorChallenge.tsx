@@ -83,7 +83,7 @@ export function TwoFactorChallenge({ method, maskedEmail, next }: { method: 'ema
       : 'Saisis le code à 6 chiffres affiché par ton application d’authentification (Google Authenticator, 1Password, Authy…).'
 
   return (
-    <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+    <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-surface p-8 shadow-sm">
       <div className="mb-6 text-center">
         <div className="text-2xl"><Logo /></div>
         <h1 className="mt-4 text-xl font-semibold">{title}</h1>

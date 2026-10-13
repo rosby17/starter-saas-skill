@@ -36,7 +36,7 @@ export function ViewModeToggle({ labels = { simple: 'Simple', avance: 'Avancé' 
     <div role="radiogroup" aria-label="Type de tableau de bord" className="inline-flex rounded-lg border bg-gray-50 p-0.5 text-xs">
       {(['simple', 'avance'] as const).map((m) => (
         <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => setMode(m)}
-          className={clsx('rounded-md px-3 py-1 font-medium transition-colors', mode === m ? 'bg-white text-brand shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+          className={clsx('rounded-md px-3 py-1 font-medium transition-colors', mode === m ? 'bg-surface text-brand shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
           {labels[m]}
         </button>
       ))}

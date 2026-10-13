@@ -20,7 +20,7 @@ export type Secret = SecretStatus
 /** Logo officiel (ou pictogramme) dans une pastille blanche 48×48 : jamais une lettre dans un carré coloré. */
 export function ServiceLogo({ service, size = 48 }: { service: Pick<ServiceDefinition, 'logo' | 'name'>; size?: number }) {
   return (
-    <span className="grid shrink-0 place-items-center rounded-xl border border-gray-200 bg-white" style={{ width: size, height: size }}>
+    <span className="grid shrink-0 place-items-center rounded-xl border border-gray-200 bg-surface" style={{ width: size, height: size }}>
       <Image src={service.logo} alt={`Logo ${service.name}`} width={Math.round(size * 0.66)} height={Math.round(size * 0.66)} unoptimized
         className="object-contain" style={{ width: Math.round(size * 0.66), height: Math.round(size * 0.66) }} />
     </span>

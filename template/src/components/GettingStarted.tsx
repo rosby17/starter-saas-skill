@@ -21,7 +21,7 @@ export function GettingStarted({ steps, storageKey = 'getting-started-done' }: {
   const next = steps.findIndex((s) => !s.done)
   const masquer = () => { try { localStorage.setItem(storageKey, '1') } catch { /* ignoré */ } setHidden(true) }
   return (
-    <section className="rounded-xl border bg-white p-5" aria-label="Premiers pas">
+    <section className="rounded-xl border bg-surface p-5" aria-label="Premiers pas">
       <div className="mb-3 flex items-baseline gap-3">
         <h2 className="text-base font-semibold">Premiers pas</h2>
         <span className="text-sm text-gray-500">{steps.filter((s) => s.done).length} sur {steps.length}</span>

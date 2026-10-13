@@ -14,6 +14,8 @@
   --color-brand-hover: var(--brand-dim);
   --color-accent: var(--brand);
   --color-surface: var(--black-card);
+  /* Texte posé sur la couleur de marque (blanc sur une marque foncée, foncé sur une marque claire : menthe, jaune…). */
+  --color-on-brand: var(--on-brand);
   --font-sans: var(--font-brand), 'Helvetica Neue', Arial, sans-serif;
 
   --color-gray-50: var(--black);
@@ -30,7 +32,7 @@
   --color-red-50: var(--tone-red-bg);
   --color-red-100: var(--tone-red-bg);
   --color-red-200: var(--tone-red-line);
-  --color-red-600: var(--brand);
+  --color-red-600: var(--danger);
   --color-red-700: var(--tone-red-text);
   --color-red-800: var(--tone-red-text);
   --color-green-50: var(--tone-green-bg);
@@ -52,8 +54,8 @@
 
 :root {
   --line-strong: #3A3A3A;
-  --tone-red-bg: color-mix(in srgb, var(--brand) 14%, transparent);
-  --tone-red-line: color-mix(in srgb, var(--brand) 40%, transparent);
+  --tone-red-bg: color-mix(in srgb, var(--danger) 14%, transparent);
+  --tone-red-line: color-mix(in srgb, var(--danger) 40%, transparent);
   --tone-red-text: #FF8A9B;
   --tone-green-bg: rgba(46, 204, 113, 0.12);
   --tone-green-line: rgba(46, 204, 113, 0.35);
@@ -65,6 +67,8 @@
   --tone-blue-line: rgba(80, 140, 255, 0.35);
   --tone-blue-text: #9DBBFF;
   --brand: #C8102E;
+  --on-brand: #FFFFFF;
+  --danger: #E5484D;
   --brand-dim: #9B0C22;
   --brand-soft: color-mix(in srgb, var(--brand) 8%, transparent);
   --black: #0D0D0D;
@@ -84,9 +88,9 @@
 
 :root[data-theme="light"], [data-theme="light"] {
   --line-strong: #C7C7CC;
-  --tone-red-bg: color-mix(in srgb, var(--brand) 8%, transparent);
-  --tone-red-line: color-mix(in srgb, var(--brand) 30%, transparent);
-  --tone-red-text: var(--brand-dim);
+  --tone-red-bg: color-mix(in srgb, var(--danger) 8%, transparent);
+  --tone-red-line: color-mix(in srgb, var(--danger) 30%, transparent);
+  --tone-red-text: #B91C1C;
   --tone-green-bg: rgba(22, 163, 74, 0.1);
   --tone-green-line: rgba(22, 163, 74, 0.3);
   --tone-green-text: #166534;
@@ -137,8 +141,9 @@ button, input, textarea, select { font-family: inherit; }
    Les anciennes sections avaient des titres en 900 avec des italiques ; on les
    aligne sur le style Neue Montreal (500, approche serrée, sans faux italique). */
 h1, h2 {
-  font-weight: 500 !important;
-  letter-spacing: -0.045em !important;
+  /* Graisse et approche des titres : propres à chaque SaaS (--heading-weight), réglables par classe (pas de !important). */
+  font-weight: var(--heading-weight, 500);
+  letter-spacing: var(--heading-tracking, -0.045em);
 }
 h3 { letter-spacing: -0.02em; }
 h1 em, h2 em, h3 em { font-style: normal !important; }
@@ -215,3 +220,11 @@ h1 em, h2 em, h3 em { font-style: normal !important; }
 .auth-marquee { animation: authMarquee 45s linear infinite; }
 @keyframes authMarquee { from { transform: translateX(0); } to { transform: translateX(calc(-50% - 5px)); } }
 @media (prefers-reduced-motion: reduce) { .auth-float, .auth-brick, .auth-brick-next, .auth-marquee { animation: none; opacity: 1; } }
+
+/* Texte posé sur la couleur de marque, écrit en ligne en blanc par certaines briques (dont la page de paiement
+   verrouillée) : suit --on-brand, pour rester lisible si la marque est claire (menthe, jaune, citron…). */
+.bg-brand.text-white, .bg-brand :where(.text-white),
+[style*="background:var(--brand)"][style*="color:#fff"], [style*="background: var(--brand)"][style*="color: #fff"],
+[style*="background:var(--brand)"][style*="color:rgb(255, 255, 255)"], [style*="background: var(--brand)"][style*="color: rgb(255, 255, 255)"] {
+  color: var(--on-brand) !important;
+}

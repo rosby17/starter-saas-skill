@@ -106,12 +106,12 @@ export default function AdminSantePage() {
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-gray-900">Santé</h1>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-xl border border-gray-200 bg-white p-1 text-sm">
+          <div className="flex rounded-xl border border-gray-200 bg-surface p-1 text-sm">
             {PERIODS.map(([id, label]) => (
               <button key={id} onClick={() => setPeriod(id)} className={`rounded-lg px-3 py-1 ${period === id ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-100"}`}>{label}</button>
             ))}
           </div>
-          <button onClick={load} aria-label="Actualiser" className="rounded-xl border border-gray-200 bg-white p-2 text-gray-600 hover:bg-gray-50">
+          <button onClick={load} aria-label="Actualiser" className="rounded-xl border border-gray-200 bg-surface p-2 text-gray-600 hover:bg-gray-50">
             <span aria-hidden>↻</span>
           </button>
         </div>
@@ -134,7 +134,7 @@ export default function AdminSantePage() {
           {shown.length > 0 && (
             <ul className="space-y-2">
               {shown.map((problem) => (
-                <li key={problem.key} className="rounded-2xl border border-gray-200 bg-white">
+                <li key={problem.key} className="rounded-2xl border border-gray-200 bg-surface">
                   <div className="flex items-center gap-3 px-4 py-3">
                     <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${DOT[problem.severity]}`} />
                     <div className="min-w-0 flex-1">
@@ -172,7 +172,7 @@ export default function AdminSantePage() {
                 ["Côté client", clientCount, "connexion, solde, saisie"],
                 ["Résolues", counts?.resolved ?? 0, `sur ${PERIODS.find(([id]) => id === period)?.[1]}`],
               ] as const).map(([label, value, hint]) => (
-                <div key={label} className="rounded-xl border border-gray-200 bg-white px-4 py-3">
+                <div key={label} className="rounded-xl border border-gray-200 bg-surface px-4 py-3">
                   <p className="text-xs text-gray-500">{label}</p>
                   <p className="text-2xl font-bold text-gray-900">{value}</p>
                   <p className="text-xs text-gray-500">{hint}</p>

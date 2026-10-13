@@ -129,7 +129,7 @@ export function TwoFactorSettings() {
           <p className="font-medium text-amber-900">Tes codes de secours</p>
           <p className="mt-1 text-sm text-amber-800">Ils te permettent d’entrer si tu n’as plus accès à {status.method === 'totp' ? 'ton application' : 'ta boîte e-mail'}. Chaque code ne sert qu’une fois. Ils ne seront plus affichés.</p>
           <ul className="mt-3 grid grid-cols-2 gap-2 font-mono text-sm">
-            {backupCodes.map((c) => <li key={c} className="select-all rounded-lg bg-white px-3 py-1.5 text-center">{c}</li>)}
+            {backupCodes.map((c) => <li key={c} className="select-all rounded-lg bg-surface px-3 py-1.5 text-center">{c}</li>)}
           </ul>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button type="button" variant="secondary" onClick={copyCodes}>Copier les codes</Button>
@@ -170,7 +170,7 @@ export function TwoFactorSettings() {
           {choosing === 'totp' && totp && (
             <div className="flex flex-wrap items-center gap-4">
               {/* eslint-disable-next-line @next/next/no-img-element -- QR code fourni en data URL par Supabase */}
-              <img src={totp.qr} alt="QR code à scanner avec ton application" width={160} height={160} className="rounded-lg border border-gray-200 bg-white p-2" />
+              <img src={totp.qr} alt="QR code à scanner avec ton application" width={160} height={160} className="rounded-lg border border-gray-200 bg-surface p-2" />
               <div className="min-w-0 flex-1 text-sm text-gray-600">
                 <p>Scanne ce QR code avec ton application, puis saisis le code à 6 chiffres qu’elle affiche.</p>
                 <p className="mt-2">Pas de caméra ? Saisis cette clé : <code className="select-all break-all font-mono text-gray-900">{totp.secret}</code></p>

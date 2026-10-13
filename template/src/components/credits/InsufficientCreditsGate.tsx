@@ -32,7 +32,7 @@ export function InsufficientCreditsGate() {
   if (!open) return null
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>
-      <div role="dialog" aria-modal="true" aria-labelledby="credits-title" className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div role="dialog" aria-modal="true" aria-labelledby="credits-title" className="w-full max-w-sm rounded-2xl bg-surface p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <h2 id="credits-title" className="text-base font-bold text-gray-900">Crédits insuffisants</h2>
         {message && <p className="mt-1.5 text-sm text-gray-600">{message}</p>}
         <div className="mt-5 flex flex-col gap-2">

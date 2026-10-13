@@ -75,6 +75,16 @@ Le script copie le modèle, remplace le nom, le domaine d'exemple et le nom du p
 6. **Affiliation** (si retenue dans la SPEC) : suis `references/affiliation.md` dans l'ordre (migrations neuves `partners`, `partner_ledger`, `link_visits`, `payout_requests` + colonnes de `profiles` et `orders`, toutes en RLS avec écriture par fonctions SQL ; route `/r/[code]` et redirection `/<nom d'utilisateur>` ; rattachement sur TOUS les chemins d'inscription ; `partner_after_payment` branché après `credit_paid_order` et annulation au remboursement ; pages « Gagner avec <Produit> » et admin « Revendeurs et affiliés » / « Retraits à payer » ; e-mails ; tests de la section 12 dans `supabase/tests/`). Ajoute le programme au manuel et aux conditions d'utilisation.
 7. Construis la landing page selon la piste choisie (hero, sections, preuves, animations discrètes avec `prefers-reduced-motion`) et pour qu'elle parle du vrai produit, pas du texte d'exemple. Relis les pages légales : ce sont des textes de départ, pas un avis juridique.
 
+### 3 bis. Originalité OBLIGATOIRE (règle de Roosevelt, 13/10/2026, refonte AgedGmailYT)
+
+Le modèle vient de la plateforme de formation de Roosevelt. Livré tel quel, chaque SaaS ressemblerait à ce site : **interdit**. On garde les BRIQUES FONCTIONNELLES communes (page de paiement verrouillée, admin, espace client, auth, e-mails, supervision) mais on **repense la disposition** de tout ce que voit un visiteur, à partir de la direction artistique du produit (et de son ancien site s'il en a un) :
+- **Connexion / inscription** : jamais le panneau gauche du modèle (`AuthHero` : briques « + ta brique », bandeau défilant paiements / réseaux, signature). Une mise en page propre au produit (carte centrée sur le fond de la vitrine, écran partagé avec une démo du produit, etc.). **Méthodes par défaut : Google en premier, puis e-mail + mot de passe** (inscription avec mot de passe) ; le lien par e-mail reste en option discrète (« Recevoir plutôt un lien », « Mot de passe oublié ? »).
+- **Hero, sections de l'accueil, FAQ, bloc contact, pied de page** : composants propres au produit (`src/components/site/<Produit>…`), pas `HomeHero` / `Faq` / `Contact` du modèle avec seulement les textes changés. Si le client a déjà un site qu'il aime, on reprend SON esprit (ex. AgedGmailYT : hero machine à écrire conservé à l'identique).
+- **Jamais de contenu inventé** : pas de témoignages, photos de « clients », captures de statistiques ou chiffres (« 5k+ utilisateurs ») fictifs. Chiffres réels lus en base, ou rien. Voir `references/promesses-marketing.md`.
+- **Contact** : le canal que le client choisit (ex. groupe WhatsApp avec QR code) ; ne pas afficher d'e-mail de support si le client n'en veut pas.
+- Avant de livrer, se poser la question : « quelqu'un qui connaît le site de formation de Roosevelt reconnaîtrait-il la mise en page ? » Si oui, ce n'est pas fini.
+- **Couleur de marque claire** (menthe, jaune, citron…) : régler `--on-brand` (texte foncé) dans `globals.css` et vérifier le contraste ≥ 4,5:1 de TOUS les boutons pleins en thème clair ET sombre (une règle CSS rattrape le blanc écrit en ligne par la brique de paiement). Titres : `--heading-weight` / `--heading-tracking` selon la charte.
+
 ## 4. Migrations : toujours automatiques
 
 - Un fichier NEUF par changement : `supabase/migrations/<AAAAMMJJHHMMSS>_<nom>.sql`. Ne jamais modifier une migration déjà appliquée.
@@ -176,6 +186,7 @@ Les scanners se testent : `python3 tests/test_audit.py`, `python3 tests/test_ren
 
 ## Règles
 
+- **On ne construit JAMAIS sur le serveur de production** (règle de Roosevelt, 13/10/2026). L'image est construite par GitHub Actions (`template/.github/workflows/build-and-deploy.yml`) et publiée sur ghcr.io ; Coolify pointe sur `template/Dockerfile.deploy` (une ligne `FROM`, aucune compilation), « Auto Deploy » décoché, et c'est GitHub Actions qui appelle `/api/v1/deploy` une fois l'image prête. Vaut pour tout SaaS créé, audité ou repris, et pour chaque app d'un serveur partagé. Détails, réglages Coolify et pièges : `references/supervision-exploitation.md` § 4.
 - **La page de paiement du kit est la seule page de paiement** de tous les SaaS créés ou audités : jamais d'autre fenêtre de paiement, jamais de fichier de `paiement.lock.json` modifié dans un projet, jamais `--signer` hors du kit.
 - Jamais de suppression de données ni de ressource payante sans accord. Jamais de secret dans Git ni dans une réponse. Dépôts toujours créés en privé.
 - Toute leçon d'exploitation tirée d'un incident (panne, alerte inutile, charge serveur) s'ajoute à `references/supervision-exploitation.md`, et son script réutilisable à `template/ops/`.

@@ -18,7 +18,7 @@ export function CookieConsentBanner() {
 
   return (
     <div role="dialog" aria-live="polite" aria-label="Cookies" className="fixed inset-x-0 bottom-0 z-[100] flex justify-center px-4 pb-4 sm:justify-end sm:px-6 sm:pb-6">
-      <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 text-gray-700 shadow-2xl">
+      <div className="w-full max-w-md rounded-xl border border-gray-200 bg-surface p-4 text-gray-700 shadow-2xl">
         <p className="text-[13px] leading-relaxed">
           Nous utilisons des cookies de mesure d’audience uniquement avec votre accord.{' '}
           <Link href="/privacy" className="font-semibold text-brand underline underline-offset-2">En savoir plus</Link>

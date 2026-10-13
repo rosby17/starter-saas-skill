@@ -71,7 +71,7 @@ export function ServerResourcesPanel() {
       {data.agentError && <p className="text-sm text-amber-700">Collecteur du serveur injoignable ({data.agentError}) : mesures du conteneur affichées.</p>}
       <div className="grid gap-3 sm:grid-cols-3">
         {cards.map((c) => (
-          <div key={c.name} className="rounded-xl border border-gray-200 bg-white p-4">
+          <div key={c.name} className="rounded-xl border border-gray-200 bg-surface p-4">
             <div className="flex items-baseline justify-between">
               <p className="text-sm text-gray-500">{c.name}</p>
               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TONE[level(c.avg ?? c.now, c.warning, c.critical)]}`}>{LABEL[level(c.avg ?? c.now, c.warning, c.critical)]}</span>

@@ -46,3 +46,18 @@ Si l'utilisateur dit « choisis pour moi », choisis toi-même et justifie en un
 - **Motion design** : au service de la compréhension (apparition des sections au défilement, démonstration du produit qui s'anime, compteur de chiffres, survol des boutons). Discret, 150 à 400 ms, rien qui bloque la lecture. Toujours désactivé avec `prefers-reduced-motion`. Pas de grosse bibliothèque ni de vidéo lourde dans le premier écran : CSS et `IntersectionObserver` d'abord ; Framer Motion seulement si une animation complexe le justifie.
 - Performance : le premier écran doit s'afficher vite sur un téléphone moyen (images en `next/image`, polices via `next/font`).
 - Note dans `SPEC.md` les références retenues et ce qui en a été tiré.
+
+## 5. Ce qui DOIT changer d'un SaaS à l'autre (leçon AgedGmailYT, 13/10/2026)
+
+Le client a reconnu tout de suite la mise en page du site de formation sur sa connexion, son pied de page et sa FAQ. Liste à repasser pour CHAQUE SaaS, même quand on garde le style (couleurs, police, sobriété) :
+
+| Élément | Modèle (à ne pas livrer tel quel) | À faire |
+|---|---|---|
+| Connexion / inscription | `AuthUI` + `AuthHero` (écran partagé, briques, bandeau paiements/réseaux) | Mise en page propre ; Google → e-mail + mot de passe ; lien e-mail en option |
+| Hero | `HomeHero` (titre géant à gauche, puces de domaines) | Dérivé de la piste choisie ou de l'ancien site du client |
+| FAQ | `Faq` (« Les questions qu'on nous pose », liste à gauche) | Mise en page propre (grille de cartes, onglets par thème…) |
+| Contact / pied de page | `Contact` (« On reste connectés », grille de réseaux, colonnes) | Bloc du canal choisi par le client + pied de page adapté |
+| Preuves | Témoignages / photos d'exemple | Avis vérifiés réels ou chiffres réels en base, sinon une section « comment ça marche » |
+| Visuels | Captures d'exemple | Captures du vrai produit (données de test masquées) |
+
+Les briques fonctionnelles (paiement verrouillé, admin, espace client, e-mails) restent communes ; seule leur couleur suit la charte.

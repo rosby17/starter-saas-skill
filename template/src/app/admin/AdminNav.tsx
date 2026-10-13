@@ -78,7 +78,7 @@ export function MaintenanceSwitch() {
         <span className={clsx('block text-xs', on ? 'text-red-700' : 'text-gray-500')}>{on === null ? '…' : on ? 'Site fermé aux visiteurs' : 'Site ouvert'}</span>
       </span>
       <span className={clsx('relative h-6 w-11 shrink-0 rounded-full transition-colors', on ? 'bg-red-600' : 'bg-gray-300')}>
-        <span className={clsx('absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all', on ? 'left-6' : 'left-1')} />
+        <span className={clsx('absolute top-1 h-4 w-4 rounded-full bg-surface shadow transition-all', on ? 'left-6' : 'left-1')} />
       </span>
     </button>
   )

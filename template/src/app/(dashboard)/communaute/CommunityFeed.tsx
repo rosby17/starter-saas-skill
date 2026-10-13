@@ -174,7 +174,7 @@ function Bubble({ p, isAdmin, discussion, onChange }: { p: FeedPost; isAdmin: bo
                 return (
                   <button key={i} type="button" onClick={() => vote(i)} className="block w-full text-left">
                     <span className="flex items-center gap-2 text-sm">
-                      <span className={clsx('grid h-5 w-5 shrink-0 place-items-center rounded-full border-2', votes.includes(i) ? 'border-brand bg-brand' : 'border-gray-400')}>{votes.includes(i) && <span className="h-2 w-2 rounded-full bg-white" />}</span>
+                      <span className={clsx('grid h-5 w-5 shrink-0 place-items-center rounded-full border-2', votes.includes(i) ? 'border-brand bg-brand' : 'border-gray-400')}>{votes.includes(i) && <span className="h-2 w-2 rounded-full bg-surface" />}</span>
                       <span className="flex-1">{o}</span><span className="text-xs text-gray-500">{n}</span>
                     </span>
                     <span className="ml-7 mt-1 block h-1.5 overflow-hidden rounded-full bg-gray-200"><span className="block h-full rounded-full bg-brand" style={{ width: `${(n / total) * 100}%` }} /></span>
