@@ -228,3 +228,8 @@ h1 em, h2 em, h3 em { font-style: normal !important; }
 [style*="background:var(--brand)"][style*="color:rgb(255, 255, 255)"], [style*="background: var(--brand)"][style*="color: rgb(255, 255, 255)"] {
   color: var(--on-brand) !important;
 }
+
+/* Boutons à fond de marque de la page de paiement verrouillée (styles internes .ck-*) : suivent --on-brand (marques claires). */
+.ck-pay, .ck-pay *, .bg-brand, button[style*="background:var(--brand)"], button[style*="background: var(--brand)"], a[style*="background:var(--brand)"], a[style*="background: var(--brand)"],
+span[style*="background:var(--brand)"], span[style*="background: var(--brand)"] { color: var(--on-brand) !important; }
+.ck-pay { box-shadow: 0 10px 30px color-mix(in srgb, var(--brand) 35%, transparent) !important; }
