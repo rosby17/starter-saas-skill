@@ -82,6 +82,10 @@ export const SECRET_CATALOG: SecretDefinition[] = [
   { name: 'WARAPPAY_PRODUCT_CODE', label: 'Code produit (prix libre)', group: 'Warappay', secret: false, requirement: gw('warappay'), help: 'Un produit à prix variable pour tous les forfaits.' },
   { name: 'WARAPPAY_WEBHOOK_SECRET', label: 'Secret du webhook', group: 'Warappay', secret: true, requirement: gw('warappay'), webhookPath: '/api/payment/webhook/warappay',
     help: 'Donné par Warappay quand tu déclares l’adresse du webhook.' },
+  { name: 'MAKETOU_API_KEY', label: 'Clé API Maketou', group: 'Maketou', secret: true, requirement: gw('maketou'),
+    help: 'maketou.net → ta boutique → Paramètres → API : la clé secrète (Bearer).' },
+  { name: 'MAKETOU_PRODUCT_ID', label: 'Identifiant du produit Maketou', group: 'Maketou', secret: false, requirement: gw('maketou'),
+    help: 'Le « productDocumentId » du produit Maketou à prix libre qui reçoit les paiements (le montant exact est envoyé à chaque paiement).' },
   { name: 'WARAPPAY_CURRENCY', label: 'Devise de la boutique', group: 'Warappay', secret: false, requirement: { kind: 'optional' }, defaultValue: 'XOF', help: 'XOF ou XAF.' },
 
   { name: 'WAVE_NUMBER', label: 'Numéro Wave du partenaire', group: 'Wave (manuel)', secret: false, requirement: { kind: 'optional' }, help: 'Numéro Wave qui reçoit les paiements (avec l’indicatif). Sans lui, Wave n’apparaît pas sur la page de paiement.' },

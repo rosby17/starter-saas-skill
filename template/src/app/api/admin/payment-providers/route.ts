@@ -23,6 +23,7 @@ export async function GET() {
     })))
     const categories = PAYMENT_CATEGORIES.map((category) => ({
       ...category,
+      enabled: settings[category.id].enabled,
       providers: PAYMENT_PROVIDERS[category.id].map((provider) => ({
         ...provider,
         active: settings[category.id].active === provider.id,

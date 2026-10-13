@@ -24,6 +24,7 @@ export const PAYMENT_PROVIDERS: Record<PaymentCategoryId, Array<{ id: string; la
   mobile_money: [
     { id: 'taramoney', label: 'Tara Money' },
     { id: 'warappay', label: 'Warappay' },
+    { id: 'maketou', label: 'Maketou' },
   ],
   wave: [{ id: 'wave', label: 'Wave (manuel)' }],
   // Warappay accepte aussi la carte et PayPal.

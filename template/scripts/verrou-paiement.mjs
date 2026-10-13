@@ -48,6 +48,7 @@ export const FILES = [
   'src/lib/payments/gateways/index.ts',
   'src/lib/payments/gateways/taramoney.ts',
   'src/lib/payments/gateways/warappay.ts',
+  'src/lib/payments/gateways/maketou.ts',
   'src/lib/payments/gateways/wave.ts',
   'src/lib/payments/gateways/binance.ts',
   'src/lib/orders/credit-order.ts',

@@ -23,7 +23,7 @@ Une fenêtre en deux colonnes (une seule sur téléphone) :
 
 ## Le verrou
 
-- `paiement.lock.json` : l'empreinte SHA-256 de chacun des 34 fichiers de la brique (liste dans `scripts/verrou-paiement.mjs`).
+- `paiement.lock.json` : l'empreinte SHA-256 de chacun des 35 fichiers de la brique (liste dans `scripts/verrou-paiement.mjs`).
 - `npm run lint` et `npm run build` (script `prebuild`, donc aussi la construction Docker sur le serveur) lancent `node scripts/verrou-paiement.mjs` : un fichier modifié ou supprimé = échec, avec la liste et quoi régler à la place. La CI GitHub fait de même.
 - `--signer` ne fonctionne que dans le kit (dossier `template/` à côté du `SKILL.md` de starter-saas).
 
@@ -48,7 +48,7 @@ Uniquement dans le dépôt du kit : modifier `template/…`, vérifier (`tsc`, l
 bash <dossier du skill>/scripts/installer-paiement.sh <dossier du projet>
 ```
 
-Le script copie les 34 fichiers, `paiement.lock.json`, `scripts/verrou-paiement.mjs`, ajoute les scripts npm (`lint`, `prebuild`, `verrou-paiement`) et la dépendance `qrcode`, puis lance `tsc` et liste ce qui manque AUTOUR de la brique (à adapter dans le projet, jamais dans la brique) :
+Le script copie les 35 fichiers, `paiement.lock.json`, `scripts/verrou-paiement.mjs`, ajoute les scripts npm (`lint`, `prebuild`, `verrou-paiement`) et la dépendance `qrcode`, puis lance `tsc` et liste ce qui manque AUTOUR de la brique (à adapter dans le projet, jamais dans la brique) :
 
 - tables et colonnes : `products` (prix FCFA, promo, précommande, crédits), `entitlements`, `preorders`, `orders` (coordonnées, `purchase_kind`, `client_ip`, `ip_country`, `price_zone`, `paid_at`, `is_test`…), fonctions `credit_paid_order` et `grant_product_access` → reprendre les migrations du modèle (`template/supabase/migrations/`) dans des migrations NEUVES du projet ;
 - modules appelés par la brique : `lib/catalog/*`, `lib/customers.ts`, `lib/currency.ts`, `lib/invoices/invoice.ts`, `lib/email/*`, `lib/auth/access-link.ts`, `lib/rate-limit.ts`, `lib/site-url.ts`, `lib/calls/slots.ts`, `lib/catalog/slugs.ts`, `config/site.ts` (`whatsapp`, `payments`, `company`), `CheckoutProvider` dans le layout racine et `CatalogProvider` ;

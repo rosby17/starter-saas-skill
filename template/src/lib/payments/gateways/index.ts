@@ -1,5 +1,6 @@
 import type { PaymentGateway } from '../types'
 import { binance } from './binance'
+import { maketou } from './maketou'
 import { taramoney } from './taramoney'
 import { warappay } from './warappay'
 import { wave } from './wave'
@@ -8,6 +9,7 @@ import { wave } from './wave'
 const GATEWAYS: Record<string, PaymentGateway> = {
   [taramoney.id]: taramoney,
   [warappay.id]: warappay,
+  [maketou.id]: maketou,
   [binance.id]: binance,
   [wave.id]: wave,
 }

@@ -5,7 +5,7 @@ import { serviceClient } from '@/lib/auth/service-client'
 import { getGateway } from '@/lib/payments/gateways'
 import { PAYMENT_PROVIDERS } from '@/lib/payments/providers'
 import type { PaymentGateway } from '@/lib/payments/types'
-import { getActivePaymentProvider } from '@/lib/payments/settings'
+import { getActivePaymentProvider, isPaymentCategoryEnabled } from '@/lib/payments/settings'
 import { GatewayError } from '@/lib/payments/types'
 import { publicOrigin } from '@/lib/site-url'
 import { toFcfa, toUsd } from '@/lib/currency'
@@ -58,6 +58,9 @@ export async function POST(request: Request) {
 
     // La passerelle active d'abord, puis les autres passerelles configurées du même type en secours :
     // si l'une refuse (clé expirée, panne), le client passe par l'autre sans rien voir.
+    if (!(await isPaymentCategoryEnabled(db, input.paymentType))) {
+      return NextResponse.json({ success: false, message: 'Ce moyen de paiement n’est plus proposé. Choisis-en un autre.' }, { status: 400 })
+    }
     const providerId = await getActivePaymentProvider(db, input.paymentType)
     const gateways = [providerId, ...PAYMENT_PROVIDERS[input.paymentType].map((p) => p.id).filter((id) => id !== providerId)]
       .map(getGateway).filter((g): g is PaymentGateway => !!g && g.isConfigured())
