@@ -30,7 +30,9 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image', title: `${site.name} — ${site.tagline}`, description: site.description, images: ['/og.png'] },
   robots: { index: true, follow: true },
   // Application installable (manifest.ts) : icône et barre d'état sur iPhone.
-  icons: { apple: '/pwa/apple-touch-icon.png' },
+  // Favicon : déclarer l'icône du site (sinon seul l'icône Apple est annoncé et les navigateurs gardent une ancienne icône).
+  // À la création d'un SaaS : régénérer src/app/icon.png, src/app/favicon.ico et src/app/apple-icon.png à partir du logo.
+  icons: { icon: [{ url: '/favicon.ico', sizes: '48x48' }, { url: '/icon.png', type: 'image/png', sizes: '512x512' }], apple: '/pwa/apple-touch-icon.png' },
   appleWebApp: { capable: true, title: site.name, statusBarStyle: 'black-translucent' },
 }
 
