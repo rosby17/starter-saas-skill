@@ -18,6 +18,9 @@ import { setOrderCookie } from '@/lib/orders/order-cookie'
 import { CALL_SLUG } from '@/lib/calls/slots'
 import { COMMUNITY_SLUG } from '@/lib/catalog/slugs'
 
+// Durée pendant laquelle une commande « pending » est reprise au lieu d'en ouvrir une nouvelle pour le même achat.
+const CHECKOUT_REUSE_WINDOW_MS = 30 * 60 * 1000
+
 const bodySchema = contactSchema.extend({
   productSlug: z.string().regex(/^[a-z0-9-]{1,80}$/),
   paymentType: z.enum(['mobile_money', 'wave', 'card', 'paypal', 'crypto']).default('mobile_money'),
@@ -158,6 +161,54 @@ export async function POST(request: Request) {
     const orderCurrency = fcfaLike ? 'XOF' : regional.currency
     const generatedId = crypto.randomUUID()
     const [firstName, ...rest] = input.fullName.split(/\s+/)
+
+    // Réutilisation : une commande « pending » encore récente, du même produit et du même type d'achat, pour la même
+    // passerelle et le même montant, renvoie SA page de paiement au lieu d'en ouvrir une deuxième (double clic,
+    // retour arrière, relance après un délai). Le client ne peut pas payer deux fois la même chose.
+    const firstMethod = gateways[0].paymentMethod
+    const { data: pending } = await db.from('orders').select('id, checkout_url')
+      .eq('user_id', userId).eq('product_id', product.id).eq('purchase_kind', purchaseKind)
+      .eq('payment_method', firstMethod).eq('status', 'pending').eq('amount_fcfa', amountFcfa)
+      .gte('created_at', new Date(Date.now() - CHECKOUT_REUSE_WINDOW_MS).toISOString())
+      .not('checkout_url', 'is', null).order('created_at', { ascending: false }).limit(1).maybeSingle()
+    if (pending?.checkout_url) {
+      await setOrderCookie(pending.id)
+      return NextResponse.json({ success: true, cartId: pending.id, redirectUrl: pending.checkout_url, manual: null })
+    }
+
+    // La commande est enregistrée AVANT l'appel à la passerelle : un paiement ne peut jamais arriver sans commande à
+    // rattacher. Si l'insertion échoue, aucune session de paiement n'est ouverte.
+    const { error: preError } = await db.from('orders').insert({
+      id: generatedId,
+      user_id: userId,
+      product_id: product.id,
+      plan_name: planName,
+      purchase_kind: purchaseKind,
+      // Pack de crédits : versés par credit_paid_order au paiement confirmé, avec leur date de fin.
+      credits: product.category === 'credits' ? product.credits : 0,
+      validity_days: product.category === 'credits' ? product.credits_validity_days : null,
+      amount_local: fcfaLike ? price : regional.amount,
+      amount_fcfa: amountFcfa,
+      amount_usd: amountUsd,
+      currency: orderCurrency,
+      payment_method: firstMethod,
+      status: 'pending',
+      customer_name: input.fullName,
+      customer_email: email,
+      customer_phone: input.phone,
+      customer_country: input.country || null,
+      // Journal : ce que le serveur a vu (adresse IP, pays déduit) et la zone de prix appliquée.
+      client_ip: ip !== 'inconnue' ? ip : null,
+      ip_country: ipCountry || null,
+      price_zone: priceZone,
+      new_account: newAccount,
+    })
+    if (preError) {
+      console.error('Commande « pending » non enregistrée :', preError)
+      return NextResponse.json({ success: false, message: 'Le service est momentanément indisponible. Réessaie dans un instant.' }, { status: 500 })
+    }
+    await setOrderCookie(generatedId)
+
     let gateway = gateways[0]
     let created: Awaited<ReturnType<PaymentGateway['createCheckout']>> | null = null
     let lastError: unknown = null
@@ -179,41 +230,25 @@ export async function POST(request: Request) {
         lastError = error
       }
     }
-    if (!created) throw lastError
+    if (!created) {
+      // Aucune passerelle n'a répondu : la commande n'a jamais été payable, on la marque échouée.
+      await db.from('orders').update({ status: 'failed' }).eq('id', generatedId).eq('status', 'pending')
+      throw lastError
+    }
     const orderId = created.orderId || generatedId
 
-    const { error } = await db.from('orders').insert({
-      id: orderId,
-      user_id: userId,
-      product_id: product.id,
-      plan_name: planName,
-      purchase_kind: purchaseKind,
-      // Pack de crédits : versés par credit_paid_order au paiement confirmé, avec leur date de fin.
-      credits: product.category === 'credits' ? product.credits : 0,
-      validity_days: product.category === 'credits' ? product.credits_validity_days : null,
-      amount_local: fcfaLike ? price : regional.amount,
-      amount_fcfa: amountFcfa,
-      amount_usd: amountUsd,
-      currency: orderCurrency,
+    // Rattache la session à la commande déjà enregistrée : c'est cette référence que le webhook et le rattrapage
+    // relisent, et l'URL sert à la tentative suivante (voir plus haut). Séparé : tant que la colonne checkout_url
+    // n'est pas migrée, la référence reste enregistrée.
+    const { error: linkError } = await db.from('orders').update({
       payment_method: gateway.paymentMethod,
       payment_ref: created.providerRef,
-      status: 'pending',
-      customer_name: input.fullName,
-      customer_email: email,
-      customer_phone: input.phone,
-      customer_country: input.country || null,
-      // Journal : ce que le serveur a vu (adresse IP, pays déduit) et la zone de prix appliquée.
-      client_ip: ip !== 'inconnue' ? ip : null,
-      ip_country: ipCountry || null,
-      price_zone: priceZone,
-      new_account: newAccount,
-    })
-    if (error) {
-      // Sans commande en base, un paiement ne pourrait jamais être livré : on n'envoie pas le client payer.
-      console.error('Commande « pending » non enregistrée :', error)
-      return NextResponse.json({ success: false, message: 'Le service est momentanément indisponible. Réessaie dans un instant.' }, { status: 500 })
+    }).eq('id', orderId)
+    if (linkError) console.error(`[ACTION REQUISE] Session ${gateway.id} créée mais non rattachée à la commande ${orderId} :`, linkError)
+    if (created.redirectUrl) {
+      const { error: urlError } = await db.from('orders').update({ checkout_url: created.redirectUrl }).eq('id', orderId)
+      if (urlError) console.warn(`URL de paiement non mémorisée pour ${orderId} (migration checkout_url absente ?) :`, urlError)
     }
-    await setOrderCookie(orderId)
 
     // redirectUrl absent = paiement manuel (Binance) : le client reçoit des instructions et la référence à indiquer.
     return NextResponse.json({ success: true, cartId: orderId, redirectUrl: created.redirectUrl ?? null, manual: created.manual ?? null })
