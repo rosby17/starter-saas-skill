@@ -68,6 +68,7 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 - [ ] Mise en ligne reproductible (un clic) et retour en arrière possible (version précédente).
 - [ ] Listes paginées, index sur les clés étrangères, pas de requête par élément dans une boucle.
 - [ ] Mode maintenance disponible.
+- [ ] Les réponses des clients ARRIVENT : l'adresse « Répondre à » (support@) a une boîte ou un renvoi actif (`dig MX`), une seule ligne `v=spf1`, test envoyé depuis une autre adresse et reçu hors spam (`emails-et-deux-etapes.md`, « Recevoir les réponses »).
 - [ ] Les e-mails partent VRAIMENT : bouton « exemple de chaque e-mail » cliqué (tous « Envoyé ») ; journal des e-mails avec la réponse du fournisseur ; un e-mail urgent attend la réponse et affiche la vraie erreur.
 - [ ] Logiciel installé : mise à jour en trois temps (fond, fin du travail, assistant + retour arrière), paquet demandé avec `?b=<build>`, fenêtre qui se reconnecte et est mise à jour aussi (`logiciel-installe-mises-a-jour.md`).
 
