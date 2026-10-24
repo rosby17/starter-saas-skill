@@ -158,7 +158,7 @@ function CheckoutModal({ slug, balance = false, onClose }: { slug: string; balan
     { id: "wave", title: "Wave", text: "Côte d’Ivoire, Sénégal, Togo… Tu envoies avec Wave, puis la capture sur WhatsApp.", icons: <WaveIcon /> },
     { id: "card", title: "Carte bancaire", text: "Visa ou Mastercard, sur la page sécurisée de la passerelle.", icons: <><VisaIcon /><MastercardIcon /></> },
     { id: "paypal", title: "PayPal", text: "Avec ton compte PayPal, ou une carte via PayPal.", icons: <PaypalIcon /> },
-    { id: "crypto", title: "Crypto (USDT)", text: "Binance Pay, ou USDT (TRC20) depuis n’importe quel portefeuille. Validée dès réception.", icons: <BinanceIcon /> },
+    { id: "crypto", title: "Crypto (USDT)", text: "Binance Pay, ou USDT (TRC20) depuis n’importe quel portefeuille. Validée dès réception.", icons: <><BinanceIcon /><TetherIcon /></> },
   ];
   const methods = allMethods.filter((m) => !available || available.includes(m.id));
   useEffect(() => {
@@ -435,89 +435,134 @@ function Step({ n, children }: { n: number; children: React.ReactNode }) {
   );
 }
 
-function Badge({ bg, children, border }: { bg: string; children: React.ReactNode; border?: boolean }) {
+// Logos officiels des moyens de paiement (redessinés en SVG d'après les logos des marques, aucune image externe),
+// mis à jour le 24/10/2026 : Orange Money, MTN MoMo, Wave, Moov, Visa, Mastercard, PayPal, Binance, Tether.
+const SIZE = 26;
+const tile: React.CSSProperties = { display: "block", flexShrink: 0, borderRadius: 7 };
+
+function OrangeMoneyIcon({ size = SIZE }: { size?: number }) {
   return (
-    <svg width="38" height="26" viewBox="0 0 38 26" aria-hidden style={{ display: "block", borderRadius: 5, border: border ? "1px solid #E5E5E5" : undefined }}>
-      <rect width="38" height="26" rx="5" fill={bg} />
-      {children}
+    <svg width={size} height={size} viewBox="0 0 448 448" aria-hidden style={tile}>
+      <title>Orange Money</title>
+      <rect width="448" height="448" rx="72" fill="#000" />
+      <g fill="none" strokeWidth="40" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M96 182H196V266M196 182L84 294" stroke="#fff" />
+        <path d="M252 158V268H352M252 268L366 154" stroke="#FF7900" />
+      </g>
     </svg>
   );
 }
 
-function OrangeMoneyIcon() {
+function MtnIcon({ size = SIZE }: { size?: number }) {
   return (
-    <Badge bg="#FF7900">
-      <rect x="6" y="16" width="26" height="3.5" fill="#fff" />
-      <text x="19" y="13" textAnchor="middle" fontSize="8" fontWeight="800" fill="#000" fontFamily="Arial, sans-serif">OM</text>
-    </Badge>
-  );
-}
-
-function MtnIcon() {
-  return (
-    <Badge bg="#FFCC00">
-      <ellipse cx="19" cy="13" rx="14" ry="8" fill="none" stroke="#000" strokeWidth="1.6" />
-      <text x="19" y="16" textAnchor="middle" fontSize="8" fontWeight="900" fill="#000" fontFamily="Arial, sans-serif">MTN</text>
-    </Badge>
-  );
-}
-
-function MoovIcon() {
-  return (
-    <Badge bg="#0066B3">
-      <text x="19" y="16.5" textAnchor="middle" fontSize="9" fontWeight="800" fill="#fff" fontFamily="Arial, sans-serif">moov</text>
-      <circle cx="31" cy="7" r="2.5" fill="#F7941D" />
-    </Badge>
-  );
-}
-
-function VisaIcon() {
-  return (
-    <Badge bg="#fff" border>
-      <text x="19" y="17" textAnchor="middle" fontSize="11" fontWeight="900" fontStyle="italic" fill="#1A1F71" fontFamily="Arial, sans-serif">VISA</text>
-    </Badge>
-  );
-}
-
-function MastercardIcon() {
-  return (
-    <Badge bg="#1A1A1A">
-      <circle cx="15" cy="13" r="7" fill="#EB001B" />
-      <circle cx="23" cy="13" r="7" fill="#F79E1B" fillOpacity="0.9" />
-    </Badge>
-  );
-}
-
-function PaypalIcon() {
-  return (
-    <Badge bg="#fff" border>
-      <text x="19" y="16.5" textAnchor="middle" fontSize="9" fontWeight="900" fontStyle="italic" fontFamily="Arial, sans-serif">
-        <tspan fill="#003087">Pay</tspan>
-        <tspan fill="#009CDE">Pal</tspan>
-      </text>
-    </Badge>
-  );
-}
-
-function BinanceIcon() {
-  return (
-    <Badge bg="#1E2026">
-      <g fill="#F0B90B" transform="translate(19 13) scale(1.35)">
-        <rect x="-2.2" y="-2.2" width="4.4" height="4.4" transform="rotate(45)" />
-        <rect x="-1.6" y="-8.6" width="3.2" height="3.2" transform="rotate(45 0 -7)" />
-        <rect x="-1.6" y="5.4" width="3.2" height="3.2" transform="rotate(45 0 7)" />
-        <rect x="-8.6" y="-1.6" width="3.2" height="3.2" transform="rotate(45 -7 0)" />
-        <rect x="5.4" y="-1.6" width="3.2" height="3.2" transform="rotate(45 7 0)" />
+    <svg width={size} height={size} viewBox="0 0 512 512" aria-hidden style={tile}>
+      <title>MTN MoMo</title>
+      <defs>
+        <linearGradient id="momo-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#FFD95A" />
+          <stop offset="1" stopColor="#FFC20E" />
+        </linearGradient>
+      </defs>
+      <rect width="512" height="512" rx="96" fill="url(#momo-bg)" />
+      <g transform="rotate(16 300 300)">
+        <rect x="196" y="120" width="212" height="340" rx="34" fill="#fff" stroke="#000" strokeWidth="18" />
+        <path d="M214 250 Q300 210 390 180 V360 H214 Z" fill="#F00000" />
+        <rect x="214" y="360" width="176" height="80" fill="#fff" />
+        <rect x="230" y="392" width="44" height="22" rx="11" fill="#000" />
+        <circle cx="302" cy="403" r="14" fill="#000" />
+        <rect x="330" y="392" width="44" height="22" rx="11" fill="#000" />
       </g>
-    </Badge>
+      <g stroke="#fff" strokeWidth="12" strokeLinejoin="round">
+        <path d="M150 96 L330 70 Q360 160 330 280 L210 300 Q170 200 150 96 Z" fill="#0B5A84" />
+        <path d="M92 150 L290 104 Q320 210 290 330 L170 360 Q130 250 92 150 Z" fill="#0B5A84" />
+      </g>
+      <circle cx="196" cy="214" r="54" fill="#fff" />
+      <text x="196" y="240" textAnchor="middle" fontSize="76" fontWeight="900" fill="#0B5A84" fontFamily="Arial, sans-serif">$</text>
+    </svg>
   );
 }
 
-function WaveIcon() {
+function WaveIcon({ size = SIZE }: { size?: number }) {
   return (
-    <Badge bg="#1DC8FF">
-      <text x="19" y="16.5" textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#fff" fontFamily="Arial, sans-serif">wave</text>
-    </Badge>
+    <svg width={size} height={size} viewBox="0 0 448 448" aria-hidden style={tile}>
+      <title>Wave</title>
+      <rect width="448" height="448" rx="72" fill="#1DC8FF" />
+      <rect x="82" y="128" width="54" height="128" rx="27" transform="rotate(-42 109 192)" fill="#000" />
+      <path d="M160 128Q160 50 240 50Q320 50 320 128L326 300Q326 382 240 386Q152 382 152 300Z" fill="#000" />
+      <ellipse cx="228" cy="266" rx="50" ry="82" fill="#fff" />
+      <circle cx="206" cy="97" r="11" fill="#fff" />
+      <circle cx="251" cy="97" r="11" fill="#fff" />
+      <path d="M194 124Q228 112 264 124Q244 146 229 146Q212 146 194 124Z" fill="#F7891F" />
+      <ellipse cx="180" cy="378" rx="40" ry="22" fill="#F7891F" />
+      <ellipse cx="278" cy="378" rx="40" ry="22" fill="#F7891F" />
+    </svg>
+  );
+}
+
+function MoovIcon({ size = SIZE }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 448 448" aria-hidden style={tile}>
+      <title>Moov Africa</title>
+      <rect width="448" height="448" rx="72" fill="#0066B3" />
+      <text x="224" y="262" textAnchor="middle" fontSize="136" fontWeight="800" fill="#fff" fontFamily="Arial, sans-serif">moov</text>
+      <circle cx="372" cy="120" r="30" fill="#F7941D" />
+    </svg>
+  );
+}
+
+function PaypalIcon({ size = SIZE }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden style={{ display: "block", flexShrink: 0 }}>
+      <title>PayPal</title>
+      <path d="M6.2 2H13.6C17.4 2 19.4 4.3 18.8 7.7C18.1 11.5 15.4 13.4 11.6 13.4H9.2L8.1 20.3H3.6Z" fill="#003087" />
+      <path d="M8.6 5.4H16C19.8 5.4 21.8 7.7 21.2 11.1C20.5 14.9 17.8 16.8 14 16.8H11.6L10.5 23.6H6Z" fill="#009CDE" />
+      <path d="M8.6 5.4H16C17.4 5.4 18.4 5.7 19.1 6.3C18.7 10.9 16 13.4 11.6 13.4H9.2L7.6 13.4Z" fill="#012169" />
+    </svg>
+  );
+}
+
+function BinanceIcon({ size = SIZE }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="-8 0 1290 1280" aria-hidden style={{ display: "block", flexShrink: 0 }}>
+      <title>Binance</title>
+      <g fill="#F3BA2F">
+        <path d="M634 0L1027 393L883 537L634 289L385 537L241 393Z" />
+        <path d="M138 495L283 639L138 784L-6 639Z" />
+        <path d="M634 493L780 639L634 786L487 639Z" />
+        <path d="M1129 495L1274 639L1129 784L985 639Z" />
+        <path d="M385 742L634 991L883 742L1027 886L634 1280L241 886Z" />
+      </g>
+    </svg>
+  );
+}
+
+function TetherIcon({ size = SIZE }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden style={{ display: "block", flexShrink: 0 }}>
+      <title>Tether (USDT)</title>
+      <circle cx="16" cy="16" r="16" fill="#26A17B" />
+      <path d="M17.9 17.4v-.1c-.1 0-.7 0-1.9 0s-2-.1-1.9 0v.1c-3.9-.2-6.8-.8-6.8-1.7s2.9-1.5 6.8-1.7v2.6c.2 0 1 .1 2 .1s1.8-.1 1.9-.1v-2.6c3.9.2 6.8.8 6.8 1.7s-2.9 1.5-6.9 1.7zM17.9 13.8v-2.4h5.4V9.2H8.6v2.2H14v2.4c-4.4.2-7.7 1.1-7.7 2.1S9.6 17.9 14 18v7.6h3.9V18c4.4-.2 7.7-1.1 7.7-2.1s-3.3-1.9-7.7-2.1z" fill="#fff" />
+    </svg>
+  );
+}
+
+function VisaIcon({ size = SIZE }: { size?: number }) {
+  return (
+    <svg width={size * 1.6} height={size} viewBox="0 0 48 30" aria-hidden style={{ display: "block", flexShrink: 0 }}>
+      <title>Visa</title>
+      <text x="24" y="21" textAnchor="middle" fontSize="17" fontWeight="900" fontStyle="italic" fill="#1434CB" fontFamily="Arial, sans-serif" letterSpacing="-0.5">VISA</text>
+    </svg>
+  );
+}
+
+function MastercardIcon({ size = SIZE }: { size?: number }) {
+  return (
+    <svg width={size * 1.3} height={size} viewBox="0 0 38 24" aria-hidden style={{ display: "block", flexShrink: 0 }}>
+      <title>Mastercard</title>
+      <circle cx="15" cy="12" r="9" fill="#EB001B" />
+      <circle cx="23" cy="12" r="9" fill="#F79E1B" />
+      <path d="M19 4.84a9 9 0 0 1 0 14.32a9 9 0 0 1 0-14.32z" fill="#FF5F00" />
+    </svg>
   );
 }
 

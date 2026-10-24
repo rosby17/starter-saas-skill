@@ -1,8 +1,8 @@
 {
   "brique": "paiement",
-  "version": "2026-10-16",
+  "version": "2026-10-24",
   "files": {
-    "src/components/site/CheckoutModal.tsx": "4fa2d304e3fd5effdb9f89436ea9e53ccce52187f032f161243a42437b309241",
+    "src/components/site/CheckoutModal.tsx": "76796a2cb554871600d53f2761cf6a4e4bfee8612e391481e7c1a8267296fb70",
     "src/components/ui/phone-input.tsx": "9a0677073e311ea88ca192413407612f49db963f787ddf2cd9dd6616427080fb",
     "src/app/(marketing)/paiement/succes/page.tsx": "efb14038a35936da72f69c95bc5e9010bd21738af6b83a212108108f83993c28",
     "src/app/(marketing)/paiement/succes/PaymentStatus.tsx": "30428a13987bfe2be2da76c96d548a6e344364d18541b325ef3100a09ec095b2",
