@@ -15,6 +15,7 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 - [ ] Mot de passe oublié : le lien arrive, n'est valable qu'une fois et expire ; le nouveau mot de passe fonctionne.
 - [ ] Mot de passe : 8 caractères au minimum (10 pour un admin), vérifié côté SERVEUR.
 - [ ] Tentatives limitées sur connexion, inscription, mot de passe oublié (par IP et par compte).
+- [ ] Formulaires publics (inscription, contact) protégés contre les robots même sans clé : champ piège invisible + délai minimal de 2 s, vérifiés côté serveur (`template/src/lib/honeypot.ts`, `HoneypotField.tsx`) ; captcha invisible (Cloudflare Turnstile, gratuit) si le spam continue.
 - [ ] Message identique « e-mail ou mot de passe incorrect » (on ne révèle pas si un compte existe).
 - [ ] Côté serveur, l'identité vient de `getUser()` / jeton vérifié, jamais d'un cookie non vérifié ni d'un champ envoyé.
 - [ ] Connexion Google / autre : adresse de retour limitée au site ; compte relié à la bonne adresse.
@@ -61,6 +62,7 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 
 ## 6. Robustesse et exploitation
 - [ ] Sauvegardes AUTOMATIQUES de la base vers un stockage externe, et une restauration déjà ESSAYÉE.
+- [ ] Les sauvegardes réussissent VRAIMENT (date de la dernière réussie vérifiée) : une sauvegarde par GitHub Actions s'arrête en silence quand le quota gratuit est épuisé (iziVoice : une semaine sans sauvegarde). Préférer les sauvegardes planifiées de Coolify, vers un bucket privé DÉDIÉ au projet (jamais celui d'un autre produit).
 - [ ] `/api/health` + contrôle de santé du conteneur + surveillance extérieure qui prévient (e-mail, WhatsApp).
 - [ ] Erreurs des clients remontées (journaux lisibles, outil de suivi des erreurs ou au minimum journal serveur).
 - [ ] Page d'erreur et page « introuvable » aux couleurs du site ; une panne d'un service extérieur n'emporte pas tout le site.
@@ -79,6 +81,7 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 - [ ] Offre gratuite / essai : ne peut pas être exploitée en boucle (confirmation d'e-mail, limites).
 - [ ] Parcours d'achat mesuré (visites → inscriptions → paiements), relances des paniers abandonnés et des fins d'essai.
 - [ ] Page de tarifs claire : ce qui est inclus, prix dans la devise du client, annuel avantageux.
+- [ ] Prix adapté au pouvoir d'achat du pays (anciens clients conservés) et paiement de plusieurs mois d'avance avec remise : voir `references/tarification-pays-engagement.md`. Prix TOUJOURS recalculé côté serveur.
 
 ## 8. Données personnelles et légal
 - [ ] Politique de confidentialité, CGU / CGV, mentions légales, liées dans le pied de page.
@@ -95,6 +98,7 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 - [ ] **Aucune fenêtre native** : `grep -rnE "(^|[^.\w])(window\.)?(confirm|alert|prompt)\("` sur le code (site, espace client, admin) ne trouve que des fenêtres maison (`useConfirm` / `useInform`) ; la fenêtre maison a titre, texte, bouton principal, Annuler, rouge si dangereuse, Échap = annuler, Entrée = valider, focus piégé, `role="alertdialog"` + `aria-modal`, et s'affiche bien en clair ET en sombre.
 - [ ] Charte appliquée partout (couleurs, police, logo, icône d'onglet), y compris e-mails, factures, pages d'erreur.
 - [ ] Parfait sur téléphone (375 px) : menus, tableaux, formulaires, fenêtres.
+- [ ] Sélecteurs en pastilles (durée, offre…) : sur téléphone, toujours UNE barre à colonnes égales (libellé au-dessus, détail dessous), jamais des pastilles qui passent à la ligne dans une bulle ; bouton d'en-tête raccourci (« Studio » au lieu de « Accéder au studio »).
 - [ ] Chaque action donne un retour : chargement, succès, erreur compréhensible (en français, avec la marche à suivre).
 - [ ] États vides utiles (« Aucun projet : créer le premier »), premier pas guidé après l'inscription.
 - [ ] **Simplicité** (`references/simplicite-interface.md`) : accueil à trois choses (action principale, en cours, mes objets) sans KPI ni erreurs brutes ; états en 3 mots ; interrupteur Simple | Avancé visible partout, Simple par défaut ; menu en groupes pliables sans entrée cachée ; assistant de création en 3 écrans ; « Premiers pas » qui se coche tout seul ; une personne neuve lance l'action principale SANS aide (test avec 3 personnes).
@@ -108,6 +112,10 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 - [ ] Titre, description et aperçu réseaux sociaux (Open Graph) sur chaque page publique.
 - [ ] `sitemap` et `robots` (admin, espace client et API interdits à l'indexation).
 - [ ] Images optimisées (`next/image`, formats modernes), police hébergée avec le site, rien de lourd dans `public/`.
+- [ ] Aucune image de plus de 300 Ko dans `public/` : `node "<dossier du skill>/scripts/compresser_images.mjs"` (mêmes noms et formats, contrôle à l'œil ensuite).
+- [ ] Aucun lien interne cassé : `node "<dossier du skill>/scripts/verifier_liens.mjs" http://localhost:3000 https://<domaine>` (part du sitemap).
+- [ ] Favicon / icône Apple, page 404 aux couleurs du site, une image d'aperçu par page publique.
+- [ ] UN appel à l'action principal par écran (un bouton plein) ; les autres choix en liens discrets.
 - [ ] Page d'accueil rapide sur mobile (Lighthouse ≥ 90 en performance, accessibilité, SEO).
 - [ ] Pages publiques rendues côté serveur ; pas de `"use client"` inutile en haut des pages.
 

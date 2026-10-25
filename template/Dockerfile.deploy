@@ -1,0 +1,14 @@
+# Dockerfile utilisé par Coolify en production : AUCUNE compilation ici.
+#
+# Règle : on ne construit jamais sur le serveur de production (voir
+# references/supervision-exploitation.md § 4 du kit starter-saas). L'image est
+# construite par GitHub Actions (.github/workflows/build-and-deploy.yml) et
+# publiée sur ghcr.io ; Coolify ne fait que la télécharger.
+#
+# Réglages Coolify : Dockerfile location = /Dockerfile.deploy ; variable
+# IMAGE_REPO=ghcr.io/<propriétaire>/<dépôt> (cochée « build ») ;
+# « Include Source Commit in Build » coché (fournit SOURCE_COMMIT) ;
+# « Auto Deploy » décoché (GitHub Actions déclenche le déploiement).
+ARG IMAGE_REPO
+ARG SOURCE_COMMIT=latest
+FROM ${IMAGE_REPO}:${SOURCE_COMMIT}

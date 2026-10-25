@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
+import { HoneypotField } from "@/components/HoneypotField";
+import { honeypotPayload } from "@/lib/honeypot";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
@@ -36,6 +38,9 @@ function AuthForm({ initialMode, google }: { initialMode: "login" | "signup"; go
   const searchParams = useSearchParams();
   const next = safeNext(searchParams.get("next"));
   const expired = searchParams.get("lien") === "expire";
+  // Anti-spam de l'inscription (lib/honeypot.ts) : moment d'affichage du formulaire.
+  const formStartedAt = useRef(0);
+  useEffect(() => { formStartedAt.current = Date.now(); }, []);
 
   const post = async (url: string, body: unknown) => {
     const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -44,6 +49,7 @@ function AuthForm({ initialMode, google }: { initialMode: "login" | "signup"; go
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const antiSpam = honeypotPayload(e.currentTarget as HTMLFormElement, formStartedAt.current);
     setError(null);
     setInfo(null);
     setIsLoading(true);
@@ -53,7 +59,7 @@ function AuthForm({ initialMode, google }: { initialMode: "login" | "signup"; go
         if (!d.success) throw new Error(d.message || "Envoi impossible.");
         setInfo(d.message);
       } else if (mode === "signup") {
-        const d = await post("/api/auth/signup", { fullName, email, phone, country, password: password || undefined });
+        const d = await post("/api/auth/signup", { fullName, email, phone, country, password: password || undefined, ...antiSpam });
         if (!d.success) throw new Error(d.message || "Inscription impossible.");
         if (d.autoLogin) {
           // Mot de passe choisi : connexion immédiate, sans attendre l'e-mail.
@@ -116,7 +122,8 @@ function AuthForm({ initialMode, google }: { initialMode: "login" | "signup"; go
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="relative space-y-4">
+        <HoneypotField />
         {mode === "signup" && (
           <div>
             <label className="mb-1.5 block text-sm text-gray-600">Nom complet</label>

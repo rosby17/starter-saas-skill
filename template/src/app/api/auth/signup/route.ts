@@ -6,6 +6,7 @@ import { createLoginLink } from '@/lib/auth/access-link'
 import { sendEmail } from '@/lib/email/brevo'
 import { loginLinkTemplate } from '@/lib/email/templates'
 import { checkRateLimit, clientIp } from '@/lib/rate-limit'
+import { isLikelyBot } from '@/lib/honeypot'
 
 /**
  * Mot de passe FACULTATIF : s'il est choisi (8 caractères min.) et que le compte est NOUVEAU, il est posé tout de suite
@@ -21,6 +22,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: 'Trop de tentatives. Réessaie dans quelques minutes.' }, { status: 429 })
   }
   const raw = await request.json().catch(() => ({}))
+  // Robot (champ piège rempli ou envoi instantané) : aucun compte, aucun e-mail.
+  if (isLikelyBot(raw)) {
+    return NextResponse.json({ success: false, message: 'Inscription impossible pour le moment. Réessaie dans quelques secondes.' }, { status: 400 })
+  }
   const password = z.string().min(8).max(72).safeParse(raw?.password)
   if (raw?.password && !password.success) return NextResponse.json({ success: false, message: 'Mot de passe : 8 caractères minimum.' }, { status: 400 })
   const parsed = contactSchema.safeParse(raw)
