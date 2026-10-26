@@ -3,6 +3,8 @@ import { requireAdmin } from '@/lib/auth/admin'
 import { z } from 'zod'
 import { serviceClient } from '@/lib/auth/service-client'
 import { logAdminAction } from '@/lib/auth/audit'
+import { setSuspended } from '@/lib/admin/accounts'
+import { findSuspensionReason } from '@/lib/admin/suspension-reasons'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +16,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ success: false }, { status: 400 })
   const db = serviceClient()
   const [{ data: profile }, { data: entitlements }, { data: orders }, { data: requests }, { data: products }] = await Promise.all([
-    db.from('profiles').select('id, email, full_name, first_name, phone, country, is_admin, created_at').eq('id', id).maybeSingle(),
+    db.from('profiles').select('id, email, full_name, first_name, phone, country, is_admin, is_internal, suspension_reason, suspended_at, created_at').eq('id', id).maybeSingle(),
     db.from('entitlements').select('id, product_id, source, created_at, revoked_at, order_id').eq('user_id', id).order('created_at', { ascending: false }),
     db.from('orders').select('id, plan_name, amount_local, currency, payment_method, status, created_at, customer_country, customer_phone').eq('user_id', id).order('created_at', { ascending: false }).limit(50),
     db.from('service_requests').select('id, kind, status, created_at').eq('user_id', id).order('created_at', { ascending: false }),
@@ -39,7 +41,11 @@ const patchSchema = z.object({
   phone: z.string().trim().max(30).regex(/^[+\d\s().-]*$/, 'Numéro invalide.').optional(),
   country: z.string().trim().max(60).optional(),
   is_admin: z.boolean().optional(),
+  is_internal: z.boolean().optional(),
   suspended: z.boolean().optional(),
+  // Suspension : motif obligatoire (liste lib/admin/suspension-reasons.ts) ; notify = e-mail préétabli du motif.
+  reason_code: z.string().max(60).optional(),
+  notify: z.boolean().optional(),
 })
 
 // Modifier une fiche client : coordonnées, rôle administrateur, suspension du compte (connexion bloquée).
@@ -50,7 +56,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ success: false }, { status: 400 })
   const parsed = patchSchema.safeParse(await request.json().catch(() => ({})))
   if (!parsed.success) return NextResponse.json({ success: false, message: parsed.error.issues[0]?.message ?? 'Données invalides.' }, { status: 400 })
-  const { suspended, ...fields } = parsed.data
+  const { suspended, reason_code, notify, ...fields } = parsed.data
+  const reason = findSuspensionReason(reason_code)
+  if (suspended === true && !reason) return NextResponse.json({ success: false, message: 'Choisis un motif de suspension.' }, { status: 400 })
   if (id === auth.userId && (fields.is_admin === false || suspended === true)) {
     return NextResponse.json({ success: false, message: 'Tu ne peux pas retirer tes propres droits ni suspendre ton compte.' }, { status: 400 })
   }
@@ -60,10 +68,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { error } = await db.from('profiles').update(update).eq('id', id)
     if (error) return NextResponse.json({ success: false, message: 'Enregistrement impossible.' }, { status: 500 })
   }
+  let emailed = false
   if (suspended !== undefined) {
-    const { error } = await db.auth.admin.updateUserById(id, { ban_duration: suspended ? '876000h' : 'none' })
-    if (error) return NextResponse.json({ success: false, message: 'Suspension impossible.' }, { status: 500 })
+    try {
+      const { data: authUser } = await db.auth.admin.getUserById(id)
+      emailed = (await setSuspended(db, auth.userId, { id, email: authUser?.user?.email ?? null }, suspended, { reason, notify })).emailed
+    } catch (error) {
+      console.error('Suspension :', error)
+      return NextResponse.json({ success: false, message: suspended ? 'Suspension impossible.' : 'Réactivation impossible.' }, { status: 500 })
+    }
   }
-  await logAdminAction(db, auth.userId, 'customer.update', { type: 'user', id }, { ...update, ...(suspended !== undefined ? { suspended } : {}) })
-  return NextResponse.json({ success: true, message: suspended === true ? 'Compte suspendu : le client ne peut plus se connecter.' : suspended === false ? 'Compte réactivé.' : 'Fiche enregistrée.' })
+  if (Object.keys(update).length) await logAdminAction(db, auth.userId, 'customer.update', { type: 'user', id }, update)
+  return NextResponse.json({
+    success: true,
+    message: suspended === true ? `Compte suspendu : le client ne peut plus se connecter${emailed ? ' (e-mail du motif envoyé)' : ''}.` : suspended === false ? 'Compte réactivé.' : 'Fiche enregistrée.',
+  })
 }

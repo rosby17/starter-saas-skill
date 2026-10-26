@@ -15,6 +15,8 @@ for _ in $(seq 1 40); do docker exec "$NAME" pg_isready -U postgres -h localhost
 # Le CLI Supabase fournit auth.users et auth.uid() ; sur une base nue on les crée s'ils manquent.
 psqlc >/dev/null <<'SQL'
 create table if not exists auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb default '{}'::jsonb);
+-- Colonnes ajoutées par GoTrue sur une vraie base (lues par les migrations des comptes suspendus).
+alter table auth.users add column if not exists banned_until timestamptz, add column if not exists created_at timestamptz default now(), add column if not exists last_sign_in_at timestamptz, add column if not exists phone text;
 do $$ begin
   if to_regprocedure('auth.uid()') is null then
     create function auth.uid() returns uuid language sql stable as $f$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $f$;

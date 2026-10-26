@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 
-// Envoie au journal (/admin/sante) les appels /api en échec et les erreurs JavaScript vus par le client.
+// Envoie au journal (/admin/erreurs) les appels /api en échec et les erreurs JavaScript vus par le client.
 // Aucun corps de requête n'est envoyé : seulement la route, le statut et le message renvoyé par l'API.
 const REPORT = '/api/monitoring/errors'
 const IGNORED = [REPORT, '/api/system-status'] // le sondage de la bannière ne regarde personne

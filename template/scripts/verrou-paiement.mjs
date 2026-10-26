@@ -51,6 +51,8 @@ export const FILES = [
   'src/lib/payments/gateways/maketou.ts',
   'src/lib/payments/gateways/wave.ts',
   'src/lib/payments/gateways/binance.ts',
+  'src/lib/payments/gateways/momo-direct.ts',
+  'src/lib/payments/gateway-alert.ts',
   'src/lib/orders/credit-order.ts',
   'src/lib/orders/deliver.ts',
   'src/lib/orders/expire-pending.ts',

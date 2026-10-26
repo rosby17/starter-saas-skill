@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from 'react'
 import { clsx } from '@/lib/utils'
+import { copyText } from '@/lib/clipboard'
 import { isYoutube, type Block, type MediaItem, type Ratio } from '@/lib/course/blocks'
 import { SecureVideo } from './SecureVideo'
 import { Lightbulb, TriangleAlert, ArrowUpRight } from 'lucide-react'
@@ -18,11 +19,11 @@ function Rich({ text }: { text: string }) {
 }
 
 function Copy({ text }: { text: string }) {
-  const [done, setDone] = useState(false)
+  const [done, setDone] = useState<'ok' | 'ko' | null>(null)
   return (
-    <button type="button" onClick={async () => { await navigator.clipboard.writeText(text).catch(() => {}); setDone(true); setTimeout(() => setDone(false), 1800) }}
+    <button type="button" onClick={async () => { setDone((await copyText(text)) ? 'ok' : 'ko'); setTimeout(() => setDone(null), 1800) }}
       className="rounded-full border border-gray-300 px-3 py-1 text-xs text-gray-600 hover:border-brand hover:text-gray-900">
-      {done ? '✓ Copié' : 'Copier'}
+      {done === 'ok' ? '✓ Copié' : done === 'ko' ? 'Copie refusée : sélectionne le texte' : 'Copier'}
     </button>
   )
 }

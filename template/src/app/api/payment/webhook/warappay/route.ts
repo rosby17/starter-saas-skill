@@ -25,7 +25,12 @@ export async function POST(request: Request) {
     if (payload.event !== 'checkout.completed') return NextResponse.json({ success: true, message: 'Event ignored.' })
 
     const { data: order } = await supabase.from('orders').select('*').eq('id', orderId).maybeSingle()
-    if (!order) return NextResponse.json({ success: true, message: 'Order not found.' })
+    // Commande introuvable (pas encore écrite, base lente) : 500 pour que Warappay REJOUE le webhook, au lieu d'acquitter
+    // un paiement qui ne serait jamais livré. La signature est déjà vérifiée : ce n'est pas un appel forgé.
+    if (!order) {
+      console.error(`[ACTION REQUISE] Webhook Warappay : commande ${orderId} introuvable, rejeu demandé.`)
+      return NextResponse.json({ success: false, message: 'Order not linked yet, retry' }, { status: 500 })
+    }
     await settlePaid(supabase, order, Number(payload.data.amount), 'fcfa', 'Warappay')
     return NextResponse.json({ success: true })
   } catch (error) {

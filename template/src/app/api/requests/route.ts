@@ -10,6 +10,7 @@ import { createLoginLink, loginPageUrl } from '@/lib/auth/access-link'
 import { sendEmail } from '@/lib/email/brevo'
 import { requestReceivedTemplate } from '@/lib/email/templates'
 import { notifyAdmin } from '@/lib/orders/deliver'
+import { recordActivity } from '@/lib/activity/record'
 
 const KINDS = Object.keys(REQUEST_KINDS) as [RequestKind, ...RequestKind[]]
 
@@ -84,6 +85,8 @@ export async function POST(request: Request) {
   }
 
   const { data: profile } = await db.from('profiles').select('first_name, full_name, phone').eq('id', userId).maybeSingle()
+  // Fil d'activité (Administration › Activité) : la demande et son texte, lisible en ouvrant la ligne.
+  await recordActivity({ userId, action: 'demande.nouvelle', label: `Nouvelle demande : ${REQUEST_KINDS[kind]}`, detail: details, ref: { table: 'service_requests', id: created.id } })
   const next = `/demandes/${created.id}`
   if (!user) {
     const loginUrl = (await createLoginLink(db, email, next)) ?? loginPageUrl(next)

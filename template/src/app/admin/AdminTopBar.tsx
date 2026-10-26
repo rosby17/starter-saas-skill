@@ -11,7 +11,8 @@ const SETTINGS = [
   { href: '/admin/keys', label: 'Clés et intégrations', text: 'E-mails, paiements, tâches automatiques' },
   { href: '/admin/deploy', label: 'Mise en ligne', text: 'Serveur, base de données, déploiement' },
   { href: '/admin/emails', label: 'E-mails', text: 'Journal des envois, exemples de chaque e-mail' },
-  { href: '/admin/sante', label: 'Santé du site', text: 'Erreurs des clients : causes et solutions' },
+  { href: '/admin/erreurs', label: 'Erreurs', text: 'Erreurs des clients, santé des services' },
+  { href: '/admin/moteurs', label: 'Moteurs IA', text: 'Moteur actif de chaque modèle, bascule, sonde' },
   { href: '/admin/server', label: 'Ressources serveur', text: 'Processeur, mémoire, disque' },
   { href: '/admin/maintenance', label: 'Maintenance', text: 'Couper le site le temps d’une intervention' },
 ]

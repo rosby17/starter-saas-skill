@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { RadioCard } from '@/components/ui/choice'
 import { useConfirm } from '@/components/ui/dialog'
 import { createClient } from '@/lib/supabase/client'
+import { copyText } from '@/lib/clipboard'
 
 type Method = 'email' | 'totp'
 type Status = { method: Method | null; pending: Method | null; backupCodesLeft: number }
@@ -104,12 +105,8 @@ export function TwoFactorSettings() {
 
   const copyCodes = async () => {
     if (!backupCodes) return
-    try {
-      await navigator.clipboard.writeText(backupCodes.join('\n'))
-      setInfo('Codes copiés. Range-les dans un endroit sûr (gestionnaire de mots de passe, papier).')
-    } catch {
-      setError('Copie impossible : sélectionne les codes et copie-les à la main.')
-    }
+    if (await copyText(backupCodes.join('\n'))) setInfo('Codes copiés. Range-les dans un endroit sûr (gestionnaire de mots de passe, papier).')
+    else setError('Copie impossible : sélectionne les codes et copie-les à la main.')
   }
 
   if (!status) return <p className="text-sm text-gray-500">{error ?? 'Chargement…'}</p>

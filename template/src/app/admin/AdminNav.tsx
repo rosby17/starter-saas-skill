@@ -13,8 +13,12 @@ import { useConfirm } from '@/components/ui/dialog'
 const NAV = [
   { href: '/admin', label: "Vue d'ensemble", icon: 'M3 12l9-8 9 8M5 10v10h14V10' },
   { href: '/admin/statistiques', label: 'Statistiques', icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2' },
+  { href: '/admin/revenus', label: 'Revenus', icon: 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
+  { href: '/admin/activite', label: 'Activité', icon: 'M22 12h-4l-3 9L9 3l-3 9H2' },
+  { href: '/admin/coach', label: 'Coach', icon: 'M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z' },
   { href: '/admin/orders', label: 'Commandes', icon: 'M6 7h12l1 13H5L6 7zM9 7a3 3 0 0 1 6 0' },
   { href: '/admin/customers', label: 'Clients', icon: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M17 11a3 3 0 1 0 0-6M22 21a6 6 0 0 0-4-5.7' },
+  { module: 'credits' as const, href: '/admin/credits', label: 'Crédits', icon: 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
   { href: '/admin/products', label: 'Formations et produits', icon: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM10 8l6 4-6 4z' },
   { module: 'appels' as const, href: '/admin/appels', label: 'Appels', icon: 'M7 3v3M17 3v3M4 8h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z' },
   { module: 'demandes' as const, href: '/admin/requests', label: 'Devis et coaching', icon: 'M4 13h4l2 3h4l2-3h4M4 13l2-8h12l2 8v6H4v-6z' },

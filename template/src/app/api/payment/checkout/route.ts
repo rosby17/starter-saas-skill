@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { after, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { serviceClient } from '@/lib/auth/service-client'
@@ -7,6 +7,8 @@ import { PAYMENT_PROVIDERS } from '@/lib/payments/providers'
 import type { PaymentGateway } from '@/lib/payments/types'
 import { getActivePaymentProvider, isPaymentCategoryEnabled } from '@/lib/payments/settings'
 import { GatewayError } from '@/lib/payments/types'
+import { alertGatewayKeyRefused, isGatewayKeyRefused, isKeyRefusal } from '@/lib/payments/gateway-alert'
+import { withSuccessClose } from '@/lib/monitoring/with-success-close'
 import { publicOrigin } from '@/lib/site-url'
 import { toFcfa, toUsd } from '@/lib/currency'
 import { regionalPrice, zoneForCountry } from '@/lib/pricing/zones'
@@ -23,7 +25,7 @@ const CHECKOUT_REUSE_WINDOW_MS = 30 * 60 * 1000
 
 const bodySchema = contactSchema.extend({
   productSlug: z.string().regex(/^[a-z0-9-]{1,80}$/),
-  paymentType: z.enum(['mobile_money', 'wave', 'card', 'paypal', 'crypto']).default('mobile_money'),
+  paymentType: z.enum(['mobile_money', 'momo_direct', 'wave', 'card', 'paypal', 'crypto']).default('mobile_money'),
 })
 
 /**
@@ -34,8 +36,13 @@ const bodySchema = contactSchema.extend({
  *     visiteur détectée par le serveur (Europe, Amériques : lib/pricing/zones.ts) ;
  *  3. la passerelle est celle que l'administrateur a activée pour le type de paiement choisi (/admin/payment-providers) ;
  *  4. la commande « pending » garde les coordonnées du client ; un cookie signé lie ce navigateur à la commande.
+ * Un paiement réussi ferme seul les erreurs ouvertes du checkout (withSuccessClose).
  */
-export async function POST(request: Request) {
+const UNAVAILABLE = 'Ce moyen de paiement est momentanément indisponible. Choisis-en un autre ou réessaie plus tard.'
+
+export const POST = withSuccessClose(handlePOST)
+
+async function handlePOST(request: Request) {
   try {
     const ip = clientIp(request)
     if (!checkRateLimit(`checkout:${ip}`, 8, 60_000).success) {
@@ -60,16 +67,17 @@ export async function POST(request: Request) {
     const basePrice = currentPrice(product)!
 
     // La passerelle active d'abord, puis les autres passerelles configurées du même type en secours :
-    // si l'une refuse (clé expirée, panne), le client passe par l'autre sans rien voir.
+    // si l'une refuse (clé expirée, panne), le client passe par l'autre sans rien voir. Une passerelle dont la clé vient
+    // d'être refusée est écartée quelques minutes (gateway-alert.ts) : aucun client n'est renvoyé vers un refus certain.
     if (!(await isPaymentCategoryEnabled(db, input.paymentType))) {
       return NextResponse.json({ success: false, message: 'Ce moyen de paiement n’est plus proposé. Choisis-en un autre.' }, { status: 400 })
     }
     const providerId = await getActivePaymentProvider(db, input.paymentType)
     const gateways = [providerId, ...PAYMENT_PROVIDERS[input.paymentType].map((p) => p.id).filter((id) => id !== providerId)]
-      .map(getGateway).filter((g): g is PaymentGateway => !!g && g.isConfigured())
+      .map(getGateway).filter((g): g is PaymentGateway => !!g && g.isConfigured() && !isGatewayKeyRefused(g.id))
     if (!gateways.length) {
-      console.error(`Paiement indisponible : passerelle "${providerId}" absente ou mal configurée.`)
-      return NextResponse.json({ success: false, message: 'Ce moyen de paiement est momentanément indisponible. Choisis-en un autre ou réessaie plus tard.' }, { status: 503 })
+      console.error(`Paiement indisponible : passerelle "${providerId}" absente, mal configurée ou clé refusée.`)
+      return NextResponse.json({ success: false, message: UNAVAILABLE }, { status: 503 })
     }
 
     // Identité : la session si le client est connecté, sinon le compte de l'e-mail saisi (créé au besoin).
@@ -152,11 +160,15 @@ export async function POST(request: Request) {
     // Les passerelles africaines facturent en FCFA : on leur passe l'équivalent exact du prix affiché.
     // Mobile Money : TOUJOURS le prix FCFA. Seul un compte Mobile Money africain peut payer ainsi ; un VPN ou un relais
     // privé (adresse vue en Amérique ou en Europe) ne doit pas faire payer un client africain en dollars ou en euros.
+    // Mobile Money DIRECT : ouvert à tous les pays (un client de la diaspora fait payer un proche sur place), toujours en
+    // FCFA. Dans la zone FCFA : le prix FCFA ; ailleurs : le prix de sa zone converti en FCFA, arrondi aux 50 supérieurs.
     const ipCountry = await visitorCountry(request)
     const regional = input.paymentType === 'mobile_money' ? { amount: price, currency: 'XAF' as const } : regionalPrice(price, ipCountry)
-    const priceZone = input.paymentType === 'mobile_money' ? 'mobile_money_fcfa' : zoneForCountry(ipCountry)
-    const fcfaLike = regional.currency === 'XAF' || regional.currency === 'XOF'
-    const amountFcfa = fcfaLike ? price : await toFcfa(regional.amount, regional.currency)
+    const priceZone = input.paymentType === 'mobile_money' ? 'mobile_money_fcfa' : input.paymentType === 'momo_direct' ? `momo_direct_${zoneForCountry(ipCountry)}` : zoneForCountry(ipCountry)
+    const regionalIsFcfa = regional.currency === 'XAF' || regional.currency === 'XOF'
+    const momoFcfa = input.paymentType === 'momo_direct' && !regionalIsFcfa ? Math.ceil((await toFcfa(regional.amount, regional.currency)) / 50) * 50 : null
+    const fcfaLike = regionalIsFcfa || momoFcfa !== null
+    const amountFcfa = momoFcfa ?? (regionalIsFcfa ? price : await toFcfa(regional.amount, regional.currency))
     const amountUsd = regional.currency === 'USD' ? regional.amount : await toUsd(amountFcfa, 'XOF')
     const orderCurrency = fcfaLike ? 'XOF' : regional.currency
     const generatedId = crypto.randomUUID()
@@ -187,7 +199,7 @@ export async function POST(request: Request) {
       // Pack de crédits : versés par credit_paid_order au paiement confirmé, avec leur date de fin.
       credits: product.category === 'credits' ? product.credits : 0,
       validity_days: product.category === 'credits' ? product.credits_validity_days : null,
-      amount_local: fcfaLike ? price : regional.amount,
+      amount_local: fcfaLike ? amountFcfa : regional.amount,
       amount_fcfa: amountFcfa,
       amount_usd: amountUsd,
       currency: orderCurrency,
@@ -216,7 +228,7 @@ export async function POST(request: Request) {
       try {
         created = await g.createCheckout({
           orderId: generatedId,
-          plan: { id: product.slug, name: planName, amountLocal: fcfaLike ? price : regional.amount, amountUsd },
+          plan: { id: product.slug, name: planName, amountLocal: fcfaLike ? amountFcfa : regional.amount, amountUsd },
           currency: orderCurrency,
           customer: { email, firstName, lastName: rest.join(' '), phone: input.phone },
           origin: publicOrigin(),
@@ -228,11 +240,20 @@ export async function POST(request: Request) {
       } catch (error) {
         console.error(`Passerelle ${g.id} indisponible, essai de la suivante :`, error instanceof Error ? error.message : error)
         lastError = error
+        // Notre clé est refusée : passerelle écartée, erreur critique et e-mail à l'admin. Le client ne voit JAMAIS ce
+        // 401 (il le lirait comme « session expirée ») : au pire « momentanément indisponible ».
+        if (error instanceof GatewayError && isKeyRefusal(error.status)) {
+          const status = error.status
+          const label = PAYMENT_PROVIDERS[input.paymentType].find((p) => p.id === g.id)?.label ?? g.id
+          const alert = alertGatewayKeyRefused({ gatewayId: g.id, label, category: input.paymentType, providerStatus: status, providerMessage: error.message, userId })
+          try { after(alert) } catch { void alert }
+        }
       }
     }
     if (!created) {
       // Aucune passerelle n'a répondu : la commande n'a jamais été payable, on la marque échouée.
       await db.from('orders').update({ status: 'failed' }).eq('id', generatedId).eq('status', 'pending')
+      if (lastError instanceof GatewayError && isKeyRefusal(lastError.status)) return NextResponse.json({ success: false, message: UNAVAILABLE }, { status: 503 })
       throw lastError
     }
     const orderId = created.orderId || generatedId

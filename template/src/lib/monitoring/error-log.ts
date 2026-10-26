@@ -1,5 +1,6 @@
 import { randomInt } from 'crypto'
 import { serviceClient } from '@/lib/auth/service-client'
+import { markActionOpen } from '@/lib/monitoring/auto-resolve'
 
 // Référence courte, lisible au téléphone (sans 0/O ni 1/I), que le client transmet au support.
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -37,6 +38,8 @@ export async function recordErrorLog(input: ErrorLogInput): Promise<string | nul
       user_agent: cut(input.userAgent, 300),
     })
     if (error) throw error
+    // Une erreur toute neuve doit pouvoir se fermer au prochain succès de la même action (auto-resolve.ts).
+    markActionOpen(cut(input.action, 300) || input.action)
     return reference
   } catch (error) {
     console.error('[error-log] enregistrement impossible', error)

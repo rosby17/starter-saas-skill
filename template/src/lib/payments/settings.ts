@@ -10,6 +10,7 @@ export type PaymentProviderSettings = Record<PaymentCategoryId, { active: string
 function defaults(): PaymentProviderSettings {
   return {
     mobile_money: { active: DEFAULT_ACTIVE_PROVIDER.mobile_money, enabled: true },
+    momo_direct: { active: DEFAULT_ACTIVE_PROVIDER.momo_direct, enabled: true },
     wave: { active: DEFAULT_ACTIVE_PROVIDER.wave, enabled: true },
     card: { active: DEFAULT_ACTIVE_PROVIDER.card, enabled: true },
     paypal: { active: DEFAULT_ACTIVE_PROVIDER.paypal, enabled: true },

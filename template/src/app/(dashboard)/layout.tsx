@@ -8,6 +8,8 @@ import { avatarOf } from '@/lib/profile/identity'
 import { ErrorReporter } from '@/components/monitoring/ErrorReporter'
 import { ProviderStatusBanner } from '@/components/monitoring/ProviderStatusBanner'
 import { InsufficientCreditsGate } from '@/components/credits/InsufficientCreditsGate'
+import { RechargeNudge } from '@/components/credits/RechargeNudge'
+import { CreditNoticeModal } from '@/components/credits/CreditNoticeModal'
 import { hasModule } from '@/config/site'
 
 // Cadre de toutes les pages connectées : menu (config/site.ts) ; compte et DÉCONNEXION dans le rond de profil.
@@ -42,6 +44,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <ErrorReporter />
       <ProviderStatusBanner />
       {hasModule('credits') && <InsufficientCreditsGate />}
+      {/* Solde faible : pack recommandé ; crédits ajoutés par l'admin : fenêtre « Tu as reçu des crédits ». */}
+      {hasModule('credits') && <><RechargeNudge /><CreditNoticeModal /></>}
       {children}
       <InstallPrompt />
     </DashboardShell>

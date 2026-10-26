@@ -52,7 +52,8 @@ export const maketou: PaymentGateway = {
     try {
       const response = await fetch(`${API}/${encodeURIComponent(order.payment_ref)}`, {
         headers: { Authorization: `Bearer ${process.env.MAKETOU_API_KEY}` },
-        signal: AbortSignal.timeout(15_000),
+        // Borné à 6 s : un fournisseur lent ne doit bloquer ni le retour du client ni le rattrapage (45 s au total).
+        signal: AbortSignal.timeout(6_000),
         cache: 'no-store',
       })
       if (!response.ok) return 'unknown'

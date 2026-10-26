@@ -32,8 +32,8 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-type PaymentType = "mobile_money" | "wave" | "card" | "paypal" | "crypto";
-type Manual = { title: string; lines: string[]; cartId: string; tab?: string; alt?: { tab: string; label: string; address: string; network: string; lines: string[] }; payIdLabel?: string; amount?: string; amountNote?: string; payId?: string; reference?: string; whatsappUrl?: string };
+type PaymentType = "mobile_money" | "momo_direct" | "wave" | "card" | "paypal" | "crypto";
+type Manual = { title: string; lines: string[]; cartId: string; tab?: string; alt?: { tab: string; label: string; address: string; network: string; lines: string[] }; payIdLabel?: string; amount?: string; amountNote?: string; payId?: string; reference?: string; whatsappUrl?: string; accounts?: { operator: string; number: string; holder?: string; ussd?: string }[] };
 
 // PAGE DE PAIEMENT DU KIT — BRIQUE VERROUILLÉE (voir PAIEMENT-VERROUILLE.md) : disposition, moyens de paiement
 // et parcours validés une fois pour toutes. Ne pas modifier dans un projet : se règle par site.ts et /admin/keys.
@@ -148,19 +148,24 @@ function CheckoutModal({ slug, balance = false, onClose }: { slug: string; balan
       if (d?.success && Array.isArray(d.methods) && d.methods.length) setAvailable(d.methods);
     }).catch(() => {});
   }, []);
-  // Mobile Money : toujours facturé en FCFA (le serveur fait la même règle).
+  // Mobile Money : toujours facturé en FCFA (le serveur fait la même règle). Mobile Money direct : en FCFA aussi, le prix
+  // affiché ici est converti à l'étape suivante pour un visiteur hors zone FCFA.
   const fcfa = (n: number) => `${new Intl.NumberFormat("fr-FR").format(n).replace(/[\u202f\u00a0]/g, " ")} FCFA`;
   const money = (n: number) => (method === "mobile_money" ? fcfa(n) : formatPrice(n));
   const local = price != null && method !== "mobile_money" ? localPrice(price) : null;
   const saving = fullPrice != null && price != null && price < fullPrice ? Math.round(((fullPrice - price) / fullPrice) * 100) : 0;
   const allMethods: { id: PaymentType; title: string; text: string; icons: React.ReactNode }[] = [
     { id: "mobile_money", title: "Mobile Money", text: "Orange Money, MTN MoMo, Moov… Tu valides sur ton téléphone.", icons: <><OrangeMoneyIcon /><MtnIcon /><MoovIcon /></> },
+    { id: "momo_direct", title: "Mobile Money direct", text: "Orange Money, MTN MoMo… sur nos numéros, en FCFA, depuis n’importe quel pays (un proche peut payer pour toi). Tu envoies, puis la capture sur WhatsApp.", icons: <><OrangeMoneyIcon /><MtnIcon /></> },
     { id: "wave", title: "Wave", text: "Côte d’Ivoire, Sénégal, Togo… Tu envoies avec Wave, puis la capture sur WhatsApp.", icons: <WaveIcon /> },
     { id: "card", title: "Carte bancaire", text: "Visa ou Mastercard, sur la page sécurisée de la passerelle.", icons: <><VisaIcon /><MastercardIcon /></> },
     { id: "paypal", title: "PayPal", text: "Avec ton compte PayPal, ou une carte via PayPal.", icons: <PaypalIcon /> },
     { id: "crypto", title: "Crypto (USDT)", text: "Binance Pay, ou USDT (TRC20) depuis n’importe quel portefeuille. Validée dès réception.", icons: <><BinanceIcon /><TetherIcon /></> },
   ];
-  const methods = allMethods.filter((m) => !available || available.includes(m.id));
+  // Dans l'ordre donné par le serveur (ex. Mobile Money direct en premier dans le pays de ses numéros).
+  const methods = available
+    ? available.map((id) => allMethods.find((m) => m.id === id)).filter((m): m is (typeof allMethods)[number] => !!m)
+    : allMethods;
   useEffect(() => {
     if (available && !available.includes(method)) setMethod(available[0]);
   }, [available, method]);
@@ -193,6 +198,11 @@ function CheckoutModal({ slug, balance = false, onClose }: { slug: string; balan
         <div style={{ minWidth: 0, flex: 1 }}>
           <p style={{ fontSize: 14, fontWeight: 600, color: "var(--white)" }}>{product.title}</p>
           <p style={{ fontSize: 12, color: "var(--white-dim)" }}>{product.category === "credits" && product.credits ? `${new Intl.NumberFormat("fr-FR").format(product.credits)} crédits ajoutés à ton solde` : product.billing === "monthly" ? "Renouvelable, sans engagement" : product.preorder ? "Réservation (10 % du prix)" : balance ? "Solde (60 % du prix)" : isCourse ? "Accès à vie" : "Paiement unique"}</p>
+          {product.category === "credits" && product.credits ? (
+            <p style={{ fontSize: 12, color: "var(--white-muted)", marginTop: 2 }}>
+              {product.credits_validity_days ? `Valables ${product.credits_validity_days} jours à partir du paiement.` : "Sans date d’expiration : vos crédits restent jusqu’à ce que vous les utilisiez."}
+            </p>
+          ) : null}
         </div>
         <span style={{ fontSize: 14, color: "var(--white)" }}>{fullPrice != null && saving > 0 ? money(fullPrice) : money(price!)}</span>
       </div>
@@ -219,7 +229,7 @@ function CheckoutModal({ slug, balance = false, onClose }: { slug: string; balan
   );
 
   const current = methods.find((m) => m.id === method) ?? methods[0];
-  const shownCurrency = method === "mobile_money" ? "FCFA" : chargedLabel;
+  const shownCurrency = method === "mobile_money" || method === "momo_direct" ? "FCFA" : chargedLabel;
   return (
     <div role="dialog" aria-modal="true" aria-label={`Paiement · ${product?.title ?? ""}`} onClick={onClose}
       style={{ position: "fixed", inset: 0, background: "rgba(6,6,8,0.72)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
@@ -252,6 +262,11 @@ function CheckoutModal({ slug, balance = false, onClose }: { slug: string; balan
                   ))}
                 </div>
               )}
+              {manual.accounts && manual.accounts.length > 0 && (
+                <div style={{ display: "grid", gap: 10 }}>
+                  {manual.accounts.map((account) => <MomoAccountCard key={account.number} account={account} />)}
+                </div>
+              )}
               {manual.alt && (altTab || !manual.payId) ? (
                 <>
                   <QrAddress address={manual.alt.address} />
@@ -262,7 +277,7 @@ function CheckoutModal({ slug, balance = false, onClose }: { slug: string; balan
               ) : (
                 <>
                   {manual.payId && <CopyField label={manual.payIdLabel || "Binance Pay ID"} value={manual.payId} />}
-                  {manual.reference && <CopyField label="Référence à coller dans la note" value={manual.reference} />}
+                  {manual.reference && <CopyField label={manual.accounts ? "Référence (à indiquer sur WhatsApp)" : "Référence à coller dans la note"} value={manual.reference} />}
                   {manual.lines.map((line, i) => (
                     <Step key={i} n={i + 1}>{line}</Step>
                   ))}
@@ -368,6 +383,8 @@ function CheckoutModal({ slug, balance = false, onClose }: { slug: string; balan
             .ck-summary { padding: 26px 22px 22px; border-right: none; border-bottom: 1px solid var(--black-line); border-radius: 24px 24px 0 0; }
             .ck-form { padding: 22px; }
           }
+          .ck-dial { display: none !important; }
+          @media (max-width: 860px) { .ck-dial { display: inline-flex !important; } }
           @media (max-width: 480px) { .ck-split { grid-template-columns: 1fr; } .ck-split .ck-row + .ck-row { border-left: none; border-top: 1px solid var(--black-line); } }
         `}</style>
       </div>
@@ -406,6 +423,33 @@ function ManualPanel({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: "grid", gap: 12, padding: 16, borderRadius: 14, background: "var(--black)", border: "1px dashed var(--black-line)" }}>
       {children}
+    </div>
+  );
+}
+
+// Mobile Money direct : une grande carte par numéro (logo de l'opérateur, numéro copiable, titulaire) et, si l'opérateur
+// a un paiement marchand, le code prêt à composer (montant déjà dedans) : copiable, et « Composer » sur téléphone.
+function MomoAccountCard({ account }: { account: { operator: string; number: string; holder?: string; ussd?: string } }) {
+  const name = account.operator.toLowerCase();
+  const icon = name.includes("orange") ? <OrangeMoneyIcon size={34} /> : name.includes("mtn") ? <MtnIcon size={34} /> : name.includes("moov") ? <MoovIcon size={34} /> : name.includes("wave") ? <WaveIcon size={34} /> : null;
+  return (
+    <div style={{ display: "grid", gap: 8, padding: 14, borderRadius: 14, border: "2px solid var(--brand)", background: "var(--black-card)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {icon}
+        <span style={{ minWidth: 0 }}>
+          <span style={{ display: "block", fontSize: 15, fontWeight: 700, color: "var(--white)" }}>{account.operator}</span>
+          {account.holder && <span style={{ display: "block", fontSize: 12, color: "var(--white-muted)" }}>Au nom de {account.holder}</span>}
+        </span>
+      </div>
+      {account.ussd ? (
+        <>
+          <CopyField label="Code marchand à composer (montant inclus)" value={account.ussd} />
+          <a href={`tel:${account.ussd.replace(/#/g, "%23")}`} className="ck-dial" style={{ ...primaryLink, marginTop: 0 }}>Composer le code</a>
+          <CopyField label="Ou transfert au numéro" value={account.number} />
+        </>
+      ) : (
+        <CopyField label="Numéro" value={account.number} />
+      )}
     </div>
   );
 }

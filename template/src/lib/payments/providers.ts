@@ -9,10 +9,11 @@
 // 2) l'enregistrer dans gateways/index.ts, 3) la lister ci-dessous dans les catégories
 // où elle marche, 4) une route webhook ou la vérification dans verify/ si besoin.
 
-export type PaymentCategoryId = 'mobile_money' | 'wave' | 'card' | 'paypal' | 'crypto'
+export type PaymentCategoryId = 'mobile_money' | 'momo_direct' | 'wave' | 'card' | 'paypal' | 'crypto'
 
 export const PAYMENT_CATEGORIES: Array<{ id: PaymentCategoryId; label: string; description: string }> = [
   { id: 'mobile_money', label: 'Mobile Money', description: 'Orange Money, MTN MoMo, Wave, etc.' },
+  { id: 'momo_direct', label: 'Mobile Money direct (manuel)', description: 'Dépôt ou code marchand sur tes numéros (réglés dans les clés), validé par un administrateur. Ouvert à tous les pays, montant en FCFA' },
   { id: 'wave', label: 'Wave (manuel)', description: 'Envoi Wave au numéro réglé dans les clés, validé par un administrateur' },
   { id: 'card', label: 'Carte bancaire', description: 'Visa / Mastercard' },
   { id: 'paypal', label: 'PayPal', description: 'Paiement via un compte PayPal' },
@@ -26,6 +27,7 @@ export const PAYMENT_PROVIDERS: Record<PaymentCategoryId, Array<{ id: string; la
     { id: 'warappay', label: 'Warappay' },
     { id: 'maketou', label: 'Maketou' },
   ],
+  momo_direct: [{ id: 'momo_direct', label: 'Mobile Money direct (manuel)' }],
   wave: [{ id: 'wave', label: 'Wave (manuel)' }],
   // Warappay accepte aussi la carte et PayPal.
   card: [
@@ -43,6 +45,7 @@ export const PAYMENT_PROVIDERS: Record<PaymentCategoryId, Array<{ id: string; la
 // doit être redirigé vers UNE page de paiement.
 export const DEFAULT_ACTIVE_PROVIDER: Record<PaymentCategoryId, string> = {
   mobile_money: 'taramoney',
+  momo_direct: 'momo_direct',
   wave: 'wave',
   card: 'taramoney',
   paypal: 'taramoney',

@@ -23,8 +23,10 @@ export async function expirePendingOrders(
     .update({ status: "failed" })
     .eq("status", "pending")
     .lt("created_at", cutoff)
-    // Binance Pay est manuel : la commande attend la validation de l'administrateur, elle n'expire pas toute seule.
+    // Binance Pay et Mobile Money direct sont manuels : la commande attend la validation de l'administrateur (le client
+    // ou un proche peut payer plus tard), elle n'expire pas toute seule.
     .neq("payment_method", "Binance Pay (manuel)")
+    .neq("payment_method", "Mobile Money direct (manuel)")
     .select("id");
 
   if (options.userId) query = query.eq("user_id", options.userId);

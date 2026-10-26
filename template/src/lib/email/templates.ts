@@ -140,6 +140,31 @@ export function twoFactorCodeTemplate({ code, purpose }: { code: string; purpose
 
 export const TWO_FACTOR_SUBJECT = `Ton code de connexion ${APP_NAME}`;
 
+/** Compte suspendu : le motif choisi par l'administrateur (texte préétabli) et comment nous joindre. */
+export function accountSuspendedTemplate({ reason }: { reason: string }): string {
+  return wrapper(`
+    <p style="font-weight:600;">Ton compte ${esc(APP_NAME)} a été suspendu</p>
+    <p>Bonjour,</p>
+    <p>Nous avons suspendu ton compte pour la raison suivante :</p>
+    <p class="rm-soft" style="background:#F5F5F7;border-radius:12px;padding:12px 14px;">${esc(reason)}</p>
+    <p>Si tu penses qu'il s'agit d'une erreur, réponds simplement à cet e-mail en nous expliquant ta situation (site web, activité, page professionnelle) : nous réexaminons chaque demande.</p>
+    <p class="rm-muted" style="font-size:13px;color:#6E6E73;">Aucune donnée n'est supprimée pendant l'examen de ta demande.</p>
+  `);
+}
+
+/** Crédits ajoutés (ou repris) par l'administrateur : montant, justification, nouveau solde. */
+export function creditsAdjustedTemplate({ name, amount, note, balance, url }: { name?: string | null; amount: number; note?: string | null; balance?: number | null; url: string }): string {
+  const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(n);
+  const added = amount > 0;
+  return wrapper(`
+    <p>Bonjour${name ? ` ${esc(name)}` : ""},</p>
+    <p>${added ? `Nous venons d'ajouter <strong>${fmt(amount)} crédits</strong> à ton compte 🎁.` : `Nous avons ajusté ton solde de <strong>${fmt(amount)} crédits</strong>.`}</p>
+    ${note ? `<p class="rm-soft" style="background:#F5F5F7;border-radius:12px;padding:12px 14px;"><strong>Motif :</strong> ${esc(note)}</p>` : ""}
+    ${balance != null ? `<p>Nouveau solde : <strong>${fmt(Math.max(0, balance))} crédits</strong>.</p>` : ""}
+    ${button(url, "Voir mes crédits")}
+  `);
+}
+
 /** Un exemple par modèle : sujet et HTML remplis avec des données fictives. */
 export type EmailExample = { id: string; label: string; subject: string; html: () => string | Promise<string> };
 
@@ -162,6 +187,10 @@ async function authTemplate(file: string): Promise<string> {
 
 // « M'envoyer un exemple de chaque e-mail » (Administration › E-mails) : chaque nouveau modèle s'ajoute ici.
 export const EMAIL_EXAMPLES: EmailExample[] = [
+  { id: "account-suspended", label: "Compte suspendu (motif choisi)", subject: "Ton compte a été suspendu",
+    html: () => accountSuspendedTemplate({ reason: "L’adresse e-mail utilisée provient d’un service d’adresses temporaires." }) },
+  { id: "credits-adjusted", label: "Crédits ajoutés par l'administrateur", subject: "🎁 Des crédits ont été ajoutés à ton compte",
+    html: () => creditsAdjustedTemplate({ name: "Awa", amount: 2000, note: "Geste commercial après un incident", balance: 2350, url: `${site.url}/credits` }) },
   { id: "access-ready", label: "Accès prêt (achat confirmé)", subject: "🎉 Bienvenue : ton accès est prêt",
     html: () => accessReadyTemplate({ name: "Awa", products: ["Formation exemple"], loginUrl: `${site.url}/login`, amount: "15 000 FCFA", invoice: "F-2026-0001" }) },
   { id: "reservation", label: "Place réservée (précommande)", subject: "✅ Ta place est réservée",
@@ -176,7 +205,48 @@ export const EMAIL_EXAMPLES: EmailExample[] = [
     html: () => adminAlertTemplate({ title: "Nouvelle vente", lines: ["Montant : 15 000 FCFA (Mobile Money)", "Client : Awa · awa@exemple.com"], url: `${site.url}/admin/orders` }) },
   { id: "notification", label: "Notification", subject: "Une nouvelle notification", html: () => genericNotificationTemplate({ title: "Ton appel est confirmé", message: "Rendez-vous mardi à 15 h." }) },
   { id: "two-factor-code", label: "Code de connexion (validation en deux étapes)", subject: TWO_FACTOR_SUBJECT, html: () => twoFactorCodeTemplate({ code: "482913", purpose: "login" }) },
+  { id: "coach-message", label: "Message du coach (relance d'un client)", subject: "Votre projet avance-t-il ?",
+    html: () => coachMessageTemplate({ text: "Bonjour Awa,\n\nNous avons vu que votre paiement n'a pas abouti. Nous restons à votre disposition pour vous aider.", ctaUrl: `${site.url}/boutique`, ctaLabel: "Reprendre ma commande", lang: "fr",
+      signature: { name: "Prénom Nom", role: "Fondateur", company: APP_NAME, tagline: site.tagline, whatsapp: site.whatsapp, email: site.supportEmail, website: site.url, address: "" } }) },
   { id: "auth-confirmation", label: "Confirmation d'inscription (Supabase)", subject: "Confirme ton adresse e-mail", html: () => authTemplate("confirmation.html") },
   { id: "auth-recovery", label: "Mot de passe oublié (Supabase)", subject: "Choisis un nouveau mot de passe", html: () => authTemplate("recovery.html") },
   { id: "auth-email-change", label: "Changement d'adresse (Supabase)", subject: "Confirme ta nouvelle adresse", html: () => authTemplate("email-change.html") },
 ];
+
+/** Signature nominative des messages du coach (réglée dans Administration › Coach › Réglages). */
+export type CoachSignature = { name: string; role: string; company: string; tagline: string; whatsapp: string; email: string; website: string; address: string };
+
+/**
+ * Message personnel du coach (relance de clients, envoi groupé depuis /admin/coach) : le texte tel quel, au
+ * « nous » et au vouvoiement, liens cliquables, un bouton s'il y a un lien, puis la signature nominative dans
+ * la langue choisie. Une formule de fin déjà écrite dans le texte est retirée (la signature la remplace).
+ */
+export function coachMessageTemplate({ text, ctaUrl, ctaLabel, lang = "fr", signature }: { text: string; ctaUrl?: string | null; ctaLabel?: string; lang?: "fr" | "en"; signature: CoachSignature }): string {
+  const en = lang === "en";
+  const linkify = (line: string) => esc(line).replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)]/g, (url) => `<a class="rm-link" href="${url}" style="color:#3A3A3C;text-decoration:underline;">${url}</a>`);
+  const blocks = text.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
+  while (blocks.length > 1 && blocks[blocks.length - 1].length < 160 && /^(bien\s+)?cordialement|^best\s+regards|^kind\s+regards|^regards|^bien\s+à\s+vous|^l[’']équipe\b|^the\s+\S+\s+team/i.test(blocks[blocks.length - 1])) blocks.pop();
+  const paragraphs = blocks.map((b) => `<p style="margin:0 0 16px;">${b.split("\n").map(linkify).join("<br>")}</p>`).join("");
+  const row = (label: string, value: string, href?: string) =>
+    value ? `<tr><td style="font-size:13px;line-height:21px;"><span style="color:#C8102E;font-weight:600;">${esc(label)}</span>&nbsp;&nbsp;${href ? `<a class="rm-link" href="${esc(href)}" style="color:#3A3A3C;text-decoration:none;">${esc(value)}</a>` : esc(value)}</td></tr>` : "";
+  const digits = signature.whatsapp.replace(/\D/g, "");
+  const signatureHtml = `
+    <p style="margin:8px 0 12px;">${en ? "Best regards," : "Cordialement,"}</p>
+    <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 8px;"><tr><td style="border-left:3px solid #C8102E;padding:2px 0 2px 14px;">
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+        <tr><td style="font-size:15px;line-height:21px;font-weight:700;">${esc(signature.name || (en ? `The ${signature.company} team` : `L'équipe ${signature.company}`))}</td></tr>
+        ${signature.name ? `<tr><td style="font-size:13px;line-height:19px;font-weight:600;color:#C8102E;padding:0 0 4px;">${esc([signature.role, signature.company].filter(Boolean).join(" · "))}</td></tr>` : ""}
+        ${signature.tagline ? `<tr><td class="rm-muted" style="font-size:12px;line-height:18px;color:#6E6E73;padding:0 0 8px;">${esc(signature.tagline)}</td></tr>` : ""}
+        ${row("WhatsApp", signature.whatsapp, digits.length >= 8 ? `https://wa.me/${digits}` : undefined)}
+        ${row(en ? "Email" : "E-mail", signature.email, signature.email ? `mailto:${signature.email}` : undefined)}
+        ${row(en ? "Website" : "Site", signature.website.replace(/^https?:\/\//, ""), signature.website || undefined)}
+        ${row(en ? "Address" : "Adresse", signature.address)}
+      </table>
+    </td></tr></table>`;
+  return wrapper(`
+    ${paragraphs}
+    ${ctaUrl ? button(ctaUrl, ctaLabel || (en ? `Open ${signature.company}` : `Ouvrir ${signature.company}`)) : ""}
+    ${signatureHtml}
+    <p class="rm-muted" style="margin-top:16px;font-size:12px;color:#6E6E73;">${en ? `You are receiving this message because you have a ${esc(signature.company)} account. Reply “STOP” to stop receiving this type of message.` : `Vous recevez ce message parce que vous avez un compte ${esc(signature.company)}. Répondez « STOP » pour ne plus recevoir ce type de message.`}</p>
+  `);
+}

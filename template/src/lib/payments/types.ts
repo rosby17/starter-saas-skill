@@ -41,6 +41,11 @@ export type CheckoutResult = {
     tab?: string
     reference?: string
     whatsappUrl?: string
+    /**
+     * Mobile Money direct : une grande carte par numéro (opérateur, numéro copiable, titulaire) et, quand l'opérateur
+     * a un paiement marchand, le code à composer avec le montant déjà dedans (copiable, et « Composer » sur téléphone).
+     */
+    accounts?: Array<{ operator: string; number: string; holder?: string; ussd?: string }>
   }
   /** Référence chez la passerelle ; sert à retrouver la commande. */
   providerRef: string

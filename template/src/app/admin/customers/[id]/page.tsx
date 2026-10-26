@@ -8,16 +8,18 @@ import { Checkbox } from '@/components/ui/choice'
 import { useConfirm } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Notice, api } from '@/components/admin/kit'
-import { Ban, Link2, Pencil, ShieldCheck, ShieldOff, UserCheck } from 'lucide-react'
+import { Ban, Link2, Pencil, ShieldCheck, ShieldOff, UserCheck, Users } from 'lucide-react'
 import { siWhatsapp } from 'simple-icons'
 import { REQUEST_KINDS, type RequestKind } from '@/lib/catalog/types'
 import { REQUEST_STATUS } from '@/lib/requests'
 import { formatOrderAmount } from '@/lib/pricing/zones'
 import { hasModule } from '@/config/site'
 import { CreditAdjustmentForm } from '@/components/admin/CreditAdjustmentForm'
+import { SuspendReasonMenu } from '@/components/admin/SuspendReasonMenu'
+import { findSuspensionReason, type SuspensionReasonCode } from '@/lib/admin/suspension-reasons'
 
 type Data = {
-  profile: { id: string; email: string | null; full_name: string | null; phone: string | null; country: string | null; is_admin: boolean; created_at: string }
+  profile: { id: string; email: string | null; full_name: string | null; phone: string | null; country: string | null; is_admin: boolean; is_internal?: boolean; suspension_reason?: string | null; suspended_at?: string | null; created_at: string }
   account: { suspended: boolean; last_sign_in_at: string | null }
   self: boolean
   entitlements: Array<{ id: string; product_id: string; source: string; created_at: string; revoked_at: string | null }>
@@ -71,11 +73,13 @@ export default function AdminCustomerPage({ params }: { params: Promise<{ id: st
     setMessage({ tone: d.success ? 'green' : 'red', text: d.message || (d.success ? 'Fait.' : 'Erreur.') })
     if (d.success) { setEdit(null); load() }
   }
-  const toggleSuspend = async () => {
-    const next = !data.account.suspended
-    if (next && !(await confirm({ title: 'Suspendre ce compte ?', message: 'Le client ne pourra plus se connecter. Ses achats restent enregistrés ; tu peux le réactiver à tout moment.', confirmLabel: 'Suspendre', danger: true }))) return
-    patch({ suspended: next })
+  // Suspension : le motif se choisit dans un menu ; l'e-mail préétabli de ce motif part au client.
+  const suspend = async (code: SuspensionReasonCode) => {
+    const reason = findSuspensionReason(code)
+    if (!(await confirm({ title: 'Suspendre ce compte ?', message: `Motif : « ${reason?.label} ». Le client ne pourra plus se connecter et reçoit l’e-mail de ce motif. Ses achats restent enregistrés ; tu peux le réactiver à tout moment.`, confirmLabel: 'Suspendre', danger: true }))) return
+    patch({ suspended: true, reason_code: code })
   }
+  const toggleInternal = () => patch({ is_internal: !profile.is_internal })
   const toggleAdmin = async () => {
     const next = !profile.is_admin
     if (!(await confirm({ title: next ? 'Nommer administrateur ?' : 'Retirer les droits d’administrateur ?', message: next ? 'Cette personne aura accès à toute l’administration : commandes, clients, paiements.' : 'Cette personne n’aura plus accès à l’administration.', confirmLabel: next ? 'Nommer admin' : 'Retirer', danger: next }))) return
@@ -100,11 +104,18 @@ export default function AdminCustomerPage({ params }: { params: Promise<{ id: st
               {name}
               {profile.is_admin && <Badge tone="amber">Admin</Badge>}
               {data.account.suspended && <Badge tone="red">Suspendu</Badge>}
+              {profile.is_internal && <Badge>Interne</Badge>}
             </h1>
             <p className="mt-1 text-sm text-gray-500">
               Client depuis le {new Date(profile.created_at).toLocaleDateString('fr-FR')}
               {data.account.last_sign_in_at ? ` · dernière connexion le ${new Date(data.account.last_sign_in_at).toLocaleDateString('fr-FR')}` : ' · jamais connecté'}
             </p>
+            {data.account.suspended && (
+              <p className="mt-1 text-sm text-red-700">
+                Suspendu{profile.suspended_at ? ` le ${new Date(profile.suspended_at).toLocaleDateString('fr-FR')}` : ''}
+                {profile.suspension_reason ? ` · motif : ${findSuspensionReason(profile.suspension_reason)?.label ?? profile.suspension_reason}` : ''}
+              </p>
+            )}
           </div>
         </div>
 
@@ -134,7 +145,10 @@ export default function AdminCustomerPage({ params }: { params: Promise<{ id: st
           <button type="button" onClick={resend} className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover"><Link2 className="h-4 w-4" />Envoyer un lien de connexion</button>
           {!edit && <button type="button" onClick={() => setEdit({ full_name: profile.full_name ?? '', phone: profile.phone ?? '', country: profile.country ?? '' })} className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-sm hover:border-gray-400"><Pencil className="h-4 w-4" />Modifier</button>}
           {!data.self && <button type="button" onClick={toggleAdmin} className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-sm hover:border-gray-400">{profile.is_admin ? <><ShieldOff className="h-4 w-4" />Retirer admin</> : <><ShieldCheck className="h-4 w-4" />Nommer admin</>}</button>}
-          {!data.self && <button type="button" onClick={toggleSuspend} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm text-red-700 hover:bg-red-50">{data.account.suspended ? <><UserCheck className="h-4 w-4" />Réactiver le compte</> : <><Ban className="h-4 w-4" />Suspendre</>}</button>}
+          {!data.self && <button type="button" onClick={toggleInternal} className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-sm hover:border-gray-400"><Users className="h-4 w-4" />{profile.is_internal ? 'Retirer « interne »' : 'Compte interne'}</button>}
+          {!data.self && (data.account.suspended
+            ? <button type="button" onClick={() => patch({ suspended: false })} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"><UserCheck className="h-4 w-4" />Réactiver le compte</button>
+            : <SuspendReasonMenu onPick={suspend} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"><Ban className="h-4 w-4" />Suspendre…</SuspendReasonMenu>)}
         </div>
       </section>
 
@@ -199,7 +213,7 @@ export default function AdminCustomerPage({ params }: { params: Promise<{ id: st
       {hasModule('credits') && (
         <section className="space-y-3 rounded-2xl border border-gray-200 bg-surface p-5">
           <h2 className="text-lg font-medium">Crédits</h2>
-          <p className="text-sm text-gray-500">Ajoute (nombre positif) ou retire (nombre négatif) des crédits. La raison est journalisée.</p>
+          <p className="text-sm text-gray-500">Ajoute (nombre positif) ou retire (nombre négatif) des crédits. Le motif est journalisé et montré au client, qui est prévenu à sa prochaine visite.</p>
           <CreditAdjustmentForm userId={id} />
         </section>
       )}

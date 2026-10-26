@@ -11,11 +11,14 @@ export type Problem = ErrorExplanation & {
   lastSeen: string
 }
 
+/** Clé d'un problème (fonctionnalité + cause en clair) : sert aussi à relire ses occurrences (/api/admin/errors?problem=). */
+export const problemKey = (explanation: Pick<ErrorExplanation, 'feature' | 'cause'>) => `${explanation.feature}::${explanation.cause}`
+
 export function groupProblems(rows: ProblemRow[], limit = 30): Problem[] {
   const groups = new Map<string, ErrorExplanation & { count: number; users: Set<string>; ids: string[]; lastSeen: string }>()
   for (const row of rows) { // de la plus récente à la plus ancienne
     const explanation = explainError(row)
-    const key = `${explanation.feature}::${explanation.cause}`
+    const key = problemKey(explanation)
     const group = groups.get(key) || { ...explanation, count: 0, users: new Set<string>(), ids: [], lastSeen: row.created_at }
     group.count += 1
     if (row.user_id) group.users.add(row.user_id)

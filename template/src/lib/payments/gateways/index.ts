@@ -1,6 +1,7 @@
 import type { PaymentGateway } from '../types'
 import { binance } from './binance'
 import { maketou } from './maketou'
+import { momoDirect } from './momo-direct'
 import { taramoney } from './taramoney'
 import { warappay } from './warappay'
 import { wave } from './wave'
@@ -12,6 +13,7 @@ const GATEWAYS: Record<string, PaymentGateway> = {
   [maketou.id]: maketou,
   [binance.id]: binance,
   [wave.id]: wave,
+  [momoDirect.id]: momoDirect,
 }
 
 export const getGateway = (id: string): PaymentGateway | null => GATEWAYS[id] ?? null

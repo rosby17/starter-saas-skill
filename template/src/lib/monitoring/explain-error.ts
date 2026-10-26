@@ -34,6 +34,21 @@ export const isProviderOutage = (error: ExplainableError) => text(error.details?
 export const isGatewayBlip = (error: ExplainableError) =>
   error.source === 'web' && [502, 503, 504].includes(error.http_status ?? 0) && !text(error.error_message)
 
+// Le service a été mis en pause automatiquement (sonde) ou le modèle demandé n'a plus de moteur disponible :
+// le client a lu un message calme, rien n'a été débité. Rien à corriger dans notre code.
+const CALM_CODES = ['service_closed', 'model_unavailable']
+export const isCalmRefusal = (error: ExplainableError) => CALM_CODES.includes(text(error.details?.error_code) || '')
+
+// Tâche ISOLÉE qu'un fournisseur a fait échouer, laissée « en cours » au-delà du délai ou perdue chez lui : le client
+// est remboursé, rien n'est cassé chez nous. Jamais « critique » : à surveiller seulement si cela se répète
+// (la sonde, elle, détecte une vraie panne et ferme le service).
+const ISOLATED_PROVIDER_REASONS = ['provider_reported_failure', 'stale_still_doing', 'missing_everywhere', 'provider_task_expired']
+export const isIsolatedProviderTask = (error: ExplainableError) => ISOLATED_PROVIDER_REASONS.includes(text(error.details?.reason) || '')
+
+// Alertes de la sonde des moteurs (service mis en pause, sonde refusée) : un fournisseur à prévenir, pas un bug.
+const WATCHDOG_REASONS = ['service_closed_by_probe', 'probe_rejected']
+const isWatchdogAlert = (error: ExplainableError) => WATCHDOG_REASONS.includes(text(error.details?.reason) || '')
+
 const isNetwork = (error: ExplainableError) =>
   text(error.details?.kind) === 'network' || /failed to fetch|load failed|networkerror/i.test(error.error_message || '')
 
@@ -48,7 +63,9 @@ export function featureFor(action: string) {
 function severityFor(error: ExplainableError): ErrorSeverity {
   const status = error.http_status ?? 0
   const kind = text(error.details?.kind)
-  if (isProviderOutage(error) || isGatewayBlip(error) || isNetwork(error)) return 'low'
+  if (isProviderOutage(error) || isGatewayBlip(error) || isNetwork(error) || isCalmRefusal(error)) return 'low'
+  if (isIsolatedProviderTask(error)) return 'medium'
+  if (isWatchdogAlert(error)) return 'high'
   if (error.source === 'server' || status >= 500) return 'critical'
   if (kind === 'js') return /hydrat|react error #(418|419|422|423|425)/i.test(error.error_message || '') ? 'low' : 'medium'
   if (text(error.details?.cause)) return 'high'
@@ -65,6 +82,12 @@ export function explainError(error: ExplainableError): ErrorExplanation {
 
   if (isProviderOutage(error)) {
     return { severity, ...base, cause: "Le fournisseur externe n'a pas répondu ou était surchargé. Ce n'est pas un bug de notre code : le client a été prévenu et ses crédits remboursés.", fix: "Rien à corriger. Si cela dure ou touche beaucoup de clients, vérifier l'état du fournisseur." }
+  }
+  if (isCalmRefusal(error)) {
+    return { severity, ...base, cause: "Le service demandé était en pause ou son modèle n'avait plus de moteur disponible : le client a lu un message calme et rien n'a été débité.", fix: 'Rien à corriger dans le code. Voir Administration › Moteurs IA pour l’état des moteurs et des services.' }
+  }
+  if (isIsolatedProviderTask(error)) {
+    return { severity, ...base, cause: "Une tâche isolée a échoué ou est restée bloquée chez le fournisseur : le client a été remboursé, rien n'est cassé chez nous.", fix: 'Rien à corriger si c’est isolé. Si cela se répète, la sonde des moteurs met le service en pause et prévient ici.' }
   }
   if (isGatewayBlip(error)) {
     return { severity, ...base, clientMessage: null, cause: "Le serveur n'a pas répondu pendant quelques secondes (réponse du proxy) : le plus souvent un déploiement ou un redémarrage.", fix: "Rien à corriger si c'est isolé ou si l'heure correspond à un déploiement. Si cela se répète, regarder la charge du serveur." }

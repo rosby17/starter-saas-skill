@@ -57,7 +57,11 @@ export async function POST(request: Request) {
       .select("id, user_id, plan_name, credits, amount_local, amount_fcfa, currency, status")
       .eq("id", productId)
       .maybeSingle();
-    if (!order) return NextResponse.json({ success: true, message: "Order not found." });
+    // Commande introuvable : 500 pour que Tara Money REJOUE le webhook, au lieu d'acquitter un paiement jamais livré.
+    if (!order) {
+      console.error(`[ACTION REQUISE] Webhook TaraMoney : commande ${productId} introuvable, rejeu demandé.`);
+      return NextResponse.json({ success: false, message: "Order not linked yet, retry" }, { status: 500 });
+    }
 
     // Le montant encaissé doit couvrir le montant dû AVANT de créditer (bug de conversion, panier trafiqué…).
     if (!paidAmountCoversOrder(amount, order.amount_fcfa ?? order.amount_local)) {

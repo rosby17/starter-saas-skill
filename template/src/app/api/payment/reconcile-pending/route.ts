@@ -33,7 +33,10 @@ export async function POST() {
     if (error) throw error;
 
     let creditedCount = 0;
+    // Borné : appelé à l'ouverture de l'application, il ne doit jamais la faire attendre (6 s par lecture, 20 s en tout).
+    const startedAt = Date.now();
     for (const order of orders || []) {
+      if (Date.now() - startedAt > 20_000) break;
       const gateway = gatewayForPaymentMethod(order.payment_method);
       if (!gateway?.checkStatus) continue;
       if ((await gateway.checkStatus({ id: order.id, payment_ref: order.payment_ref })) === "paid" && (await creditPaidOrder(supabase, order))) {

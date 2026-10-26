@@ -43,6 +43,9 @@ export const SERVICES: ServiceDefinition[] = [
   { id: 'wave', name: 'Wave (manuel)', section: 'Paiement', logo: '/logos/services/cle.svg',
     description: 'Le client envoie le montant à ton numéro Wave puis la capture sur WhatsApp ; tu valides la commande à la main.',
     keys: ['WAVE_NUMBER', 'WAVE_NAME'] },
+  { id: 'momo_direct', name: 'Mobile Money direct (manuel)', section: 'Paiement', logo: '/logos/services/cle.svg',
+    description: 'Le client envoie le montant sur tes numéros Mobile Money (dépôt ou code marchand), depuis n’importe quel pays, puis la capture sur WhatsApp ; tu valides la commande à la main. Aussi modifiable dans Moyens de paiement › Coordonnées.',
+    keys: ['MOMO_DIRECT_1_OPERATOR', 'MOMO_DIRECT_1_NUMBER', 'MOMO_DIRECT_1_USSD', 'MOMO_DIRECT_2_OPERATOR', 'MOMO_DIRECT_2_NUMBER', 'MOMO_DIRECT_2_USSD', 'MOMO_DIRECT_HOLDER', 'MOMO_DIRECT_COUNTRY'] },
 
   { id: 'google', name: 'Connexion avec Google', section: 'Connexion et IA', logo: '/logos/services/google.svg',
     description: 'Ajoute « Continuer avec Google » sur la connexion et l’inscription.',
@@ -51,7 +54,11 @@ export const SERVICES: ServiceDefinition[] = [
   { id: 'kie', name: 'kie.ai (Claude)', section: 'Connexion et IA', logo: '/logos/services/cle.svg',
     description: 'Analyse le questionnaire d’accueil et prépare le parcours personnalisé de chaque élève.',
     where: { label: 'kie.ai › API Key', url: 'https://kie.ai/api-key' },
-    keys: ['KIE_API_KEY'] },
+    keys: ['KIE_API_KEY', 'KIE_API_KEY_2'] },
+  { id: 'anthropic', name: 'Anthropic (Claude)', section: 'Connexion et IA', logo: '/logos/services/anthropic.svg',
+    description: 'Le coach business : point du jour, questions libres, analyse des réponses des clients.',
+    where: { label: 'Claude Console › API Keys', url: 'https://platform.claude.com/settings/keys' },
+    keys: ['ANTHROPIC_API_KEY', 'COACH_MODEL', 'COACH_FALLBACK_MODEL'] },
 
   { id: 'github', name: 'GitHub', section: 'Mise en ligne', logo: '/logos/services/github.svg',
     description: 'Dépôt du code du site (mise en ligne automatique).', keys: ['GITHUB_TOKEN'] },
