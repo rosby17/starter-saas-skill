@@ -103,6 +103,8 @@ Méthodes détaillées : sécurité `audit-securite.md`, rentabilité `audit-ren
 - [ ] États vides utiles (« Aucun projet : créer le premier »), premier pas guidé après l'inscription.
 - [ ] **Simplicité** (`references/simplicite-interface.md`) : accueil à trois choses (action principale, en cours, mes objets) sans KPI ni erreurs brutes ; états en 3 mots ; interrupteur Simple | Avancé visible partout, Simple par défaut ; menu en groupes pliables sans entrée cachée ; assistant de création en 3 écrans ; « Premiers pas » qui se coche tout seul ; une personne neuve lance l'action principale SANS aide (test avec 3 personnes).
 - [ ] Toute l'interface est traduite dans chaque langue proposée (`references/traductions.md`) ; une langue longue (allemand) et une écriture de droite à gauche (arabe) ne cassent aucun écran.
+- [ ] **Finitions** (`references/finitions-interface.md`) : aucun `transition: all`, chiffres qui changent en `tabular-nums`, arrondis emboîtés cohérents, zones de clic d'au moins 40 px sur téléphone, images claires avec contour neutre.
+- [ ] Chaque bouton important tient sa promesse jusqu'à l'état final : pas de double action au double clic, pas de « Enregistré » si le serveur a échoué (skill `audit-boutons`).
 - [ ] Accessibilité de base : contraste suffisant, texte alternatif des images, langue de la page, navigation au clavier, libellés des champs.
 - [ ] Téléphone : ☰ avec les noms des pages et ← sur chaque écran connecté, « ← Mon compte » sur les pages autonomes (paiement, facture) ; aucune page ne dépasse 375 px (`mobile-navigation.md`).
 - [ ] Langue : menu déroulant d'une ligne, pas de grille. Choix d'un utilisateur : recherche pendant la frappe, pas un e-mail à taper.

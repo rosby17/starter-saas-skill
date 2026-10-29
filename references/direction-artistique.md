@@ -45,6 +45,7 @@ Si l'utilisateur dit « choisis pour moi », choisis toi-même et justifie en un
 - Visuels : captures du vrai produit, illustrations ou photos libres de droits ; jamais une image du site d'inspiration.
 - **Motion design** : au service de la compréhension (apparition des sections au défilement, démonstration du produit qui s'anime, compteur de chiffres, survol des boutons). Discret, 150 à 400 ms, rien qui bloque la lecture. Toujours désactivé avec `prefers-reduced-motion`. Pas de grosse bibliothèque ni de vidéo lourde dans le premier écran : CSS et `IntersectionObserver` d'abord ; Framer Motion seulement si une animation complexe le justifie.
 - Performance : le premier écran doit s'afficher vite sur un téléphone moyen (images en `next/image`, polices via `next/font`).
+- Finitions avant de livrer : `references/finitions-interface.md` (arrondis, chiffres, ombres, zones de clic, animations).
 - Note dans `SPEC.md` les références retenues et ce qui en a été tiré.
 
 ## 5. Ce qui DOIT changer d'un SaaS à l'autre (leçon AgedGmailYT, 13/10/2026)
