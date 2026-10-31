@@ -30,6 +30,12 @@ Chaque fiche (`recent.design/i/…`) donne : une description, le **style** (Illu
 
 Autres sources si besoin : land-book.com, lapa.ninja, saaslandingpage.com, godly.website (motion très poussé).
 
+**Animations et vidéos : raivcoo.com.** Bibliothèque de vidéos de motion design classées par étiquette (`Saas`, `Launch video`,
+`UI / UX`, `Smooth`, `Transition`, `Logo`…). On y prend l'idée d'animation de la landing (démonstration du produit qui s'anime,
+transition entre sections, logo animé) et, surtout, la référence de la **vidéo de lancement** du SaaS. Chaque vidéo du SaaS (pub de
+lancement, démo du hero, tutoriel) passe par le skill `motion-design`, qui commence toujours par choisir une vidéo d'inspiration
+sur raivcoo.com et noter ce qu'on fera de plus original (`references/inspiration-raivcoo.md` de ce skill).
+
 Méthode : parcours 15 à 30 références, garde-en 6 qui passent le filtre du point 1, puis retiens-en **3 aux partis pris différents** (ex. une épurée, une illustrée, une très animée).
 
 ## 3. Proposer (dans le résumé « on y va ? »)
