@@ -62,8 +62,13 @@ export function cloudflare(token: string): DnsProvider {
   return {
     id: 'cloudflare',
     async pointToServer(domain, ip) {
-      const zones = await call<Array<{ id: string }>>(`/zones?name=${domain}`)
-      const zoneId = zones[0]?.id
+      // La zone peut être un domaine parent (gokamo-fx.tools-cl.com → zone tools-cl.com) : on remonte d'un cran à la fois.
+      let zoneId: string | undefined
+      const labels = domain.split('.')
+      for (let i = 0; !zoneId && i <= labels.length - 2; i++) {
+        const zones = await call<Array<{ id: string }>>(`/zones?name=${labels.slice(i).join('.')}`)
+        zoneId = zones[0]?.id
+      }
       if (!zoneId) throw new DeployError(`Le domaine ${domain} n'est pas dans ce compte Cloudflare.`)
       const upsert = async (name: string, type: 'A' | 'CNAME', content: string) => {
         const records = await call<Array<{ id: string; type: string }>>(`/zones/${zoneId}/dns_records?name=${name}`)

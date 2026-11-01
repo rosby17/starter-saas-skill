@@ -31,11 +31,20 @@ export async function ensurePrivateRepo(token: string, owner: string, name: stri
  *  Le jeton passe par une variable d'environnement de git, jamais dans la ligne de commande ni dans .git/config. */
 export async function pushProject(token: string, fullName: string): Promise<void> {
   const cwd = process.cwd()
+  // Le SaaS est parfois un sous-dossier d'un autre dépôt (ex. TRADING/saas) : on ne touche jamais au dépôt parent
+  // (pas de « git add -A » chez lui) et on n'envoie que ce dossier, via un dépôt à part rangé dans .deploy-git.
+  let top = ''
+  try { top = (await run('git', ['rev-parse', '--show-toplevel'], { cwd })).stdout.trim() } catch { /* pas de dépôt */ }
+  const nested = !!top && (await fs.realpath(top)) !== (await fs.realpath(cwd))
+  const dedicated = nested ? ['--git-dir', path.join(cwd, '.deploy-git'), '--work-tree', cwd] : []
   const git = (args: string[], extraEnv: Record<string, string> = {}) =>
-    run('git', ['-c', 'user.name=starter-saas', '-c', 'user.email=deploy@starter-saas.local', ...args], { cwd, env: { ...process.env, ...extraEnv }, maxBuffer: 10 * 1024 * 1024 })
-  try {
-    await run('git', ['rev-parse', '--is-inside-work-tree'], { cwd })
-  } catch {
+    run('git', [...dedicated, '-c', 'user.name=starter-saas', '-c', 'user.email=deploy@starter-saas.local', ...args], { cwd, env: { ...process.env, ...extraEnv }, maxBuffer: 10 * 1024 * 1024 })
+  if (nested) {
+    await fs.access(path.join(cwd, '.deploy-git', 'HEAD')).catch(() => git(['init', '-q', '-b', 'main']))
+    // Coolify construit lui-même : pas de workflow GitHub Actions dans ce dépôt (le jeton n'a pas le droit « workflow »).
+    await fs.writeFile(path.join(cwd, '.deploy-git', 'info', 'exclude'), '.github/\n')
+    await git(['rm', '-r', '-q', '--cached', '--ignore-unmatch', '.github'])
+  } else if (!top) {
     await git(['init', '-q'])
   }
   await git(['add', '-A'])
@@ -51,7 +60,7 @@ export async function pushProject(token: string, fullName: string): Promise<void
   let last = ''
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      await git(['-c', 'http.postBuffer=1073741824', '-c', 'http.version=HTTP/1.1', 'push', '-q', `https://github.com/${fullName}.git`, 'HEAD:refs/heads/main'], {
+      await git(['-c', 'http.postBuffer=1073741824', '-c', 'http.version=HTTP/1.1', 'push', '-q', `https://github.com/${fullName}.git`, `${nested ? '+' : ''}HEAD:refs/heads/main`], {
         GIT_TERMINAL_PROMPT: '0',
         GIT_CONFIG_COUNT: '1',
         GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader',

@@ -15,3 +15,4 @@ supabase/.branches
 
 # Mise en ligne directe (scripts/deployer.ts) : jetons et état, jamais dans Git
 .deploy.json
+.deploy-git
