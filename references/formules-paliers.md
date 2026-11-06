@@ -29,6 +29,7 @@ Appris sur ORA le 06/11/2026 (pasteur numérique, Vite + Supabase auto-hébergé
 
 - **Barre latérale = seulement les rubriques principales** (ORA : Mon espace, Mes programmes, Études, Prières) + l'action principale. Compte, abonnement, paramètres, administration et déconnexion sont dans le menu du profil (en haut à droite).
 - Repliable : **petit bouton rond posé sur le bord de la barre** (chevron), pas dans la barre du haut, loin de la barre.
+- **Administration** : même photo de profil en haut à droite que l'espace client (son menu donne « Retour au site » quand on est dans l'admin, par là où on est entré), barre latérale repliable, contenu **centré** (jamais collé à gauche avec du vide à droite). Clic sur un compte = **fiche client** complète (formule, chiffres, programmes, paiements, abonnements, cadeaux, actions), sans jamais le contenu privé de la personne.
 - Page « Paramètres » distincte du profil (prénom, mot de passe avec œil, déconnexion, suppression du compte).
 
 ## 5. Connexion et clés
