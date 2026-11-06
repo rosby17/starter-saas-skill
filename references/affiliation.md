@@ -170,3 +170,12 @@ Ajouter chaque modèle à la page « exemple de chaque e-mail » de l'admin (`re
 - Activation hors ligne : crédit insuffisant refusé ; deux activations simultanées ne passent jamais sous zéro ; échec de livraison → crédit rendu.
 - Nom d'utilisateur : réservé refusé, déjà pris → suggestion libre.
 - RLS : un partenaire ne lit ni les mouvements ni les filleuls d'un autre ; un client ne peut pas écrire dans `partners` ni `partner_ledger`.
+
+## Variante Ballon Viral : associés nommés par l'admin, puis associés éditeurs (06/11/2026)
+
+Version plus simple que les revendeurs à crédit prépayé, quand le propriétaire choisit lui-même ses associés :
+- **Création dans l'admin** : e-mail d'un compte existant, taux (1 à 95 %), lien `/r/<code>` facultatif ; e-mail de bienvenue. Pause, changement de taux ou de lien, versements notés à la main (jamais au-delà du disponible).
+- **Commission écrite par un déclencheur SQL** `AFTER UPDATE OF status ON orders` (passage à `success`), dans un bloc `exception when others` qui ne bloque jamais la commande ; une ligne par `(order_id, reason)` grâce à un index unique ; disponible 14 jours après ; contre-ligne au remboursement. Solde = somme des lignes du grand livre, jamais une colonne.
+- **Parrain protégé** : un déclencheur `BEFORE UPDATE` sur `profiles` remet `referrer_id` à l'ancienne valeur dès que `auth.uid()` n'est pas vide (un `revoke update` de colonne ne suffit pas sur Supabase). Rattachement seulement pour un compte de moins de 24 h, premier parrain gagnant, jamais soi-même, sur TOUS les chemins d'inscription (callback OAuth + premier passage dans l'espace client).
+- **Associés éditeurs** : interrupteur « Éditeur » par associé ; il crée SES magazines et SES articles, publiés tout de suite ; l'admin voit l'auteur, peut tout corriger ou retirer, et fixe seul la part de l'auteur par numéro (`magazines.author_share`, refusée en 403 si un non-admin l'envoie). Les routes de l'admin passent par `requireEditor()` + `ownsContent(table, id)` ; les droits sensibles (mise en avant, prix des autres, clés, paiements) restent à l'admin. Si l'acheteur vient du lien de l'auteur, une seule part (pas de commission en plus).
+- Code de référence : `ballon-viral/supabase/migrations/0022_associes.sql`, `0023_associes_editeurs.sql`, `src/lib/partners.ts`, `src/lib/auth/admin.ts`, `src/app/(dashboard)/associe/`, tests `supabase/tests/associes*.test.sql`.
