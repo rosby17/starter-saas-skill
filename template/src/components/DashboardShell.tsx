@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { site, contactLink, hasModule, contactChannel } from '@/config/site'
 import { clsx } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
@@ -40,30 +40,35 @@ export type Plan = { pro: boolean; eligible: boolean; offer: { slug: string; pri
 
 // Espace client : menu de gauche aéré (fixe sur ordinateur, tiroir sur téléphone), formule Gratuit / Pro,
 // aide WhatsApp en un clic ; en haut : thème clair / sombre et rond de profil (compte, administration, déconnexion).
+// Sur ordinateur, la barre se replie en icônes seules avec le bouton rond posé sur son bord (choix gardé dans le navigateur).
+const COLLAPSE_KEY = 'side-collapsed'
 export function DashboardShell({ email, name, avatarUrl, isAdmin, plan, logout, children }: {
   email: string; name: string; avatarUrl: string | null; isAdmin: boolean; plan: Plan; logout: React.ReactNode; children: React.ReactNode
 }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
+  useEffect(() => { setCollapsed(localStorage.getItem(COLLAPSE_KEY) === '1') }, [])
+  const toggle = () => setCollapsed((c) => { localStorage.setItem(COLLAPSE_KEY, c ? '0' : '1'); return !c })
 
-  const side = (
+  const side = (small: boolean) => (
     <div className="flex h-full flex-col">
-      <nav className="space-y-1 px-4 py-2">
+      <nav className={clsx('space-y-1 py-2', small ? 'px-3' : 'px-4')}>
         {site.dashboardNav.filter((item) => !item.module || hasModule(item.module)).map((item) => {
           const active = item.href === '/dashboard' ? pathname === '/dashboard'
             : pathname === item.href || pathname.startsWith(`${item.href}/`) || (item.href === '/mes-achats' && pathname.startsWith('/cours/'))
           return (
-            <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
-              className={clsx('flex items-center gap-3.5 rounded-2xl px-4 py-3 text-[15px] transition-colors',
+            <Link key={item.href} href={item.href} onClick={() => setOpen(false)} aria-label={item.label}
+              className={clsx('flex items-center rounded-2xl py-3 text-[15px] transition-colors', small ? 'justify-center px-0' : 'gap-3.5 px-4',
                 active ? 'bg-brand/10 font-medium text-gray-900' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900')}>
               <span className={clsx(active ? 'text-brand' : 'text-gray-500')}><Icon name={item.icon} /></span>
-              {item.label}
+              {!small && item.label}
             </Link>
           )
         })}
       </nav>
 
-      <div className="mt-auto space-y-3 p-4">
+      <div className={clsx('mt-auto space-y-3 p-4', small && 'hidden')}>
         {plan.pro ? (
           <div className="rounded-2xl border border-brand/30 bg-brand/10 p-4">
             <p className="flex items-center gap-2 text-sm font-medium"><ProBadge size="sm" /> Membre Pro</p>
@@ -87,9 +92,13 @@ export function DashboardShell({ email, name, avatarUrl, isAdmin, plan, logout, 
 
   return (
     <div className="min-h-screen md:flex">
-      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-r border-gray-200 bg-surface md:flex">
-        <Link href="/dashboard" className="flex h-20 items-center px-7"><Logo /></Link>
-        {side}
+      <aside className={clsx('sticky top-0 hidden h-screen shrink-0 flex-col border-r border-gray-200 bg-surface transition-[width] duration-200 md:flex', collapsed ? 'w-[76px]' : 'w-72')}>
+        <button type="button" onClick={toggle} aria-label={collapsed ? 'Déplier le menu' : 'Replier le menu'} aria-expanded={!collapsed}
+          className="absolute -right-3.5 top-7 z-10 grid h-7 w-7 place-items-center rounded-full border border-gray-200 bg-surface text-gray-500 shadow-sm hover:text-gray-900">
+          <svg viewBox="0 0 24 24" className={clsx('h-4 w-4 transition-transform', collapsed && 'rotate-180')} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M15 6l-6 6 6 6" /></svg>
+        </button>
+        <Link href="/dashboard" className={clsx('flex h-20 items-center overflow-hidden', collapsed ? 'justify-center px-2' : 'px-7')}><Logo /></Link>
+        {side(collapsed)}
       </aside>
 
       {open && (
@@ -97,7 +106,7 @@ export function DashboardShell({ email, name, avatarUrl, isAdmin, plan, logout, 
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
           <aside className="absolute left-0 top-0 flex h-full w-80 max-w-[85vw] flex-col bg-surface">
             <div className="flex h-20 items-center px-7"><Logo /></div>
-            {side}
+            {side(false)}
           </aside>
         </div>
       )}
