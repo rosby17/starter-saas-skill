@@ -40,5 +40,6 @@ Appris sur ORA le 06/11/2026 (pasteur numérique, Vite + Supabase auto-hébergé
 ## 6. Contenu et images
 
 - Les pages de l'espace connecté (programmes, suivi) ont un bandeau illustré, les **vrais chiffres de la personne** (en cours, jours faits, terminés ; jamais de chiffres inventés), les éléments en cours séparés des terminés, et un court « comment ça se passe ».
-- Des **photos de personnes du public visé** (ORA : chrétiens africains en prière), générées gratuitement (Google Flow, Nano Banana), en `.webp` dans `public/img`, avec repli propre si l'image manque.
+- Des **photos de personnes du public visé**, générées gratuitement (Google Flow, Nano Banana), en `.webp` dans `public/img`, avec repli propre si l'image manque. **Public mixte = casting mixte** (ORA : Africains, Afro-descendants, Européens ; une série où tout le monde est noir a été refusée). Varier sur l'ensemble des images : seul, en famille, en groupe d'origines diverses.
+- **Aperçu des liens partagés (WhatsApp, Facebook, X) obligatoire** : `public/og.jpg` 1200x630 (fond de la charte, logo lisible, une photo, la promesse, l'adresse du site), rendu depuis un gabarit HTML par Playwright (ORA : `scripts/og/`), et balises `og:*` (avec `og:image:width/height`, URL absolue) + `twitter:card=summary_large_image` + `apple-touch-icon`. Sans elles, WhatsApp montre le logo sur fond blanc, illisible.
 - Logo : une icône qui dit le métier (ORA : une Bible qui s'ouvre et une croix qui se lève), animée une fois à l'ouverture, en boucle pendant un chargement, rien si l'appareil demande moins d'animations.
