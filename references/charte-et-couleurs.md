@@ -39,6 +39,8 @@ Leçon Ballon Viral (05-06/11/2026). Roosevelt a dû corriger à la main, écran
 
 Cartes à partager, aperçus Facebook / WhatsApp (`opengraph-image.tsx`), couvertures, factures : même police (fichier `.woff` chargé dans la route next/og), mêmes jetons, version claire et sombre si le site a les deux, logos réels. Une carte qui ne ressemble pas au site se voit tout de suite dans le fil Facebook.
 
+Une image PAR TYPE DE LIEN (Roosevelt, 06/11/2026) : l'accueil montre le grand logo et le slogan, un produit sa couverture, un article sa photo et son titre, un match les deux équipes. Jamais l'image d'un produit précis sur le lien de l'accueil. Et une image qui arrive vite et légère : WhatsApp abandonne au-delà de quelques secondes ou d'environ 300 Ko et affiche une vignette blanche. Ballon Viral produisait des PNG de 370 à 700 Ko en 20 s ; corrigé avec des routes `/og/<type>/<id>` qui réduisent les photos avant de les dessiner, sortent en JPEG (sharp, 30 à 70 Ko) et gardent l'image en mémoire une heure (`src/lib/og/render.ts`, `meta.ts`). Contrôle : `curl -w "%{size_download} %{time_total}"` sur l'adresse `og:image` de chaque type de page.
+
 ## 6. Le « côté IA » à enlever
 
 Repérés sur Ballon Viral et corrigés : slogans courts terminés par un point, dégradés violets génériques, titres tous centrés, cartes identiques en grille de trois. Ce qui a plu : étiquettes en capitales espacées, flèches, halos discrets, coins de 28 px sur les grands blocs, nom de marque gardé tel que le client l'écrit (BALLON VIRAL en capitales).
