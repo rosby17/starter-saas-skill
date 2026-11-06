@@ -65,3 +65,25 @@ il faut vérifier que l'adresse de réponse reçoit vraiment.
   si on les range sur le poste, dans un fichier privé (droits 600) HORS du dépôt git, jamais commité.
 - **Prudence à l'activation par e-mail** : vérifier d'abord que les e-mails partent (bouton d'exemples), sinon proposer l'application.
 - L'administration exige la deuxième étape (adresse d'admin ET adresse confirmée ET deuxième étape active).
+
+## Leçons Ballon Viral (06/11/2026) : adresse de contact au nom du domaine
+
+- **Une seule adresse publique** `contact@<domaine>` (site.supportEmail) : expéditeur ET « Répondre à » par défaut de `sendEmail`
+  (le modèle le fait), affichée sur Contact, Confidentialité, CGU, mentions légales et dans le pied de chaque e-mail.
+- **Routage Cloudflare en 3 clics** : Email Routing > Routing rules > `contact` vers le Gmail vérifié, puis Settings > DNS records >
+  « Add missing records » (pose les 3 MX `routeN.mx.cloudflare.net`, le SPF et la clé DKIM de Cloudflare). Contrôler par `dig`.
+  Si Brevo envoie au nom du domaine, ajouter `include:spf.brevo.com` dans la MÊME ligne `v=spf1` que Cloudflare a créée.
+- **Brevo** : le code `brevo-code:` peut déjà être dans la zone (domaine ajouté plus tôt dans Brevo) : il reste DKIM `brevo1/brevo2`
+  et `_dmarc` (Brevo propose la connexion automatique à Cloudflare), puis l'expéditeur `contact@<domaine>` (son code de validation
+  arrive dans le Gmail grâce au routage). Le propriétaire colle lui-même la clé API et la clé SMTP dans /admin/keys.
+- **Un seul habillage pour tous les e-mails** : logo, bouton aux couleurs de la marque (texte blanc), pied de page avec l'adresse
+  de contact, quelques liens du site et UNE phrase « Tu reçois cet e-mail parce que… » propre à chaque modèle. Les gabarits de
+  connexion de GoTrue (`public/email-templates`) suivent le même habillage et la même langue que le site : un projet parti d'un
+  ancien site gardait des gabarits en anglais au nom d'un autre produit. À relire à chaque nouveau SaaS.
+- **Logo blanc sur fond transparent = invisible** sur le fond blanc d'un e-mail : le poser sur une pastille de la couleur de la
+  marque (`background:<brand>;padding:6px;border-radius:10px` sur l'`img`) ou utiliser une version foncée. Contrôler dans
+  l'aperçu « exemple de chaque e-mail » de l'admin, pas seulement dans le code.
+- **Formulaire de contact** plutôt qu'un simple `mailto:` quand le client n'a pas de WhatsApp public : route `/api/contact`
+  (zod, champ piège invisible qui répond « succès » sans rien envoyer, limite par IP et par adresse), e-mail vers `contact@` avec
+  « Répondre à » = le visiteur, catégorie admin dans le journal. Sujets en pastilles (jamais de `<select>`), message de repli
+  qui donne l'adresse e-mail si Brevo n'est pas encore branché.

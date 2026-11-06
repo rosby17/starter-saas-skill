@@ -56,7 +56,9 @@ export async function saveDeploySettings(patch: DeploySettings): Promise<DeployS
 // Renvoie true si quelque chose a changé (il faut alors redémarrer le service).
 async function applyAuthConfig(cf: ReturnType<typeof coolify>, uuid: string, apiUrl: string, siteUrl: string, domain: string): Promise<boolean> {
   const smtpLogin = env('BREVO_SMTP_LOGIN'), smtpKey = env('BREVO_SMTP_KEY')
-  const smtp = !!(smtpLogin && smtpKey && env('BREVO_SENDER_EMAIL'))
+  // Expéditeur facultatif : à défaut, l'adresse de contact du site (Ballon Viral, 06/11/2026 : sinon le SMTP restait coupé).
+  const sender = env('BREVO_SENDER_EMAIL') || site.supportEmail
+  const smtp = !!(smtpLogin && smtpKey)
   const googleId = env('GOOGLE_CLIENT_ID'), googleSecret = env('GOOGLE_CLIENT_SECRET')
   const google = !!(googleId && googleSecret)
   const patched = google ? await cf.enableGoogleAuth(uuid) : false
@@ -68,7 +70,7 @@ async function applyAuthConfig(cf: ReturnType<typeof coolify>, uuid: string, api
     ENABLE_EMAIL_AUTOCONFIRM: smtp ? 'false' : 'true',
     ...(smtp ? {
       SMTP_HOST: 'smtp-relay.brevo.com', SMTP_PORT: '587', SMTP_USER: smtpLogin, SMTP_PASS: smtpKey,
-      SMTP_ADMIN_EMAIL: env('BREVO_SENDER_EMAIL'), SMTP_SENDER_NAME: env('BREVO_SENDER_NAME') || site.name,
+      SMTP_ADMIN_EMAIL: sender, SMTP_SENDER_NAME: env('BREVO_SENDER_NAME') || site.name,
     } : {}),
     GOTRUE_EXTERNAL_GOOGLE_ENABLED: google ? 'true' : 'false',
     ...(google ? { GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: googleId, GOTRUE_EXTERNAL_GOOGLE_SECRET: googleSecret, GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: `${apiUrl}/auth/v1/callback` } : {}),

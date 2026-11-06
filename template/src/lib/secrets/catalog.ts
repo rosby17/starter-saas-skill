@@ -43,8 +43,8 @@ export const SECRET_CATALOG: SecretDefinition[] = [
   // --- E-mails
   { name: 'BREVO_API_KEY', label: 'Clé API Brevo', group: 'E-mails (Brevo)', secret: true, requirement: { kind: 'always' },
     help: 'Brevo > SMTP & API > Clés API. Sans elle, aucun e-mail (reçus, notifications) ne part.' },
-  { name: 'BREVO_SENDER_EMAIL', label: "Adresse d'expédition", group: 'E-mails (Brevo)', secret: false, requirement: { kind: 'always' },
-    help: 'Doit être un expéditeur vérifié dans Brevo.' },
+  { name: 'BREVO_SENDER_EMAIL', label: "Adresse d'expédition", group: 'E-mails (Brevo)', secret: false, requirement: { kind: 'optional' },
+    help: 'Expéditeur vérifié dans Brevo (domaine authentifié). Vide = adresse de contact du site (site.supportEmail).' },
   { name: 'BREVO_SENDER_NAME', label: "Nom d'expéditeur", group: 'E-mails (Brevo)', secret: false, requirement: { kind: 'optional' },
     help: 'Nom affiché dans la boîte de réception.' },
   { name: 'ADMIN_NOTIFY_EMAIL', label: 'E-mail qui reçoit les alertes', group: 'E-mails (Brevo)', secret: false, requirement: { kind: 'optional' },

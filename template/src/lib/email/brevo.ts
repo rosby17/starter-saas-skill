@@ -101,7 +101,8 @@ export async function sendEmailDetailed(params: EmailParams): Promise<EmailResul
           to: [{ email: to.email, name: to.name || to.email }],
           subject,
           htmlContent: html,
-          ...(replyTo ? { replyTo } : {}),
+          // Réponse par défaut à l'adresse de contact (routée vers la boîte du propriétaire) : jamais de réponse perdue.
+          replyTo: replyTo ?? { email: site.supportEmail, name: site.name },
           ...(attachments?.length ? { attachment: attachments } : {}),
         }),
       });
