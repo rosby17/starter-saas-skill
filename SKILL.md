@@ -178,6 +178,7 @@ Site média + pronostics + boutique de magazines PDF, Supabase auto-hébergé su
 - **Disque plein = base arrêtée** (`PANIC: No space left on device`) : plus de matchs, plus de connexion. Nettoyage hebdo des images Docker et alerte disque à 85 % (`references/supervision-exploitation.md`).
 - **Associés nommés par l'admin + associés éditeurs** → `references/affiliation.md` § « Variante Ballon Viral ».
 - **Routines cloud et publication automatique** : API `/api/automation/*` fermée par un jeton (`AUTOMATION_TOKEN`, 503 tant qu'il manque) pour que des routines claude.ai publient articles et e-books ; posts Facebook déposés dans la file KappGen Publish (`image.jpg`, `texte.txt`, `publication.json`) plutôt qu'un jeton Meta.
+- **Warappay** : `currency` doit être la devise de la boutique (XAF en Afrique centrale, sinon CURRENCY_MISMATCH) et `channel` (`mobile_money`, `card`, `paypal`) doit suivre le moyen choisi par le client, sinon Warappay ouvre toujours Mobile Money. Carte et PayPal : minimum ~1 $ (`CARD_AMOUNT_TOO_LOW`), à traduire en message clair. Tous les achats (abonnements, produits) passent par LA même fenêtre de paiement, jamais un raccourci qui choisit le moyen à la place du client.
 - **Valeur réservée aux abonnés** : on cache la valeur elle-même derrière le badge (le score exact), on n'ajoute pas une ligne de vente sous chaque élément.
 
 ## Mode audit
