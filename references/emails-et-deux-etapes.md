@@ -94,3 +94,34 @@ il faut vérifier que l'adresse de réponse reçoit vraiment.
   (zod, champ piège invisible qui répond « succès » sans rien envoyer, limite par IP et par adresse), e-mail vers `contact@` avec
   « Répondre à » = le visiteur, catégorie admin dans le journal. Sujets en pastilles (jamais de `<select>`), message de repli
   qui donne l'adresse e-mail si Brevo n'est pas encore branché.
+
+## Leçons NERDS Academy (07/11/2026) : e-mails, pieds de page et signatures à faire pour CHAQUE client
+
+Le client a reçu les 15 e-mails du site avec le bouton rouge et le nom en texte du kit : « aucun mail n'a la charte graphique ».
+Les e-mails font partie de la charte, comme le site. À chaque nouveau SaaS (et à chaque audit), sans attendre qu'on le demande :
+
+1. **Gabarit aux couleurs du client** : remplacer TOUTES les couleurs du kit dans `src/lib/email/templates.ts` (`grep -rn "C8102E"`
+   dans `src` et `public` : rappels d'abonnement, facture PDF, `offline.html` aussi). Bouton plein de la couleur sombre de la charte,
+   filet de la couleur ou du dégradé de marque en haut de la carte (`background:<couleur>` d'abord, puis `background-image:linear-gradient`,
+   que Outlook ignore). Les e-mails écrits ailleurs (crons) passent par le même cadre (`emailLayout(body)` exporté de `templates.ts`).
+2. **Vrai logo, centré**, en PNG (400 px de large, affiché à 170-180 px), servi par le site à une adresse ABSOLUE en dur
+   (`https://<domaine>/marque/signature/<marque>.png`) : une adresse relative ou `localhost` ne s'affiche dans aucune messagerie.
+   Il n'apparaît qu'après la mise en ligne qui publie le fichier : le dire au propriétaire.
+3. **Bouton centré**, logo centré : c'est ce que le client attend d'un e-mail de marque.
+4. **Pied de page** : bande de la couleur sombre de la marque, liens qui RAMÈNENT AU SITE (Mon espace, les offres, un outil gratuit,
+   le blog), nom de la marque et de la maison mère, adresse du site. Pas de WhatsApp dans le pied d'un e-mail : on répond à l'e-mail
+   (« Une question ? Répondez simplement à cet e-mail »), et `Répondre à` mène au Gmail du client par le routage.
+5. **Gabarits de connexion** (`public/email-templates/*.html`) : même cadre, langue du site (une ligne dans l'autre langue si le
+   public est bilingue), liens par `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup|recovery`.
+6. **Vouvoiement ou tutoiement** selon le site, jusque dans le pied (le kit disait « Réponds »).
+7. **Signatures Gmail** pour chaque adresse qui répond (fondateur, contact@, la plateforme) dans
+   `PROJETS CLIENTS/<CLIENT>/GRAPHISME/SIGNATURES-EMAIL/` : un fichier par signature + `APERCU-SIGNATURES.html` à copier-coller dans
+   Gmail. Tableau en styles en ligne : logo à gauche (150 px), filet vertical de marque, nom, fonction, puis une ligne par contact
+   AVEC ICÔNE (WhatsApp avec son logo officiel vert, e-mail, adresse, site) : icônes PNG 64 px rondes aux couleurs de la marque,
+   affichées à 18 px, hébergées dans `public/marque/signature/icones/` (Gmail n'affiche pas les SVG). Fabriquées par Chrome sans
+   fenêtre (`--headless --default-background-color=00000000 --window-size=64,64 --screenshot`), logo WhatsApp tiré de `simple-icons`.
+8. **Procédure « Envoyer en tant que »** (section ci-dessus) écrite pour le client dans le même dossier, en français simple.
+9. **Contrôle** : rendre un e-mail en HTML puis capture (Chrome sans fenêtre, logo pointé en `file://` le temps de l'aperçu), puis
+   « M'envoyer un exemple de chaque e-mail » après la mise en ligne. Les essais vont à l'adresse de l'admin connecté : une fois validé,
+   plus aucun e-mail du client ne doit arriver sur l'adresse personnelle de Roosevelt (vérifier `ADMIN_NOTIFY_EMAIL` dans /admin/keys :
+   l'adresse business du client).

@@ -10,23 +10,39 @@ export type Db = { url: string; serviceKey: string }
 
 const q = (value: string) => `'${value.replace(/'/g, "''")}'`
 
-export function pgQuery<T = Record<string, unknown>>(db: Db, query: string): Promise<T[]> {
-  return callJson<T[]>('Base de données', `${db.url.replace(/\/+$/, '')}/pg/query`, db.serviceKey, {
-    method: 'POST',
-    body: { query },
-    headers: { apikey: db.serviceKey },
-  })
+// Une base qui redémarre (chaque mise en ligne la redémarre) répond 502 / 503 / 504 pendant quelques minutes,
+// surtout sur un serveur chargé : on réessaie au lieu d'abandonner. Les migrations sont rejouables, réessayer est sans risque.
+const BUSY = /\b(502|503|504)\b|Bad Gateway|Service Unavailable|Gateway Time-?out|fetch failed|ECONNRESET|ETIMEDOUT/i
+
+export async function pgQuery<T = Record<string, unknown>>(db: Db, query: string, tries = 8): Promise<T[]> {
+  for (let i = 1; ; i++) {
+    try {
+      return await callJson<T[]>('Base de données', `${db.url.replace(/\/+$/, '')}/pg/query`, db.serviceKey, {
+        method: 'POST',
+        body: { query },
+        headers: { apikey: db.serviceKey },
+      })
+    } catch (error) {
+      if (i >= tries || !BUSY.test((error as Error).message)) throw error
+      await new Promise((r) => setTimeout(r, 20_000))
+    }
+  }
 }
 
 /** Attend que la base réponde (premier démarrage sur le serveur : quelques minutes, plus la propagation du domaine). */
 export async function waitForDatabase(db: Db, timeoutMs: number): Promise<void> {
   const end = Date.now() + timeoutMs
   let last = ''
+  let ok = 0
+  // Trois réponses de suite, à 10 s d'écart : juste après un redémarrage, la base répond parfois une fois puis retombe.
   while (Date.now() < end) {
     try {
-      await pgQuery(db, 'select 1')
-      return
+      await pgQuery(db, 'select 1', 1)
+      if (++ok >= 3) return
+      await new Promise((r) => setTimeout(r, 10_000))
+      continue
     } catch (error) {
+      ok = 0
       last = (error as Error).message
     }
     await new Promise((r) => setTimeout(r, 15_000))

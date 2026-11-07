@@ -35,7 +35,9 @@ export async function pushProject(token: string, fullName: string): Promise<void
   // (pas de « git add -A » chez lui) et on n'envoie que ce dossier, via un dépôt à part rangé dans .deploy-git.
   let top = ''
   try { top = (await run('git', ['rev-parse', '--show-toplevel'], { cwd })).stdout.trim() } catch { /* pas de dépôt */ }
-  const nested = !!top && (await fs.realpath(top)) !== (await fs.realpath(cwd))
+  // Toujours un dépôt d'envoi à part (.deploy-git) : il exclut .github/, que le jeton GitHub (sans droit « workflow »)
+  // ne peut pas envoyer. Avant, seul un SaaS rangé dans un autre dépôt passait par là (refus GitHub, NERDS Academy 06/11/2026).
+  const nested = true || (!!top && (await fs.realpath(top)) !== (await fs.realpath(cwd)))
   const dedicated = nested ? ['--git-dir', path.join(cwd, '.deploy-git'), '--work-tree', cwd] : []
   const git = (args: string[], extraEnv: Record<string, string> = {}) =>
     run('git', [...dedicated, '-c', 'user.name=starter-saas', '-c', 'user.email=deploy@starter-saas.local', ...args], { cwd, env: { ...process.env, ...extraEnv }, maxBuffer: 10 * 1024 * 1024 })

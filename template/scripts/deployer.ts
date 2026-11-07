@@ -67,7 +67,13 @@ async function need(key: keyof Config, question: string, secret = false, guide =
 async function main() {
   try { cfg = JSON.parse(await fs.readFile(PROFILE, 'utf8')) } catch { /* pas encore de profil serveur */ }
   const known = !!cfg.COOLIFY_API_TOKEN
-  try { cfg = { ...cfg, ...JSON.parse(await fs.readFile(FILE, 'utf8')) } } catch { /* première fois pour ce SaaS */ }
+  // Le profil serveur gagne pour ses clés (Coolify, GitHub, DNS) : sinon une clé renouvelée dans le profil était
+  // écrasée par l'ancienne copie de .deploy.json, puis réécrite dans le profil (bug NERDS Academy, 06/11/2026).
+  try {
+    const own = JSON.parse(await fs.readFile(FILE, 'utf8')) as Config & { BASE_DOMAIN?: string }
+    const shared = Object.fromEntries(PROFILE_KEYS.filter((k) => cfg[k]).map((k) => [k, cfg[k]]))
+    cfg = { ...cfg, ...own, ...shared }
+  } catch { /* première fois pour ce SaaS */ }
   const pkg = JSON.parse(await fs.readFile('package.json', 'utf8')) as { name: string }
   console.log(known ? 'Profil serveur trouvé (~/.starter-saas) : il ne manque que le domaine de ce SaaS.' : 'Première mise en ligne : je retiens ces réponses pour tous tes prochains SaaS.')
 
