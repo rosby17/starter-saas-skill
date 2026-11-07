@@ -70,7 +70,7 @@ Pour CHAQUE route API, action serveur et page privée, réponds à ces questions
 21. Erreurs : pas de trace technique ni de secret renvoyé au navigateur ; journaux sans clé ni mot de passe.
 22. Crons, tâches et routes internes protégés par un secret.
 23. Sauvegardes de la base et plan de restauration ; dépendances à jour ; HTTPS forcé.
-24. Inscription : confirmation d'e-mail activée (`mailer_autoconfirm` à faux dans GoTrue) ; sinon comptes jetables illimités, qui rendent les autres failles faciles. `next/image` : `remotePatterns` limité aux domaines du projet, jamais `**.domaine-partagé`. Historique git scanné (gitleaks) : un jeton retiré du code reste lisible dans les anciens commits.
+24. Inscription : confirmation d'e-mail activée (`mailer_autoconfirm` à faux dans GoTrue), ce qui suppose un SMTP réellement configuré (sinon plus personne ne peut s'inscrire) et un écran « Vérifie ta boîte mail » quand `signUp` ne renvoie pas de session. Fermer aussi l'inscription par téléphone (`ENABLE_PHONE_SIGNUP=false`) si le site ne l'utilise pas : ouverte avec `sms_autoconfirm`, elle crée des comptes sans aucun contrôle. Vérifier que « Mot de passe oublié » mène bien à un formulaire de demande ; sinon comptes jetables illimités, qui rendent les autres failles faciles. `next/image` : `remotePatterns` limité aux domaines du projet, jamais `**.domaine-partagé`. Historique git scanné (gitleaks) : un jeton retiré du code reste lisible dans les anciens commits.
 
 ## 4. Classer
 
