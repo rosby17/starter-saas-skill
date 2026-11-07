@@ -1,7 +1,9 @@
+import { requireAdminPage } from '@/lib/auth/admin-page'
 import { ActivityFeed } from './ActivityFeed'
 
 // Administration › Activité : le fil de tout ce qui se passe sur le site, en direct, échecs compris.
-export default function AdminActivityPage() {
+export default async function AdminActivityPage() {
+  await requireAdminPage()
   return (
     <main className="max-w-6xl space-y-6 p-4 sm:p-8">
       <div>

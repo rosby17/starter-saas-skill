@@ -175,6 +175,18 @@ export async function middleware(request: NextRequest) {
     return redirectWithCookies(url, supabaseResponse)
   }
 
+  // Administration : rôle admin vérifié ici ET dans chaque page, jamais seulement dans le layout
+  // (Next.js ne réexécute pas un layout lors d'une navigation interne ; leçon de l'audit Ballon Viral, 07/11/2026).
+  if (user && (pathname === '/admin' || pathname.startsWith('/admin/'))) {
+    const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).maybeSingle()
+    if (!profile?.is_admin) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      url.search = ''
+      return redirectWithCookies(url, supabaseResponse)
+    }
+  }
+
   if (user && pathname === '/login') {
     const url = request.nextUrl.clone()
     const rawNext = url.searchParams.get('next')

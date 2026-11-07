@@ -1,7 +1,9 @@
+import { requireAdminPage } from '@/lib/auth/admin-page'
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 
 export default async function AdminAnnouncementDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireAdminPage()
   const { id } = await params;
   const supabase = await createClient();
   const { data: announcement } = await supabase.from("announcements").select("*").eq("id", id).maybeSingle();

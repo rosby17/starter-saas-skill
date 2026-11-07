@@ -1,8 +1,10 @@
+import { requireAdminPage } from '@/lib/auth/admin-page'
 import { ServerResourcesPanel } from '@/components/admin/ServerResourcesPanel'
 
 export const metadata = { title: 'Ressources serveur' }
 
-export default function ServerResourcesPage() {
+export default async function ServerResourcesPage() {
+  await requireAdminPage()
   return (
     <div className="mx-auto max-w-4xl space-y-5 pb-10">
       <header>

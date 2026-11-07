@@ -41,9 +41,10 @@ Pour CHAQUE route API, action serveur et page privée, réponds à ces questions
 3. Quand on lit, modifie ou supprime une ressource par son identifiant, vérifie-t-on qu'elle appartient à l'utilisateur ? Essaie mentalement avec l'identifiant d'un autre client.
 4. Les routes admin vérifient-elles le rôle côté serveur, dans une donnée que l'utilisateur ne peut pas modifier ? Si le rôle vient d'une liste d'adresses e-mail (`ADMIN_EMAILS`), l'adresse doit être CONFIRMÉE : sinon, créer un compte avec une adresse d'administrateur encore libre donne l'administration.
 5. Le client « service » (qui ignore la RLS) n'est-il utilisé qu'après ces contrôles ?
+5 bis. **Garde dans le layout seulement = faille** (audit Ballon Viral, 07/11/2026). Next.js ne réexécute pas un `layout` lors d'une navigation interne : une requête `RSC: 1` avec un `Next-Router-State-Tree` fabriqué reçoit la page sans passer par la vérification du layout. Chaque page serveur de `/admin` appelle `requireAdminPage()` (`src/lib/auth/admin-page.ts`, avec `cache` de React), et le middleware vérifie `profiles.is_admin` pour `/admin/*`. Test : compte non admin + requête RSC fabriquée → redirection vers `/dashboard`.
 
 **Base de données** (Supabase)
-6. RLS sur chaque table ; politiques par propriétaire / admin ; aucune politique `true` en écriture.
+6. RLS sur chaque table ; politiques par propriétaire / admin ; aucune politique `true` en écriture. Une politique `using (true)` en LECTURE se justifie ligne par ligne : chez Ballon Viral, elle exposait le contenu payant (pronostics Pro) à la clé anon publique. Sonder chaque table avec la clé anon après chaque migration.
 7. Colonnes sensibles (rôle, crédits, statut de paiement, abonnement) non modifiables par l'utilisateur, même sur sa propre ligne (déclencheur ou politique de colonne).
 8. Fonctions `security definer` : `search_path` fixé, droits d'exécution limités.
 9. Stockage (buckets) : privés si les fichiers sont personnels, politiques par propriétaire.
@@ -59,7 +60,7 @@ Pour CHAQUE route API, action serveur et page privée, réponds à ces questions
 15. Contenu utilisateur affiché sans HTML brut ; e-mails HTML échappés.
 16. Envoi de fichiers : type et taille limités, nom régénéré, jamais servi comme HTML.
 17. Appels vers une adresse fournie par l'utilisateur (aperçu de lien, import par URL) : risque SSRF, liste blanche.
-18. Redirections et liens d'e-mail : adresse du site fixée côté serveur, chemin interne seulement.
+18. Redirections et liens d'e-mail : adresse du site fixée côté serveur, chemin interne seulement, toujours via `safeNext()` (`src/lib/safe-next.ts`). Les navigateurs lisent `\\` comme `/` et ignorent tabulations et retours à la ligne : `/\\evil.com`, `/%5Cevil.com` ou `/<tab>/evil.com` partent ailleurs si on ne teste que `startsWith('//')`. `safeNext` refuse ces caractères puis vérifie que l'origine résolue reste la même.
 
 **Comptes**
 19. Mot de passe oublié, confirmation d'e-mail, changement d'adresse : pas de prise de contrôle possible ; limitation de débit par adresse IP ET par compte (essais répartis sur de nombreuses IP). Derrière un proxy, l'IP est la DERNIÈRE valeur de `X-Forwarded-For` (ou l'en-tête de Cloudflare), jamais la première, que le client écrit lui-même.
@@ -69,6 +70,7 @@ Pour CHAQUE route API, action serveur et page privée, réponds à ces questions
 21. Erreurs : pas de trace technique ni de secret renvoyé au navigateur ; journaux sans clé ni mot de passe.
 22. Crons, tâches et routes internes protégés par un secret.
 23. Sauvegardes de la base et plan de restauration ; dépendances à jour ; HTTPS forcé.
+24. Inscription : confirmation d'e-mail activée (`mailer_autoconfirm` à faux dans GoTrue) ; sinon comptes jetables illimités, qui rendent les autres failles faciles. `next/image` : `remotePatterns` limité aux domaines du projet, jamais `**.domaine-partagé`. Historique git scanné (gitleaks) : un jeton retiré du code reste lisible dans les anciens commits.
 
 ## 4. Classer
 

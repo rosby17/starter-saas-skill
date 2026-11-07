@@ -1,3 +1,4 @@
+import { requireAdminPage } from '@/lib/auth/admin-page'
 import type { Metadata } from 'next'
 import { serviceClient } from '@/lib/auth/service-client'
 import { ReviewsAdmin, type AdminReview } from './ReviewsAdmin'
@@ -8,6 +9,7 @@ export const dynamic = 'force-dynamic'
 
 // Avis vérifiés : tous publiés d'office. Ici, seulement masquer un avis extrême (avec un motif), ou le réafficher.
 export default async function AdminReviewsPage() {
+  await requireAdminPage()
   requireModule('avis')
   const db = serviceClient()
   const { data: rows } = await db.from('course_reviews').select('id, user_id, product_id, rating, title, body, progress_pct, hidden, hidden_reason, created_at').order('created_at', { ascending: false }).limit(300)

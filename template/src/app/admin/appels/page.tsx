@@ -1,3 +1,4 @@
+import { requireAdminPage } from '@/lib/auth/admin-page'
 import type { Metadata } from 'next'
 import { serviceClient } from '@/lib/auth/service-client'
 import { AdminCalls, type AdminBooking } from './AdminCalls'
@@ -9,6 +10,7 @@ export const dynamic = 'force-dynamic'
 
 // Agenda des appels : à confirmer en haut, puis les appels confirmés à venir, puis l'historique.
 export default async function AdminCallsPage() {
+  await requireAdminPage()
   requireModule('appels')
   const db = serviceClient()
   const { data: bookings } = await db.from('call_bookings').select('id, user_id, status, topic, slots, counter_at, scheduled_at, meet_url, admin_note, created_at').order('created_at', { ascending: false }).limit(200)

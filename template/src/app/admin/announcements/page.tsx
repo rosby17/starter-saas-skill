@@ -1,7 +1,9 @@
+import { requireAdminPage } from '@/lib/auth/admin-page'
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminAnnouncementsPage() {
+  await requireAdminPage()
   const supabase = await createClient();
   const { data: announcements } = await supabase
     .from("announcements")

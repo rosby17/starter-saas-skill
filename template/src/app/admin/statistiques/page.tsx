@@ -1,3 +1,4 @@
+import { requireAdminPage } from '@/lib/auth/admin-page'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { serviceClient } from '@/lib/auth/service-client'
@@ -21,6 +22,7 @@ const pct = (n: number, d: number) => (d ? Math.round((n / d) * 100) : 0)
 // ce qui est suivi (élèves qui commencent, qui finissent, temps passé) et où les élèves décrochent.
 // Les commandes de test ne comptent jamais. Lecture côté serveur (page réservée aux admins par le layout).
 export default async function StatsPage({ searchParams }: { searchParams: Promise<{ cours?: string }> }) {
+  await requireAdminPage()
   const { cours } = await searchParams
   const db = serviceClient()
   const since30 = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)

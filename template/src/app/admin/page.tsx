@@ -1,3 +1,4 @@
+import { requireAdminPage } from '@/lib/auth/admin-page'
 import Link from "next/link";
 import { serviceClient } from "@/lib/auth/service-client";
 import { Badge } from "@/components/ui/card";
@@ -5,6 +6,7 @@ import { Badge } from "@/components/ui/card";
 const fcfa = (n: number) => `${n.toLocaleString("fr-FR")} FCFA`;
 
 export default async function AdminOverviewPage() {
+  await requireAdminPage()
   // Le layout a déjà vérifié le rôle administrateur.
   const db = serviceClient();
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
