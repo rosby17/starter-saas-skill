@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSecretsStatus } from "@/lib/secrets/store";
+import { getSecretDefinition } from "@/lib/secrets/catalog";
 import { Logo } from "@/components/Logo";
 import { LogoutButton } from "@/components/LogoutButton";
 import { AdminNav, MaintenanceSwitch } from "./AdminNav";
@@ -16,8 +17,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { data: profile } = await supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
   if (!profile?.is_admin) redirect("/dashboard");
 
-  // Clés indispensables manquantes (passerelles actives, e-mails, crons) : un bandeau, un clic pour les renseigner.
-  const missing = (await getSecretsStatus()).filter((s) => s.required && s.source === "missing");
+  // Clés OBLIGATOIRES manquantes (passerelles actives, e-mails, crons), jamais les facultatives ni les cachées :
+  // le bandeau nomme le service qui bloque et, pour une passerelle activée sans clés, propose de la couper.
+  const missing = (await getSecretsStatus()).filter((s) => s.required && s.source === "missing" && !s.hidden);
+  const missingServices = [...new Set(missing.map((s) => s.group))];
+  const gatewayMissing = missing.some((s) => getSecretDefinition(s.name)?.requirement.kind === "gateway");
   const { count: newRequests } = await supabase.from("service_requests").select("id", { count: "exact", head: true }).eq("status", "nouvelle");
 
   return (
@@ -35,10 +39,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <AdminTopBar email={user.email ?? ""} logout={<LogoutButton className="w-full rounded-xl px-3 py-2.5 text-left text-sm text-red-700 hover:bg-red-50" />} />
         {missing.length > 0 && (
           <div className="m-4 mb-0 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 md:m-8 md:mb-0">
-            <span>{missing.length === 1 ? "1 clé manquante" : `${missing.length} clés manquantes`} : {missing.map((s) => s.name).join(", ")}</span>
-            <Link href={`/admin/keys?focus=${missing[0].name}#${missing[0].name}`} className="ml-auto rounded-lg bg-brand px-3 py-1 text-xs font-medium text-white">
-              Renseigner
-            </Link>
+            <span className="min-w-0 flex-1">
+              <b>{missingServices.join(", ")}</b> : {missing.length === 1 ? "1 clé obligatoire manque" : `${missing.length} clés obligatoires manquent`}
+              {gatewayMissing ? ". Ce moyen de paiement est activé : les clients qui le choisissent tombent sur une erreur." : "."}
+            </span>
+            <span className="flex shrink-0 gap-2">
+              {gatewayMissing && (
+                <Link href="/admin/payment-providers" className="rounded-lg border border-amber-200 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100">Couper ce moyen</Link>
+              )}
+              <Link href={`/admin/keys?focus=${missing[0].name}#${missing[0].name}`} className="rounded-lg bg-brand px-3 py-1 text-xs font-medium text-on-brand">
+                Renseigner
+              </Link>
+            </span>
           </div>
         )}
         <div className="flex-1">{children}</div>

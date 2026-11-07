@@ -80,6 +80,13 @@ il faut vérifier que l'adresse de réponse reçoit vraiment.
   de contact, quelques liens du site et UNE phrase « Tu reçois cet e-mail parce que… » propre à chaque modèle. Les gabarits de
   connexion de GoTrue (`public/email-templates`) suivent le même habillage et la même langue que le site : un projet parti d'un
   ancien site gardait des gabarits en anglais au nom d'un autre produit. À relire à chaque nouveau SaaS.
+- **L'habillage du modèle** (`template/src/lib/email/layout.ts`, repris de Ballon Viral le 07/11/2026) : `emailLayout({ body, reason,
+  preheader?, eyebrow?, title? })` donne un en-tête sombre avec le logo PNG sur une pastille de la couleur de marque et un trait de couleur,
+  un sur-titre et un grand titre facultatifs, la carte de contenu, puis un pied de page en trois parties : carte d'aide (« réponds à cet
+  e-mail » + contact), liens du site (menu public filtré par modules + Mon espace), mentions et raison de l'envoi. Aides : `emailButton(href,
+  label, 'primary' | 'ghost')`, `emailTag(label)` (étiquette), `emailPanel(html)` (encadré avec un trait de marque), `esc()` pour tout texte
+  inséré. Couleurs dans `BRAND`, `ON_BRAND`, `BRAND_SOFT` : les mêmes valeurs que `--brand` / `--on-brand` de `globals.css`, à changer en même
+  temps. Tables et styles en ligne, `color-scheme: light only`. Tous les modèles de `templates.ts` passent par là, sans emoji dans le corps.
 - **Logo blanc sur fond transparent = invisible** sur le fond blanc d'un e-mail : le poser sur une pastille de la couleur de la
   marque (`background:<brand>;padding:6px;border-radius:10px` sur l'`img`) ou utiliser une version foncée. Contrôler dans
   l'aperçu « exemple de chaque e-mail » de l'admin, pas seulement dans le code.

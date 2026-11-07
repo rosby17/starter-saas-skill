@@ -148,5 +148,5 @@ export function getSecretValues(names: string[]): Record<string, string> {
 }
 
 export async function countMissingRequiredSecrets(): Promise<number> {
-  return (await getSecretsStatus()).filter((s) => s.required && s.source === 'missing').length
+  return (await getSecretsStatus()).filter((s) => s.required && s.source === 'missing' && !s.hidden).length
 }

@@ -1,168 +1,189 @@
 /**
- * E-mails transactionnels. CLAIRS par défaut (blanc, rouge #C8102E) ; ils passent en sombre seulement si la messagerie
- * du lecteur est en thème sombre (prefers-color-scheme : Apple Mail, iOS, Outlook ; Gmail adapte lui-même ses couleurs).
+ * E-mails transactionnels. Tous passent par emailLayout() (src/lib/email/layout.ts) : en-tête sombre avec le logo sur une
+ * pastille de marque, titre, carte de contenu, pied de page en trois parties (aide, liens du site, mentions et raison de l'envoi).
  * Tout texte inséré passe par esc() : un nom ou un titre ne doit jamais injecter de HTML.
  */
 
-export const esc = (value: unknown) =>
-  String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+import { site } from "@/config/site";
+import { BRAND, INK, MUTED, emailButton, emailLayout, emailPanel, emailTag, esc } from "@/lib/email/layout";
 
-import { contactChannel, contactLink, site } from "@/config/site";
+export { esc };
 
 const APP_NAME = site.name;
-const CONTACT = contactLink();
+const ACCOUNT_REASON = `Tu reçois cet e-mail parce que tu as un compte ${APP_NAME}.`;
 
-// Couleurs claires en ligne (lues partout) ; les classes rm-* les remplacent en thème sombre.
-const DARK_CSS = `
-  :root { color-scheme: light dark; supported-color-schemes: light dark; }
-  @media (prefers-color-scheme: dark) {
-    .rm-bg { background:#0D0D0D !important; }
-    .rm-card { background:#141414 !important; border-color:#2A2A2A !important; color:#FAFAFA !important; }
-    .rm-muted { color:#9A9A9A !important; }
-    .rm-soft { background:#1E1E1E !important; }
-    .rm-link { color:#D6D6D6 !important; }
-  }`;
-
-function wrapper(bodyHtml: string): string {
-  return `<!doctype html><html><head><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><style>${DARK_CSS}</style></head>
-  <body style="margin:0;padding:0;">
-  <div class="rm-bg" style="background:#F5F5F7;padding:32px 12px;">
-    <div class="rm-card" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;padding:32px 28px;background:#FFFFFF;border:1px solid #E5E5EA;border-radius:18px;color:#1C1C1E;font-size:15px;line-height:1.6;">
-      <p style="margin:0 0 24px;font-size:18px;font-weight:600;letter-spacing:-0.02em;">${APP_NAME}<span style="color:#C8102E;">.</span></p>
-      ${bodyHtml}
-      <p class="rm-muted" style="margin-top:32px;font-size:12px;color:#6E6E73;">
-        Une question ? Réponds à cet e-mail ou écris-nous sur <a class="rm-link" href="${CONTACT}" style="color:#3A3A3C;">${contactChannel()}</a>.
-      </p>
-    </div>
-  </div>
-  </body></html>`;
-}
-
-function button(href: string, label: string): string {
-  return `<p style="margin:28px 0;"><a href="${esc(href)}" style="display:inline-block;background:#C8102E;color:#ffffff;text-decoration:none;font-weight:600;padding:14px 26px;border-radius:999px;">${esc(label)}</a></p>`;
-}
+const p = (html: string) => `<p style="margin:0 0 14px">${html}</p>`;
+const small = (html: string) => `<p style="margin:14px 0 0;font-size:12px;line-height:1.6;color:${MUTED}">${html}</p>`;
 
 const linkNote = (href: string) =>
-  `<p class="rm-muted" style="font-size:12px;color:#6E6E73;">Le bouton ne marche pas ? Copie ce lien dans ton navigateur :<br><span class="rm-link" style="word-break:break-all;color:#3A3A3C;">${esc(href)}</span></p>
-   <p class="rm-muted" style="font-size:12px;color:#6E6E73;">Ce lien te connecte directement : ne le transfère à personne. Il expire au bout d'une heure ; tu peux en redemander un à tout moment sur la page Connexion.</p>`;
+  small(`Le bouton ne marche pas ? Copie ce lien dans ton navigateur :<br><span style="word-break:break-all;color:${INK}">${esc(href)}</span>`) +
+  small("Ce lien te connecte directement : ne le transfère à personne. Il expire au bout d'une heure ; tu peux en redemander un à tout moment sur la page Connexion.");
 
 /** Accès livré après un paiement, un accès donné par l'admin ou un import : l'e-mail de bienvenue. */
 export function accessReadyTemplate({ name, products, loginUrl, amount, invoice }: { name?: string | null; products: string[]; loginUrl: string; amount?: string | null; invoice?: string | null }): string {
-  const list = products.map((p) => `<li style="margin:4px 0;"><strong>${esc(p)}</strong></li>`).join("");
-  return wrapper(`
-    <p style="font-size:22px;font-weight:600;letter-spacing:-0.02em;margin:0 0 12px;">Bienvenue${name ? ` ${esc(name)}` : ""} 🎉</p>
-    <p>${amount ? `Ton paiement de <strong>${esc(amount)}</strong> est confirmé. ` : ""}Ton accès est prêt :</p>
-    <ul style="padding-left:18px;">${list}</ul>
-    <p>En entrant, je te pose quelques petites questions pour préparer <strong>ton</strong> parcours. Ensuite, tu avances leçon par leçon, à ton rythme, avec les vrais fichiers de mes projets.</p>
-    ${button(loginUrl, "Commencer ma formation")}
-    ${invoice ? `<p style="font-size:14px;">🧾 Ta facture <strong>${esc(invoice)}</strong> est jointe à cet e-mail (PDF). Tu la retrouves aussi dans « Factures ».</p>` : ""}
-    <p class="rm-muted" style="font-size:13px;color:#6E6E73;">Tout reste dans ton espace : leçons, fichiers, groupe d’entraide et factures, depuis n’importe quel téléphone.</p>
-    ${linkNote(loginUrl)}
-  `);
+  const list = products.map((x) => `<li style="margin:4px 0;"><strong>${esc(x)}</strong></li>`).join("");
+  return emailLayout({
+    eyebrow: amount ? "Paiement confirmé" : "Accès ouvert",
+    title: `Bienvenue${name ? ` ${name}` : ""}, ton accès est prêt`,
+    preheader: "Ton accès est prêt : connecte-toi en un clic.",
+    reason: `Tu reçois cet e-mail parce qu'un accès vient d'être ouvert sur ton compte ${APP_NAME}.`,
+    body: `
+      ${p(`${amount ? `Ton paiement de <strong>${esc(amount)}</strong> est confirmé. ` : ""}Voici ce qui t'attend :`)}
+      ${emailPanel(`<ul style="margin:0;padding-left:18px;">${list}</ul>`)}
+      ${p(`<br>En entrant, quelques petites questions préparent <strong>ton</strong> parcours. Ensuite, tu avances à ton rythme.`)}
+      ${emailButton(loginUrl, "Ouvrir mon espace")}
+      ${invoice ? small(`Ta facture <strong>${esc(invoice)}</strong> est jointe à cet e-mail (PDF). Tu la retrouves aussi dans « Factures ».`) : ""}
+      ${linkNote(loginUrl)}`,
+  });
 }
 
-/** Réservation (précommande, 10 %) confirmée : pas encore d'accès, la place est gardée. */
+/** Réservation (précommande) confirmée : pas encore d'accès, la place est gardée. */
 export function reservationTemplate({ name, product, amount, invoice, loginUrl }: { name?: string | null; product: string; amount?: string | null; invoice?: string | null; loginUrl: string }): string {
-  return wrapper(`
-    <p style="font-size:22px;font-weight:600;letter-spacing:-0.02em;margin:0 0 12px;">Ta place est réservée${name ? `, ${esc(name)}` : ""} ✅</p>
-    <p>${amount ? `Ton paiement de <strong>${esc(amount)}</strong> est confirmé. ` : ""}Tu es sur la liste d’attente de <strong>${esc(product)}</strong>.</p>
-    <p>Dès la sortie de la formation, je te préviens le premier. Tu finiras alors avec <strong>60 % du prix</strong> au lieu de 100 %, et ton accès s’ouvrira tout de suite.</p>
-    ${invoice ? `<p style="font-size:14px;">🧾 Ta facture <strong>${esc(invoice)}</strong> est jointe à cet e-mail (PDF).</p>` : ""}
-    ${button(loginUrl, "Voir ma réservation")}
-    ${linkNote(loginUrl)}
-  `);
+  return emailLayout({
+    eyebrow: "Réservation confirmée",
+    title: `Ta place est réservée${name ? `, ${name}` : ""}`,
+    preheader: `Tu es sur la liste d'attente de ${product}.`,
+    reason: `Tu reçois cet e-mail parce que tu as réservé une place sur ${APP_NAME}.`,
+    body: `
+      ${p(`${amount ? `Ton paiement de <strong>${esc(amount)}</strong> est confirmé. ` : ""}Tu es sur la liste d'attente de <strong>${esc(product)}</strong>.`)}
+      ${p("Dès la sortie, tu es prévenu en premier, avec le prix réservé, et ton accès s'ouvre tout de suite.")}
+      ${emailButton(loginUrl, "Voir ma réservation")}
+      ${invoice ? small(`Ta facture <strong>${esc(invoice)}</strong> est jointe à cet e-mail (PDF).`) : ""}
+      ${linkNote(loginUrl)}`,
+  });
 }
 
 /** Nouveauté d'une formation (nouveau module, nouvelle leçon) envoyée aux élèves. */
 export function courseUpdateTemplate({ name, title, body, url }: { name?: string | null; title: string; body?: string | null; url: string }): string {
-  return wrapper(`
-    <p>Bonjour ${esc(name || "")},</p>
-    <p style="font-size:20px;font-weight:600;letter-spacing:-0.02em;margin:16px 0 8px;">${esc(title)}</p>
-    ${body ? `<p style="white-space:pre-line;">${esc(body)}</p>` : ""}
-    <p>C’est déjà dans ton espace, à la suite de ton parcours.</p>
-    ${button(url, "Voir la nouveauté")}
-  `);
+  return emailLayout({
+    eyebrow: "Nouveauté",
+    title,
+    preheader: body || "C'est déjà dans ton espace.",
+    reason: `Tu reçois cet e-mail parce que tu suis une formation sur ${APP_NAME}.`,
+    body: `
+      ${p(`Bonjour${name ? ` ${esc(name)}` : ""},`)}
+      ${body ? `<p style="margin:0 0 14px;white-space:pre-line;">${esc(body)}</p>` : ""}
+      ${p("C'est déjà dans ton espace, à la suite de ton parcours.")}
+      ${emailButton(url, "Voir la nouveauté")}`,
+  });
 }
 
 /** Lien de connexion demandé depuis la page Connexion. */
 export function loginLinkTemplate({ loginUrl }: { loginUrl: string }): string {
-  return wrapper(`
-    <p>Bonjour,</p>
-    <p>Voici ton lien pour te connecter à ton espace et retrouver tes achats.</p>
-    ${button(loginUrl, "Me connecter")}
-    ${linkNote(loginUrl)}
-    <p class="rm-muted" style="font-size:12px;color:#6E6E73;">Tu n'as rien demandé ? Ignore simplement cet e-mail.</p>
-  `);
+  return emailLayout({
+    eyebrow: "Connexion",
+    title: "Ton lien de connexion",
+    preheader: "Un clic et tu retrouves ton espace.",
+    reason: `Tu reçois cet e-mail parce qu'un lien de connexion a été demandé pour ton compte ${APP_NAME}. Tu n'as rien demandé ? Ignore-le simplement.`,
+    body: `
+      ${p("Voici ton lien pour te connecter à ton espace et retrouver tes achats.")}
+      ${emailButton(loginUrl, "Me connecter")}
+      ${linkNote(loginUrl)}`,
+  });
 }
 
 /** Demande enregistrée (accompagnement, service sur devis, monétisation). */
 export function requestReceivedTemplate({ name, kind, loginUrl }: { name?: string | null; kind: string; loginUrl: string }): string {
-  return wrapper(`
-    <p>Bonjour ${esc(name || "")},</p>
-    <p>Ta demande « <strong>${esc(kind)}</strong> » est bien enregistrée. Je te réponds rapidement, et tu peux suivre son avancement dans ton espace.</p>
-    ${button(loginUrl, "Suivre ma demande")}
-    ${linkNote(loginUrl)}
-  `);
+  return emailLayout({
+    eyebrow: "Demande reçue",
+    title: "Ta demande est bien enregistrée",
+    preheader: `${kind} : réponse rapide, suivi dans ton espace.`,
+    reason: `Tu reçois cet e-mail parce que tu as envoyé une demande sur ${APP_NAME}.`,
+    body: `
+      ${p(`Bonjour${name ? ` ${esc(name)}` : ""},`)}
+      <p style="margin:0 0 14px">${emailTag(kind)}</p>
+      ${p("Nous te répondons rapidement, et tu peux suivre son avancement dans ton espace.")}
+      ${emailButton(loginUrl, "Suivre ma demande")}
+      ${linkNote(loginUrl)}`,
+  });
 }
 
 /** Réponse ou changement de statut d'une demande. */
 export function requestUpdateTemplate({ name, kind, status, reply, url }: { name?: string | null; kind: string; status: string; reply?: string | null; url: string }): string {
-  return wrapper(`
-    <p>Bonjour ${esc(name || "")},</p>
-    <p>Ta demande « <strong>${esc(kind)}</strong> » est maintenant : <strong>${esc(status)}</strong>.</p>
-    ${reply ? `<div class="rm-soft" style="margin:16px 0;padding:14px 16px;border-left:3px solid #C8102E;background:#F2F2F7;border-radius:8px;white-space:pre-line;">${esc(reply)}</div>` : ""}
-    ${button(url, "Voir ma demande")}
-  `);
+  return emailLayout({
+    eyebrow: "Suivi de ta demande",
+    title: `Ta demande est maintenant : ${status}`,
+    preheader: reply ? reply.slice(0, 90) : `${kind} : ${status}`,
+    reason: `Tu reçois cet e-mail parce que tu as envoyé une demande sur ${APP_NAME}.`,
+    body: `
+      ${p(`Bonjour${name ? ` ${esc(name)}` : ""},`)}
+      <p style="margin:0 0 14px">${emailTag(kind)}</p>
+      ${reply ? emailPanel(`<span style="white-space:pre-line">${esc(reply)}</span>`) : ""}
+      ${emailButton(url, "Voir ma demande")}`,
+  });
 }
 
 /** Alerte envoyée à l'administrateur (nouvelle vente, nouvelle demande). */
 export function adminAlertTemplate({ title, lines, url }: { title: string; lines: string[]; url: string }): string {
-  return wrapper(`
-    <p style="font-weight:600;">${esc(title)}</p>
-    <ul style="padding-left:18px;">${lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
-    ${button(url, "Ouvrir l'administration")}
-  `);
+  return emailLayout({
+    eyebrow: "Administration",
+    title,
+    preheader: lines[0] ?? title,
+    reason: `Tu reçois cet e-mail parce que ton adresse est celle des alertes de l'administration de ${APP_NAME}.`,
+    body: `
+      ${emailPanel(lines.map((l) => esc(l)).join("<br>"))}
+      ${emailButton(url, "Ouvrir l'administration")}`,
+  });
 }
 
 export function genericNotificationTemplate({ title, message }: { title: string; message: string }): string {
-  return wrapper(`<p style="font-weight:600;">${esc(title)}</p><p>${esc(message)}</p>`);
+  return emailLayout({
+    title,
+    preheader: message,
+    reason: ACCOUNT_REASON,
+    body: `<p style="margin:0;white-space:pre-line">${esc(message)}</p>`,
+  });
 }
 
 /** Code de la validation en deux étapes (par e-mail). Jamais le code dans le sujet. */
 export function twoFactorCodeTemplate({ code, purpose }: { code: string; purpose: "login" | "enable" }): string {
-  return wrapper(`
-    <p>${purpose === "enable" ? "Voici ton code pour activer la validation en deux étapes par e-mail :" : "Voici ton code de connexion 🔐 :"}</p>
-    <p style="font-size:32px;font-weight:700;letter-spacing:8px;margin:16px 0;">${esc(code)}</p>
-    <p>Il est valable 10 minutes et ne sert qu'une fois.</p>
-    <p class="rm-muted" style="font-size:13px;color:#6E6E73;">Tu n'as rien demandé ? Ignore cet e-mail et change ton mot de passe : quelqu'un le connaît peut-être.</p>
-  `);
+  return emailLayout({
+    eyebrow: "Sécurité",
+    title: purpose === "enable" ? "Ton code d'activation" : "Ton code de connexion",
+    preheader: "Valable 10 minutes, une seule fois.",
+    reason: `Tu reçois cet e-mail parce qu'un code a été demandé pour ton compte ${APP_NAME}.`,
+    body: `
+      ${p(purpose === "enable" ? "Voici ton code pour activer la validation en deux étapes par e-mail :" : "Voici ton code de connexion :")}
+      <p style="margin:18px 0;font-size:32px;font-weight:800;letter-spacing:8px;color:${INK}">${esc(code)}</p>
+      ${p("Il est valable 10 minutes et ne sert qu'une fois.")}
+      ${small("Tu n'as rien demandé ? Ignore cet e-mail et change ton mot de passe : quelqu'un le connaît peut-être.")}`,
+  });
 }
 
 export const TWO_FACTOR_SUBJECT = `Ton code de connexion ${APP_NAME}`;
 
 /** Compte suspendu : le motif choisi par l'administrateur (texte préétabli) et comment nous joindre. */
 export function accountSuspendedTemplate({ reason }: { reason: string }): string {
-  return wrapper(`
-    <p style="font-weight:600;">Ton compte ${esc(APP_NAME)} a été suspendu</p>
-    <p>Bonjour,</p>
-    <p>Nous avons suspendu ton compte pour la raison suivante :</p>
-    <p class="rm-soft" style="background:#F5F5F7;border-radius:12px;padding:12px 14px;">${esc(reason)}</p>
-    <p>Si tu penses qu'il s'agit d'une erreur, réponds simplement à cet e-mail en nous expliquant ta situation (site web, activité, page professionnelle) : nous réexaminons chaque demande.</p>
-    <p class="rm-muted" style="font-size:13px;color:#6E6E73;">Aucune donnée n'est supprimée pendant l'examen de ta demande.</p>
-  `);
+  return emailLayout({
+    eyebrow: "Ton compte",
+    title: `Ton compte ${APP_NAME} a été suspendu`,
+    preheader: "Le motif et comment demander un nouvel examen.",
+    reason: ACCOUNT_REASON,
+    body: `
+      ${p("Bonjour,")}
+      ${p("Nous avons suspendu ton compte pour la raison suivante :")}
+      ${emailPanel(esc(reason))}
+      ${p(`<br>Si tu penses qu'il s'agit d'une erreur, réponds simplement à cet e-mail en nous expliquant ta situation (site web, activité, page professionnelle) : nous réexaminons chaque demande.`)}
+      ${small("Aucune donnée n'est supprimée pendant l'examen de ta demande.")}`,
+  });
 }
 
 /** Crédits ajoutés (ou repris) par l'administrateur : montant, justification, nouveau solde. */
 export function creditsAdjustedTemplate({ name, amount, note, balance, url }: { name?: string | null; amount: number; note?: string | null; balance?: number | null; url: string }): string {
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(n);
   const added = amount > 0;
-  return wrapper(`
-    <p>Bonjour${name ? ` ${esc(name)}` : ""},</p>
-    <p>${added ? `Nous venons d'ajouter <strong>${fmt(amount)} crédits</strong> à ton compte 🎁.` : `Nous avons ajusté ton solde de <strong>${fmt(amount)} crédits</strong>.`}</p>
-    ${note ? `<p class="rm-soft" style="background:#F5F5F7;border-radius:12px;padding:12px 14px;"><strong>Motif :</strong> ${esc(note)}</p>` : ""}
-    ${balance != null ? `<p>Nouveau solde : <strong>${fmt(Math.max(0, balance))} crédits</strong>.</p>` : ""}
-    ${button(url, "Voir mes crédits")}
-  `);
+  return emailLayout({
+    eyebrow: "Crédits",
+    title: added ? `${fmt(amount)} crédits ajoutés à ton compte` : "Ton solde de crédits a été ajusté",
+    preheader: balance != null ? `Nouveau solde : ${fmt(Math.max(0, balance))} crédits.` : "",
+    reason: ACCOUNT_REASON,
+    body: `
+      ${p(`Bonjour${name ? ` ${esc(name)}` : ""},`)}
+      ${p(added ? `Nous venons d'ajouter <strong>${fmt(amount)} crédits</strong> à ton compte.` : `Nous avons ajusté ton solde de <strong>${fmt(amount)} crédits</strong>.`)}
+      ${note ? emailPanel(`<strong>Motif :</strong> ${esc(note)}`) : ""}
+      ${balance != null ? p(`<br>Nouveau solde : <strong>${fmt(Math.max(0, balance))} crédits</strong>.`) : ""}
+      ${emailButton(url, "Voir mes crédits")}`,
+  });
 }
 
 /** Un exemple par modèle : sujet et HTML remplis avec des données fictives. */
@@ -223,30 +244,35 @@ export type CoachSignature = { name: string; role: string; company: string; tagl
  */
 export function coachMessageTemplate({ text, ctaUrl, ctaLabel, lang = "fr", signature }: { text: string; ctaUrl?: string | null; ctaLabel?: string; lang?: "fr" | "en"; signature: CoachSignature }): string {
   const en = lang === "en";
-  const linkify = (line: string) => esc(line).replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)]/g, (url) => `<a class="rm-link" href="${url}" style="color:#3A3A3C;text-decoration:underline;">${url}</a>`);
+  const linkify = (line: string) => esc(line).replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)]/g, (url) => `<a href="${url}" style="color:${INK};text-decoration:underline;">${url}</a>`);
   const blocks = text.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
   while (blocks.length > 1 && blocks[blocks.length - 1].length < 160 && /^(bien\s+)?cordialement|^best\s+regards|^kind\s+regards|^regards|^bien\s+à\s+vous|^l[’']équipe\b|^the\s+\S+\s+team/i.test(blocks[blocks.length - 1])) blocks.pop();
   const paragraphs = blocks.map((b) => `<p style="margin:0 0 16px;">${b.split("\n").map(linkify).join("<br>")}</p>`).join("");
   const row = (label: string, value: string, href?: string) =>
-    value ? `<tr><td style="font-size:13px;line-height:21px;"><span style="color:#C8102E;font-weight:600;">${esc(label)}</span>&nbsp;&nbsp;${href ? `<a class="rm-link" href="${esc(href)}" style="color:#3A3A3C;text-decoration:none;">${esc(value)}</a>` : esc(value)}</td></tr>` : "";
+    value ? `<tr><td style="font-size:13px;line-height:21px;"><span style="color:${BRAND};font-weight:600;">${esc(label)}</span>&nbsp;&nbsp;${href ? `<a href="${esc(href)}" style="color:${INK};text-decoration:none;">${esc(value)}</a>` : esc(value)}</td></tr>` : "";
   const digits = signature.whatsapp.replace(/\D/g, "");
   const signatureHtml = `
     <p style="margin:8px 0 12px;">${en ? "Best regards," : "Cordialement,"}</p>
-    <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 8px;"><tr><td style="border-left:3px solid #C8102E;padding:2px 0 2px 14px;">
+    <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 8px;"><tr><td style="border-left:3px solid ${BRAND};padding:2px 0 2px 14px;">
       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
         <tr><td style="font-size:15px;line-height:21px;font-weight:700;">${esc(signature.name || (en ? `The ${signature.company} team` : `L'équipe ${signature.company}`))}</td></tr>
-        ${signature.name ? `<tr><td style="font-size:13px;line-height:19px;font-weight:600;color:#C8102E;padding:0 0 4px;">${esc([signature.role, signature.company].filter(Boolean).join(" · "))}</td></tr>` : ""}
-        ${signature.tagline ? `<tr><td class="rm-muted" style="font-size:12px;line-height:18px;color:#6E6E73;padding:0 0 8px;">${esc(signature.tagline)}</td></tr>` : ""}
+        ${signature.name ? `<tr><td style="font-size:13px;line-height:19px;font-weight:600;color:${BRAND};padding:0 0 4px;">${esc([signature.role, signature.company].filter(Boolean).join(" · "))}</td></tr>` : ""}
+        ${signature.tagline ? `<tr><td style="font-size:12px;line-height:18px;color:${MUTED};padding:0 0 8px;">${esc(signature.tagline)}</td></tr>` : ""}
         ${row("WhatsApp", signature.whatsapp, digits.length >= 8 ? `https://wa.me/${digits}` : undefined)}
         ${row(en ? "Email" : "E-mail", signature.email, signature.email ? `mailto:${signature.email}` : undefined)}
         ${row(en ? "Website" : "Site", signature.website.replace(/^https?:\/\//, ""), signature.website || undefined)}
         ${row(en ? "Address" : "Adresse", signature.address)}
       </table>
     </td></tr></table>`;
-  return wrapper(`
+  const reason = en
+    ? `You are receiving this message because you have a ${signature.company} account. Reply “STOP” to stop receiving this type of message.`
+    : `Vous recevez ce message parce que vous avez un compte ${signature.company}. Répondez « STOP » pour ne plus recevoir ce type de message.`;
+  return emailLayout({
+    preheader: blocks[0]?.slice(0, 90) ?? "",
+    reason,
+    body: `
     ${paragraphs}
-    ${ctaUrl ? button(ctaUrl, ctaLabel || (en ? `Open ${signature.company}` : `Ouvrir ${signature.company}`)) : ""}
-    ${signatureHtml}
-    <p class="rm-muted" style="margin-top:16px;font-size:12px;color:#6E6E73;">${en ? `You are receiving this message because you have a ${esc(signature.company)} account. Reply “STOP” to stop receiving this type of message.` : `Vous recevez ce message parce que vous avez un compte ${esc(signature.company)}. Répondez « STOP » pour ne plus recevoir ce type de message.`}</p>
-  `);
+    ${ctaUrl ? emailButton(ctaUrl, ctaLabel || (en ? `Open ${signature.company}` : `Ouvrir ${signature.company}`)) : ""}
+    ${signatureHtml}`,
+  });
 }

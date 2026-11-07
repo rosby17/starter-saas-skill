@@ -9,6 +9,8 @@
 // - toute variable NEXT_PUBLIC_* : elle est figée dans le code au moment du build.
 //
 // Ajouter une passerelle : ajoute ses clés ici avec `gateway: '<id>'`.
+// `group` = nom du service : il doit avoir son entrée (thème, logo) dans SERVICES de services.ts.
+// Service non utilisé par ce SaaS : `hidden: true` sur ses clés (page Clés et bandeau l'ignorent, le code reste).
 
 export type SecretRequirement =
   | { kind: 'always' }            // indispensable au SaaS
@@ -31,6 +33,9 @@ export type SecretDefinition = {
   webhookPath?: string
   /** Valeur utilisée par le code quand rien n'est posé : affichée (et modifiable) dans le champ de l'admin. */
   defaultValue?: string
+  /** true : service non utilisé par ce SaaS, clé cachée dans /admin/keys et jamais comptée dans le bandeau
+   *  (le code reste en place ; retirer la ligne `hidden: true` la fait réapparaître). */
+  hidden?: boolean
 }
 
 const gw = (id: string): SecretRequirement => ({ kind: 'gateway', id })
@@ -60,16 +65,16 @@ export const SECRET_CATALOG: SecretDefinition[] = [
   { name: 'GOOGLE_CLIENT_SECRET', label: 'Code secret du client Google', group: 'Connexion avec Google', secret: true, requirement: { kind: 'optional' },
     help: 'Affiché par Google avec l’ID client. Ensuite : Mise en ligne → Redéployer, et le bouton « Continuer avec Google » apparaît sur la connexion et l’inscription.' },
 
-  // --- Mise en ligne (utilisées par /admin/deploy ; facultatives tant qu'on ne déploie pas)
-  { name: 'GITHUB_TOKEN', label: 'Jeton GitHub', group: 'Mise en ligne', secret: true, requirement: { kind: 'optional' },
+  // --- Mise en ligne : GitHub, Coolify, domaine (utilisées par /admin/deploy ; facultatives tant qu'on ne déploie pas)
+  { name: 'GITHUB_TOKEN', label: 'Jeton GitHub', group: 'GitHub', secret: true, requirement: { kind: 'optional' },
     help: 'github.com/settings/tokens → Generate new token (classic), case « repo ». Le code part dans un dépôt PRIVÉ.' },
-  { name: 'COOLIFY_URL', label: 'Adresse de Coolify', group: 'Mise en ligne', secret: false, requirement: { kind: 'optional' },
+  { name: 'COOLIFY_URL', label: 'Adresse de Coolify', group: 'Coolify', secret: false, requirement: { kind: 'optional' },
     help: 'L’adresse de ton tableau de bord Coolify, ex. https://coolify.mondomaine.com' },
-  { name: 'COOLIFY_API_TOKEN', label: 'Jeton API Coolify', group: 'Mise en ligne', secret: true, requirement: { kind: 'optional' },
+  { name: 'COOLIFY_API_TOKEN', label: 'Jeton API Coolify', group: 'Coolify', secret: true, requirement: { kind: 'optional' },
     help: 'Coolify → Keys & Tokens → API tokens → Create, droit « root » (ou read, read:sensitive, write, deploy). Active l’API dans Settings → Advanced si besoin. Sert aussi à installer la base de données sur ton serveur.' },
-  { name: 'HOSTINGER_API_TOKEN', label: 'Jeton API Hostinger', group: 'Mise en ligne', secret: true, requirement: { kind: 'optional' },
+  { name: 'HOSTINGER_API_TOKEN', label: 'Jeton API Hostinger', group: 'Hostinger', secret: true, requirement: { kind: 'optional' },
     help: 'hPanel → Profil → API → Nouveau jeton. Pour régler le domaine (DNS) et, si tu veux, l’acheter.' },
-  { name: 'CLOUDFLARE_API_TOKEN', label: 'Jeton API Cloudflare', group: 'Mise en ligne', secret: true, requirement: { kind: 'optional' },
+  { name: 'CLOUDFLARE_API_TOKEN', label: 'Jeton API Cloudflare', group: 'Cloudflare', secret: true, requirement: { kind: 'optional' },
     help: 'Cloudflare → Mon profil → Jetons API → Créer → modèle « Modifier la zone DNS ». Si ton domaine est chez Cloudflare.' },
 
   // --- Paiement
@@ -106,16 +111,16 @@ export const SECRET_CATALOG: SecretDefinition[] = [
   { name: 'BINANCE_PAY_NAME', label: 'Nom affiché dans Binance', group: 'Binance Pay (manuel)', secret: false, requirement: { kind: 'optional' }, help: 'Le nom que le client voit avant d’envoyer.' },
   { name: 'USDT_TRC20_ADDRESS', label: 'Adresse USDT (TRC20)', group: 'Binance Pay (manuel)', secret: false, requirement: { kind: 'optional' }, help: 'Pour ceux qui paient en USDT sans compte Binance (réseau TRON uniquement).' },
   // --- Intelligence artificielle (parcours personnalisé des formations)
-  { name: 'KIE_API_KEY', label: 'Clé kie.ai (Claude)', group: 'Intelligence artificielle', secret: true, requirement: { kind: 'optional' },
+  { name: 'KIE_API_KEY', label: 'Clé kie.ai (Claude)', group: 'kie.ai', secret: true, requirement: { kind: 'optional' },
     help: "Clé de ton compte kie.ai (kie.ai → API Key). Elle sert à analyser le questionnaire d'accueil d'une formation et à proposer à chaque élève son parcours personnalisé. Sans elle, le parcours est calculé par des règles simples." },
-  { name: 'KIE_API_KEY_2', label: 'Clé kie.ai de relais (second compte)', group: 'Intelligence artificielle', secret: true, requirement: { kind: 'optional' },
+  { name: 'KIE_API_KEY_2', label: 'Clé kie.ai de relais (second compte)', group: 'kie.ai', secret: true, requirement: { kind: 'optional' },
     help: "Facultatif : clé d'un second compte kie.ai. Si le premier refuse (solde épuisé, clé révoquée, saturation), la demande passe sur celui-ci sans que le client ne voie rien (Administration › Moteurs IA)." },
   // --- Coach business (Administration › Coach) : Claude par l'API Anthropic, kie.ai en secours
-  { name: 'ANTHROPIC_API_KEY', label: 'Clé API Anthropic (Claude)', group: 'Intelligence artificielle', secret: true, requirement: { kind: 'optional' },
+  { name: 'ANTHROPIC_API_KEY', label: 'Clé API Anthropic (Claude)', group: 'Anthropic (Claude)', secret: true, requirement: { kind: 'optional' },
     help: "platform.claude.com → API Keys → Create Key. Sert au coach business (point du jour, questions, analyse des réponses clients). Sans elle, le coach passe par kie.ai s'il est réglé, sinon il reste éteint." },
-  { name: 'COACH_MODEL', label: 'Modèle Claude du coach', group: 'Intelligence artificielle', secret: false, requirement: { kind: 'optional' }, defaultValue: 'claude-sonnet-5-5',
+  { name: 'COACH_MODEL', label: 'Modèle Claude du coach', group: 'Anthropic (Claude)', secret: false, requirement: { kind: 'optional' }, defaultValue: 'claude-sonnet-5-5',
     help: 'Identifiant exact du modèle (ex. claude-sonnet-5-5, claude-opus-5-5). Changeable sans redéployer.' },
-  { name: 'COACH_FALLBACK_MODEL', label: 'Modèle Claude de secours', group: 'Intelligence artificielle', secret: false, requirement: { kind: 'optional' }, defaultValue: 'claude-opus-5-5',
+  { name: 'COACH_FALLBACK_MODEL', label: 'Modèle Claude de secours', group: 'Anthropic (Claude)', secret: false, requirement: { kind: 'optional' }, defaultValue: 'claude-opus-5-5',
     help: 'Repris si le premier modèle décline la demande ou échoue. Vide = directement kie.ai.' },
 ]
 
