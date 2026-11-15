@@ -27,6 +27,9 @@ export const warappay: PaymentGateway = {
       // Doit correspondre à la devise de la boutique Warappay (XAF = Afrique centrale, XOF = Afrique de l'Ouest) :
       // sinon Warappay répond CURRENCY_MISMATCH. Sans réglage dans /admin/keys : XAF (Roosevelt, 15/11/2026).
       currency: process.env.WARAPPAY_CURRENCY || 'XAF',
+      // Moyen choisi par le client : sans ce champ, Warappay ouvre toujours sa page Mobile Money, même quand le client
+      // a choisi « Carte bancaire » ou « PayPal » chez nous (NERDS Academy, 15/11/2026 ; même correctif qu'IziVoice).
+      channel: paymentType === 'card' || paymentType === 'paypal' ? paymentType : 'mobile_money',
     }
     if (customer.phone) payload.customer_phone = customer.phone
 
@@ -38,6 +41,10 @@ export const warappay: PaymentGateway = {
     const data = await response.json()
     if (!response.ok || !data.checkout_url) {
       console.error('Warappay:', data)
+      const code = data?.error?.code
+      const min = Number(data?.error?.min_amount ?? data?.min_amount)
+      if (code === 'CARD_AMOUNT_TOO_LOW') throw new GatewayError(`Ce montant est trop faible pour un paiement par carte ou PayPal${Number.isFinite(min) && min > 0 ? ` (minimum ${min} FCFA)` : ''}. Choisis Mobile Money.`, 400)
+      if (code === 'CHANNEL_UNAVAILABLE') throw new GatewayError('Ce moyen de paiement n’est pas ouvert sur la boutique pour le moment. Choisis un autre moyen.', 400)
       throw new GatewayError(data?.error?.message || "Impossible d'initialiser le paiement.", response.ok ? 502 : response.status)
     }
     return { redirectUrl: data.checkout_url, providerRef: data.id || orderId, orderId }

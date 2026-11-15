@@ -141,12 +141,15 @@ function CheckoutModal({ slug, balance = false, onClose }: { slug: string; balan
 
   const isCourse = !!product && (product.category === "formation" || product.category === "accompagnement");
   const [method, setMethod] = useState<PaymentType>("mobile_money");
-  // Moyens réellement configurés (passerelle et clés posées dans /admin/keys) ; tous affichés en attendant la réponse.
+  // Moyens réellement configurés (passerelle et clés posées dans /admin/keys). Rien n'est affiché avant la réponse :
+  // sinon tous les moyens apparaissent une fraction de seconde puis disparaissent (NERDS Academy, 15/11/2026).
+  // Si la réponse n'arrive pas, on affiche tous les moyens (le serveur refusera proprement un moyen non branché).
   const [available, setAvailable] = useState<PaymentType[] | null>(null);
+  const [methodsReady, setMethodsReady] = useState(false);
   useEffect(() => {
     fetch("/api/payment/methods", { cache: "no-store" }).then((r) => r.json()).then((d) => {
       if (d?.success && Array.isArray(d.methods) && d.methods.length) setAvailable(d.methods);
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setMethodsReady(true));
   }, []);
   // Mobile Money : toujours facturé en FCFA (le serveur fait la même règle). Mobile Money direct : en FCFA aussi, le prix
   // affiché ici est converti à l'étape suivante pour un visiteur hors zone FCFA.
@@ -323,8 +326,9 @@ function CheckoutModal({ slug, balance = false, onClose }: { slug: string; balan
               <p className="ck-note">{me ? "Connecté : ton accès s’ajoute à ton compte, ta facture arrive par e-mail." : "Ton accès et ta facture arrivent à cette adresse e-mail. Ton compte est créé automatiquement."}</p>
 
               <h4 className="ck-h" style={{ marginTop: 26 }}>Moyen de paiement</h4>
-              <div className="ck-group" role="radiogroup" aria-label="Moyen de paiement">
-                {methods.map((m) => (
+              <div className="ck-group" role="radiogroup" aria-label="Moyen de paiement" aria-busy={!methodsReady}>
+                {!methodsReady && <p className="ck-note" style={{ margin: 0, padding: "18px 16px" }}>Chargement des moyens de paiement…</p>}
+                {methodsReady && methods.map((m) => (
                   <button key={m.id} type="button" role="radio" aria-checked={method === m.id} onClick={() => setMethod(m.id)} className={`ck-method${method === m.id ? " on" : ""}`}>
                     <span className="ck-radio" aria-hidden />
                     <span style={{ flex: 1, textAlign: "left" }}>
@@ -341,7 +345,7 @@ function CheckoutModal({ slug, balance = false, onClose }: { slug: string; balan
                   {error} {owned && <a href="/login?next=/mes-achats" style={{ color: "var(--white)", textDecoration: "underline" }}>Me connecter</a>}
                 </p>
               )}
-              <button type="submit" disabled={busy} className="ck-pay">
+              <button type="submit" disabled={busy || !methodsReady} className="ck-pay">
                 {busy ? <><span className="ck-spin" aria-hidden /> Connexion à la passerelle…</> : <>{product.preorder ? "Réserver" : "Payer"} {money(price!)}{pricePeriod(product)}</>}
               </button>
               <p className="ck-note" style={{ textAlign: "center" }}>

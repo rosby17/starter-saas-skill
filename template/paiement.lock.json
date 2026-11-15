@@ -2,7 +2,7 @@
   "brique": "paiement",
   "version": "2026-11-15",
   "files": {
-    "src/components/site/CheckoutModal.tsx": "7fd6bdcf43f83a8189744af3310cb1cd1955270b4550c3e6ce2a384d5e0f74cd",
+    "src/components/site/CheckoutModal.tsx": "9c97d1ad1f84a8bdea5d7cb3c906d4bf6b136a6c331e6ca3f0ad7a34c40a0739",
     "src/components/ui/phone-input.tsx": "9a0677073e311ea88ca192413407612f49db963f787ddf2cd9dd6616427080fb",
     "src/app/(marketing)/paiement/succes/page.tsx": "efb14038a35936da72f69c95bc5e9010bd21738af6b83a212108108f83993c28",
     "src/app/(marketing)/paiement/succes/PaymentStatus.tsx": "30428a13987bfe2be2da76c96d548a6e344364d18541b325ef3100a09ec095b2",
@@ -26,7 +26,7 @@
     "src/lib/payments/manual-contact.ts": "b383cae59bbf89a2e8024178799d5ac248584e4c5a56b5e6732ec80cdb789a08",
     "src/lib/payments/gateways/index.ts": "1ad06c724ce2860c001d687bbaf8bd1b590e9f4b358a1e9c5a5d350217071eef",
     "src/lib/payments/gateways/taramoney.ts": "993158528c0deb8bcf14771a5840b5b420c572ee43e0a3262d64d1cbb1cf1113",
-    "src/lib/payments/gateways/warappay.ts": "3e26ae914ab4df92648c8288397cfa77920f138e477ddc4f1161589c4d401e12",
+    "src/lib/payments/gateways/warappay.ts": "fa7114086f9d5a8d9df78fc42d795d17e7531aa911f67e982d3ffebd2712fcfb",
     "src/lib/payments/gateways/maketou.ts": "bf1488fd8238ccfbd400ba7c00edb9dcc887e714295c9e63aa5e4cd03a99ef86",
     "src/lib/payments/gateways/wave.ts": "7a4d87ceb6d6de739edb7b7de444518e35d994a09c43ec1362a03e5b5aba9759",
     "src/lib/payments/gateways/binance.ts": "2f073f1fd0549c3a9b8b2f945aa5c215dc551ebbd706a9acbc85b880ca23fc17",
