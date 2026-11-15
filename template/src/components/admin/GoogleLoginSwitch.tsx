@@ -37,7 +37,8 @@ export function GoogleLoginSwitch() {
     if (!token.trim()) return
     setBusy(true); setMessage(null)
     const values: Record<string, string> = { COOLIFY_API_TOKEN: token.trim() }
-    if (!state?.coolify) { const host = window.location.hostname.split('.').slice(-2).join('.'); if (host.includes('.')) values.COOLIFY_URL = `https://coolify.${host}` }
+    // Pas d'adresse Coolify devinée depuis le domaine du site (un domaine client donnait coolify.<domaine du client>,
+    // alors que Coolify est ailleurs) : elle se saisit dans la carte Coolify, et la route le rappelle si elle manque.
     const d = await fetch('/api/admin/secrets', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ values }) }).then((r) => r.json()).catch(() => ({ success: false }))
     if (!d.success) { setBusy(false); return setMessage({ ok: false, text: d.message || 'Jeton non enregistré.' }) }
     setToken('')
@@ -66,7 +67,7 @@ export function GoogleLoginSwitch() {
           <div className="mt-3 space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
             <p className="text-sm text-gray-700">Colle ici ton nouveau jeton Coolify (ton tableau de bord Coolify → Keys &amp; Tokens → API tokens → Create, droit « root ») :</p>
             <div className="flex flex-wrap gap-2">
-              <div className="min-w-56 flex-1"><PasswordInput value={token} onChange={(e) => setToken(e.target.value)} placeholder="Jeton API Coolify" autoComplete="off" /></div>
+              <div className="min-w-56 flex-1"><PasswordInput value={token} onChange={(e) => setToken(e.target.value)} placeholder="Jeton API Coolify" autoComplete="new-password" name="jeton-coolify" data-1p-ignore data-lpignore="true" /></div>
               <button type="button" onClick={saveTokenAndEnable} disabled={busy || !token.trim()} className="rounded-full bg-brand px-5 py-2 text-sm font-medium text-white hover:bg-brand-hover disabled:opacity-50">{busy ? 'Un instant…' : 'Enregistrer et activer Google'}</button>
             </div>
           </div>

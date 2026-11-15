@@ -186,7 +186,7 @@ export default function KeysPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative">
             <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Chercher une clé, un service…" aria-label="Chercher une clé" {...NO_AUTOFILL}
+            <input type="search" name="recherche-cles" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Chercher une clé, un service…" aria-label="Chercher une clé" {...NO_AUTOFILL}
               className="w-full rounded-xl border border-gray-200 bg-surface py-2.5 pl-9 pr-3 text-sm outline-none focus:border-brand sm:w-72" />
           </div>
           <div className="flex rounded-xl bg-gray-100 p-1" role="tablist" aria-label="Filtrer les clés">
