@@ -6,7 +6,7 @@
     "src/components/ui/phone-input.tsx": "9a0677073e311ea88ca192413407612f49db963f787ddf2cd9dd6616427080fb",
     "src/app/(marketing)/paiement/succes/page.tsx": "efb14038a35936da72f69c95bc5e9010bd21738af6b83a212108108f83993c28",
     "src/app/(marketing)/paiement/succes/PaymentStatus.tsx": "30428a13987bfe2be2da76c96d548a6e344364d18541b325ef3100a09ec095b2",
-    "src/app/api/payment/checkout/route.ts": "e07ecd2191e79be19ae9fbdfc510254c460a757edbdb23c56ab14dc0d7ef111e",
+    "src/app/api/payment/checkout/route.ts": "36447cd0f95e10a70a121e531b525da704c86c4537cbce155b873519389238f4",
     "src/app/api/payment/enter/route.ts": "78852789e8794380821b86dd5de57de1d2dd868b855d87015f6237ce1700140c",
     "src/app/api/payment/methods/route.ts": "ed3c12e67dfae92f9d9dcea83472a838e06aa3023cfbb2c068caf2bf6639b518",
     "src/app/api/payment/verify/route.ts": "374574b89d4b72b96e5e8b73cd43bac7f803743f53a8b273a9f15132d8a175b1",

@@ -177,10 +177,12 @@ async function handlePOST(request: Request) {
     // Réutilisation : une commande « pending » encore récente, du même produit et du même type d'achat, pour la même
     // passerelle et le même montant, renvoie SA page de paiement au lieu d'en ouvrir une deuxième (double clic,
     // retour arrière, relance après un délai). Le client ne peut pas payer deux fois la même chose.
+    // Même MOYEN aussi (payment_type) : une passerelle comme Warappay sert la carte, PayPal et Mobile Money ; sans ce
+    // filtre, un client qui passait de la carte à PayPal retombait sur sa page carte (NERDS Academy, 15/11/2026).
     const firstMethod = gateways[0].paymentMethod
     const { data: pending } = await db.from('orders').select('id, checkout_url')
       .eq('user_id', userId).eq('product_id', product.id).eq('purchase_kind', purchaseKind)
-      .eq('payment_method', firstMethod).eq('status', 'pending').eq('amount_fcfa', amountFcfa)
+      .eq('payment_method', firstMethod).eq('payment_type', input.paymentType).eq('status', 'pending').eq('amount_fcfa', amountFcfa)
       .gte('created_at', new Date(Date.now() - CHECKOUT_REUSE_WINDOW_MS).toISOString())
       .not('checkout_url', 'is', null).order('created_at', { ascending: false }).limit(1).maybeSingle()
     if (pending?.checkout_url) {
@@ -204,6 +206,7 @@ async function handlePOST(request: Request) {
       amount_usd: amountUsd,
       currency: orderCurrency,
       payment_method: firstMethod,
+      payment_type: input.paymentType,
       status: 'pending',
       customer_name: input.fullName,
       customer_email: email,
