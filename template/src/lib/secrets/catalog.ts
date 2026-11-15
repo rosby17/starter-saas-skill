@@ -33,6 +33,8 @@ export type SecretDefinition = {
   webhookPath?: string
   /** Valeur utilisée par le code quand rien n'est posé : affichée (et modifiable) dans le champ de l'admin. */
   defaultValue?: string
+  /** Valeurs permises : l'admin choisit parmi elles (boutons) au lieu de taper une valeur libre. */
+  options?: string[]
   /** true : service non utilisé par ce SaaS, clé cachée dans /admin/keys et jamais comptée dans le bandeau
    *  (le code reste en place ; retirer la ligne `hidden: true` la fait réapparaître). */
   hidden?: boolean
@@ -91,7 +93,7 @@ export const SECRET_CATALOG: SecretDefinition[] = [
     help: 'maketou.net → ta boutique → Paramètres → API : la clé secrète (Bearer).' },
   { name: 'MAKETOU_PRODUCT_ID', label: 'Identifiant du produit Maketou', group: 'Maketou', secret: false, requirement: gw('maketou'),
     help: 'Le « productDocumentId » du produit Maketou à prix libre qui reçoit les paiements (le montant exact est envoyé à chaque paiement).' },
-  { name: 'WARAPPAY_CURRENCY', label: 'Devise de la boutique', group: 'Warappay', secret: false, requirement: { kind: 'optional' }, defaultValue: 'XOF', help: 'XOF ou XAF.' },
+  { name: 'WARAPPAY_CURRENCY', label: 'Devise de la boutique', group: 'Warappay', secret: false, requirement: { kind: 'optional' }, defaultValue: 'XAF', options: ['XAF', 'XOF'], help: 'XAF pour le Cameroun (Afrique centrale), XOF pour l’Afrique de l’Ouest. Sans choix, XAF.' },
 
   { name: 'WAVE_NUMBER', label: 'Numéro Wave du partenaire', group: 'Wave (manuel)', secret: false, requirement: { kind: 'optional' }, help: 'Numéro Wave qui reçoit les paiements (avec l’indicatif). Sans lui, Wave n’apparaît pas sur la page de paiement.' },
   { name: 'WAVE_NAME', label: 'Nom affiché dans Wave', group: 'Wave (manuel)', secret: false, requirement: { kind: 'optional' }, help: 'Le nom que le client voit dans Wave avant d’envoyer.' },

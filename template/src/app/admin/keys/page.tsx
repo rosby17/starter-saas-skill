@@ -343,13 +343,28 @@ export default function KeysPage() {
                                   </p>
                                 )}
 
+                                {s.source === 'missing' && s.defaultValue && (
+                                  <p className="mt-3 flex items-center gap-2 text-xs">
+                                    <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-gray-500">par défaut</span>
+                                    <code className="text-gray-700">{s.defaultValue}</code>
+                                  </p>
+                                )}
                                 <p className="mt-3 text-xs leading-relaxed text-gray-500">{s.help}</p>
                                 {s.oauthCallback && <CopyLine label="Adresse de redirection à déclarer chez Google" value={`${supabaseUrl}/auth/v1/callback`} />}
                                 {s.webhookPath && origin && <CopyLine label="Adresse du webhook à déclarer" value={`${origin}${s.webhookPath}`} />}
 
                                 {isEditing ? (
                                   <form className="mt-4 space-y-3" autoComplete="off" onSubmit={(e) => { e.preventDefault(); save(s) }}>
-                                    {s.secret
+                                    {s.options?.length ? (
+                                      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={s.label}>
+                                        {s.options.map((o) => (
+                                          <button key={o} type="button" role="radio" aria-checked={value === o} disabled={prefilling} onClick={() => setValue(o)}
+                                            className={`rounded-lg border px-4 py-2 font-mono text-sm transition-colors ${value === o ? 'border-brand bg-brand/10 font-semibold text-brand' : 'border-gray-200 bg-surface text-gray-700 hover:border-brand'}`}>
+                                            {o}{o === s.defaultValue ? ' (par défaut)' : ''}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    ) : s.secret
                                       ? <PasswordInput {...fieldProps} className="font-mono" />
                                       : <input {...fieldProps} className="w-full rounded-lg border border-gray-200 bg-surface px-4 py-2.5 font-mono text-sm outline-none focus:border-brand" />}
                                     <div className="flex flex-wrap items-center justify-end gap-2">

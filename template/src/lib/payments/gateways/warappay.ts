@@ -24,9 +24,9 @@ export const warappay: PaymentGateway = {
       redirect_url: `${origin}/paiement/succes?cartId=${orderId}`,
       meta: { order_id: orderId, planId: plan.id, payment_type: paymentType },
       amount: amountFcfa,
-      // Doit correspondre à la devise de la boutique Warappay (XOF = Afrique de l'Ouest, XAF = Afrique centrale) :
-      // sinon Warappay répond CURRENCY_MISMATCH.
-      currency: process.env.WARAPPAY_CURRENCY || 'XOF',
+      // Doit correspondre à la devise de la boutique Warappay (XAF = Afrique centrale, XOF = Afrique de l'Ouest) :
+      // sinon Warappay répond CURRENCY_MISMATCH. Sans réglage dans /admin/keys : XAF (Roosevelt, 15/11/2026).
+      currency: process.env.WARAPPAY_CURRENCY || 'XAF',
     }
     if (customer.phone) payload.customer_phone = customer.phone
 
