@@ -8,7 +8,7 @@ import { GoogleLoginSwitch } from '@/components/admin/GoogleLoginSwitch'
 import { FALLBACK_LOGO, SERVICES, THEMES, themeOf } from '@/lib/secrets/services'
 import type { SecretStatus } from '@/lib/secrets/store'
 
-// Clés et intégrations, sur toute la largeur : compteurs, recherche et filtres en haut, sommaire collant à gauche
+// Clés et intégrations, sur toute la largeur : compteurs et filtres en haut, sommaire collant à gauche
 // rangé par thèmes (logo de chaque service), services en colonnes au centre, une carte par clé avec sa pastille d'état.
 // Les clés sont chiffrées en base et actives dès l'enregistrement (pas de redéploiement).
 // Thèmes, logos et liens « Où la trouver » : src/lib/secrets/services.ts. Clé cachée (`hidden` dans catalog.ts) : jamais affichée ni comptée.
@@ -78,7 +78,8 @@ export default function KeysPage() {
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
   const [origin, setOrigin] = useState('')
   const [filter, setFilter] = useState<Filter>('toutes')
-  const [query, setQuery] = useState('')
+  // Pas de barre de recherche (Roosevelt, 16/11/2026) : Chrome la prenait pour l'identifiant du champ de
+  // clé ouvert et y collait l'e-mail de l'admin, ce qui vidait la liste et faisait disparaître la carte.
   const focusDone = useRef(false)
   const confirm = useConfirm()
 
@@ -153,14 +154,12 @@ export default function KeysPage() {
   }, [secrets])
 
   const visible = useMemo(() => {
-    const q = query.trim().toLowerCase()
     return secrets.filter((s) => {
       const st = stateOf(s)
       if (filter === 'a-faire' && st !== 'manquante' && st !== 'ressaisir') return false
-      if (filter === 'renseignees' && st !== 'ok') return false
-      return !q || [s.label, s.name, s.group, s.help].some((t) => t.toLowerCase().includes(q))
+      return !(filter === 'renseignees' && st !== 'ok')
     })
-  }, [secrets, filter, query])
+  }, [secrets, filter])
 
   const allGroups = [...new Set(secrets.map((s) => s.group))].sort((a, b) => themeIndex(a) - themeIndex(b))
   const groups = allGroups.filter((g) => visible.some((s) => s.group === g))
@@ -174,7 +173,7 @@ export default function KeysPage() {
 
   return (
     <main className="p-4 md:p-8">
-      {/* En-tête : titre à gauche, recherche et filtres à droite */}
+      {/* En-tête : titre à gauche, filtres à droite */}
       <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div className="max-w-2xl">
           <h1 className="text-3xl md:text-4xl">Clés et intégrations</h1>
@@ -184,11 +183,6 @@ export default function KeysPage() {
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative">
-            <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
-            <input type="search" name="recherche-cles" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Chercher une clé, un service…" aria-label="Chercher une clé" {...NO_AUTOFILL}
-              className="w-full rounded-xl border border-gray-200 bg-surface py-2.5 pl-9 pr-3 text-sm outline-none focus:border-brand sm:w-72" />
-          </div>
           <div className="flex rounded-xl bg-gray-100 p-1" role="tablist" aria-label="Filtrer les clés">
             {FILTERS.map((f) => (
               <button key={f.id} type="button" role="tab" aria-selected={filter === f.id} onClick={() => setFilter(f.id)}
